@@ -127,4 +127,17 @@ struct IndexExpr : Expr {
         return v.visit(*this);
     }
 };
+
+struct SetIndexExpr : Expr {
+    ExprPtr collection;
+    ExprPtr index;
+    ExprPtr value;
+
+    SetIndexExpr(ExprPtr coll, ExprPtr idx, ExprPtr val)
+        : collection(std::move(coll)), index(std::move(idx)), value(std::move(val)) {}
+
+    Value accept(ExprVisitor& v) override {
+        return v.visit(*this);
+    }
+};
 }  // namespace izi

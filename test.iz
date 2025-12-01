@@ -21,6 +21,12 @@ fn sumArray(a){
     return acc;
 }
 
+var m = {"hp":10};
+
+m["hhhh"] = 10;
+
+
+print(m);
 ab[1] = 10;
 var a = ab;
 print("len(a)", len(a));

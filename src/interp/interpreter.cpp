@@ -193,6 +193,36 @@ Value Interpreter::visit(IndexExpr& expr) {
     }
 }
 
+Value Interpreter::visit(SetIndexExpr& expr) {
+    Value collection = evaluate(*expr.collection);
+    Value index = evaluate(*expr.index);
+    Value value = evaluate(*expr.value);
+
+    if (std::holds_alternative<std::shared_ptr<Array>>(collection)) {
+        auto array = std::get<std::shared_ptr<Array>>(collection);
+        size_t idx = static_cast<size_t>(asNumber(index));
+        if (idx <0 ) {
+            throw std::runtime_error("Array index cannot be negative.");
+        }
+        if (idx >= array->elements.size()) {
+            throw std::runtime_error("Array index out of bounds.");
+        }
+        array->elements[idx] = value;
+        return value;
+    } 
+    
+    if (std::holds_alternative<std::shared_ptr<Map>>(collection)) {
+        auto map = std::get<std::shared_ptr<Map>>(collection);
+        if(!std::holds_alternative<std::string>(index)) {
+            throw std::runtime_error("Map keys must be strings.");
+        }
+        std::string key = std::get<std::string>(index);
+        map->entries[key] = value;
+        return value;
+    } 
+        throw std::runtime_error("Index assignment is only supported on arrays and maps.");
+}
+
 // Statement visitors
 void Interpreter::visit(ExprStmt& stmt) {
     evaluate(*stmt.expr);

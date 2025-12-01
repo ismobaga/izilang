@@ -44,6 +44,7 @@ class Interpreter : public ExprVisitor, public StmtVisitor {
     Value visit(ArrayExpr& expr) override;
     Value visit(MapExpr& expr) override;
     Value visit(IndexExpr& expr) override;
+    Value visit(SetIndexExpr& expr) override;
 
     // StmVisitor
 

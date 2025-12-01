@@ -46,6 +46,9 @@ void Lexer::scanToken() {
         case ';':
             addToken(TokenType::SEMICOLON);
             break;
+        case ':':
+            addToken(TokenType::COLON);
+            break;
         case '+':
             addToken(TokenType::PLUS);
             break;

@@ -13,6 +13,7 @@ struct GroupingExpr;
 struct ArrayExpr;
 struct MapExpr;
 struct IndexExpr;
+struct SetIndexExpr;
 
 struct ExprStmt;
 struct BlockStmt;
@@ -37,6 +38,7 @@ class ExprVisitor {
     virtual Value visit(ArrayExpr&) = 0;
     virtual Value visit(MapExpr&) = 0;
     virtual Value visit(IndexExpr&) = 0;
+    virtual Value visit(SetIndexExpr&) = 0;
 };
 
 class StmtVisitor {
