@@ -193,7 +193,14 @@ obj/Debug/izi/interpreter.o: src/interp/interpreter.cpp \
  /usr/include/c++/13/bits/ranges_uninitialized.h \
  /usr/include/c++/13/bits/ranges_algobase.h \
  /usr/include/c++/13/pstl/glue_memory_defs.h \
- /usr/include/c++/13/pstl/execution_defs.h src/ast/stmt.hpp \
+ /usr/include/c++/13/pstl/execution_defs.h \
+ /usr/include/c++/13/unordered_set \
+ /usr/include/c++/13/bits/unordered_set.h \
+ /usr/include/c++/13/bits/hashtable.h \
+ /usr/include/c++/13/bits/hashtable_policy.h \
+ /usr/include/c++/13/bits/enable_special_members.h \
+ /usr/include/c++/13/bits/node_handle.h \
+ /usr/include/c++/13/bits/erase_if.h src/ast/stmt.hpp \
  /usr/include/c++/13/vector /usr/include/c++/13/bits/stl_vector.h \
  /usr/include/c++/13/bits/stl_bvector.h \
  /usr/include/c++/13/bits/vector.tcc src/common/token.hpp \
@@ -213,19 +220,20 @@ obj/Debug/izi/interpreter.o: src/interp/interpreter.cpp \
  /usr/include/c++/13/bits/std_function.h /usr/include/c++/13/iostream \
  /usr/include/c++/13/istream /usr/include/c++/13/bits/istream.tcc \
  /usr/include/c++/13/unordered_map \
- /usr/include/c++/13/bits/unordered_map.h \
- /usr/include/c++/13/bits/hashtable.h \
- /usr/include/c++/13/bits/hashtable_policy.h \
- /usr/include/c++/13/bits/enable_special_members.h \
- /usr/include/c++/13/bits/node_handle.h \
- /usr/include/c++/13/bits/erase_if.h /usr/include/c++/13/variant \
+ /usr/include/c++/13/bits/unordered_map.h /usr/include/c++/13/variant \
  src/common/callable.hpp src/ast/visitor.hpp src/interp/environment.hpp \
- src/interp/user_function.hpp src/interp/native.hpp \
+ src/interp/user_function.hpp /usr/include/c++/13/sstream \
+ /usr/include/c++/13/bits/sstream.tcc /usr/include/c++/13/fstream \
+ /usr/include/c++/13/bits/codecvt.h \
+ /usr/include/x86_64-linux-gnu/c++/13/bits/basic_file.h \
+ /usr/include/x86_64-linux-gnu/c++/13/bits/c++io.h \
+ /usr/include/c++/13/bits/fstream.tcc src/interp/native.hpp \
  /usr/include/c++/13/functional /usr/include/c++/13/array \
  /usr/include/c++/13/bits/stl_algo.h \
  /usr/include/c++/13/bits/algorithmfwd.h \
  /usr/include/c++/13/bits/stl_heap.h \
- /usr/include/c++/13/bits/uniform_int_dist.h
+ /usr/include/c++/13/bits/uniform_int_dist.h src/parse/parser.hpp \
+ src/parse/lexer.hpp
 /usr/include/stdc-predef.h:
 src/interp/interpreter.hpp:
 /usr/include/c++/13/memory:
@@ -466,6 +474,13 @@ src/interp/interpreter.hpp:
 /usr/include/c++/13/bits/ranges_algobase.h:
 /usr/include/c++/13/pstl/glue_memory_defs.h:
 /usr/include/c++/13/pstl/execution_defs.h:
+/usr/include/c++/13/unordered_set:
+/usr/include/c++/13/bits/unordered_set.h:
+/usr/include/c++/13/bits/hashtable.h:
+/usr/include/c++/13/bits/hashtable_policy.h:
+/usr/include/c++/13/bits/enable_special_members.h:
+/usr/include/c++/13/bits/node_handle.h:
+/usr/include/c++/13/bits/erase_if.h:
 src/ast/stmt.hpp:
 /usr/include/c++/13/vector:
 /usr/include/c++/13/bits/stl_vector.h:
@@ -500,16 +515,18 @@ src/common/value.hpp:
 /usr/include/c++/13/bits/istream.tcc:
 /usr/include/c++/13/unordered_map:
 /usr/include/c++/13/bits/unordered_map.h:
-/usr/include/c++/13/bits/hashtable.h:
-/usr/include/c++/13/bits/hashtable_policy.h:
-/usr/include/c++/13/bits/enable_special_members.h:
-/usr/include/c++/13/bits/node_handle.h:
-/usr/include/c++/13/bits/erase_if.h:
 /usr/include/c++/13/variant:
 src/common/callable.hpp:
 src/ast/visitor.hpp:
 src/interp/environment.hpp:
 src/interp/user_function.hpp:
+/usr/include/c++/13/sstream:
+/usr/include/c++/13/bits/sstream.tcc:
+/usr/include/c++/13/fstream:
+/usr/include/c++/13/bits/codecvt.h:
+/usr/include/x86_64-linux-gnu/c++/13/bits/basic_file.h:
+/usr/include/x86_64-linux-gnu/c++/13/bits/c++io.h:
+/usr/include/c++/13/bits/fstream.tcc:
 src/interp/native.hpp:
 /usr/include/c++/13/functional:
 /usr/include/c++/13/array:
@@ -517,3 +534,5 @@ src/interp/native.hpp:
 /usr/include/c++/13/bits/algorithmfwd.h:
 /usr/include/c++/13/bits/stl_heap.h:
 /usr/include/c++/13/bits/uniform_int_dist.h:
+src/parse/parser.hpp:
+src/parse/lexer.hpp:

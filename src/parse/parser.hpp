@@ -39,6 +39,7 @@ class Parser {
     StmtPtr forStatement();
     StmtPtr returnStatement();
     StmtPtr functionDeclaration();
+    StmtPtr importStatement();
 
     // Helper methods
     bool match(std::initializer_list<TokenType> types);

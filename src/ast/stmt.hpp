@@ -96,4 +96,12 @@ struct IfStmt : public Stmt {
     void accept(StmtVisitor& v) override { v.visit(*this); }
 };
 
+// Import statement (e.g., "import 'module';")
+struct ImportStmt : public Stmt {
+    std::string module; 
+    explicit ImportStmt(std::string modName)
+        : module(std::move(modName)) {}
+
+    void accept(StmtVisitor& v) override { v.visit(*this); }
+};
 }  // namespace izi

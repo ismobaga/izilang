@@ -21,6 +21,7 @@ StmtPtr Parser::declaration() {
     try {
         if (match({TokenType::VAR})) return varDeclaration();
         if (match({TokenType::FN})) return functionDeclaration();
+        if (match({TokenType::IMPORT})) return importStatement();
         return statement();
     } catch (const std::runtime_error& e) {
         synchronize();
@@ -67,6 +68,17 @@ StmtPtr Parser::functionDeclaration() {
         std::string(name.lexeme),
         std::move(params),
         std::move(bodyStmts));
+}
+
+StmtPtr Parser::importStatement() {
+    Token moduleToken = consume(TokenType::STRING, "Expect module name as string.");
+    consume(TokenType::SEMICOLON, "Expect ';' after import statement.");
+    // Remove quotes from string literal
+    std::string moduleName = std::string(moduleToken.lexeme);
+    if (moduleName.size() >= 2 && moduleName.front() == '"' && moduleName.back() == '"') {
+        moduleName = moduleName.substr(1, moduleName.size() - 2);
+    }
+    return std::make_unique<ImportStmt>(std::move(moduleName));
 }
 
 StmtPtr Parser::statement() {

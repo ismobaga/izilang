@@ -4,6 +4,8 @@
 #include <iostream>
 #include <memory>
 #include <stdexcept>
+#include <sstream>
+#include <fstream>
 #include <string>
 
 #include "ast/expr.hpp"
@@ -12,7 +14,8 @@
 #include "common/token.hpp"
 #include "common/value.hpp"
 #include "interp/native.hpp"
-
+#include "parse/parser.hpp"
+#include "parse/lexer.hpp"
 namespace izi {
 
 Interpreter::Interpreter() : globals(nullptr), env(&globals) {
@@ -269,4 +272,43 @@ void Interpreter::visit(ReturnStmt& stmt) {
     throw ReturnSignal{v};
 }
 
+
+void Interpreter::visit(ImportStmt& stmt) {
+
+    std::string modulePath = normalizeModulePath(stmt.module);
+    if (importedModules.contains(modulePath) ) {
+        // Module already imported
+        return;
+    }
+
+    std::string source = loadFile(modulePath);
+    Lexer lexer(source);
+    auto tokens = lexer.scanTokens();
+    Parser parser(std::move(tokens));
+    auto program = parser.parse();
+    interpret(program);
+
+    // Execute the module in a new environment
+
+    importedModules.insert(modulePath);
+}
+std::string Interpreter::normalizeModulePath(const std::string& path) {
+    // Turn "math" into "math.iz"
+    if (path.size() >= 3 && path.ends_with(".iz"))
+    {
+        return path;
+    }
+    return path + ".iz";
+   
+}
+
+std::string Interpreter::loadFile(const std::string& path) {
+    std::ifstream file(path);
+    if (!file) {
+        throw std::runtime_error("Could not open file: " + path);
+    }   
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    return buffer.str();
+}
 }  // namespace izi

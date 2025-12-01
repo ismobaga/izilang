@@ -2,6 +2,8 @@
 
 #include <memory>
 #include <stdexcept>
+#include <string>
+#include <unordered_set>
 
 #include "ast/stmt.hpp"
 #include "ast/visitor.hpp"
@@ -55,14 +57,25 @@ class Interpreter : public ExprVisitor, public StmtVisitor {
     void visit(IfStmt&) override;
     void visit(FunctionStmt&) override;
     void visit(ReturnStmt&) override;
+    void visit(ImportStmt&) override;
 
     void executeBlock(const std::vector<StmtPtr>& statements, Environment* newEnv);
 
    private:
     Environment globals;
     Environment* env;
+
     Value evaluate(Expr& expr);
     void execute(Stmt& expr);
+    
+      
+    
+    // for imports
+    std::unordered_set<std::string> importedModules;
+
+    // helpers
+    std::string loadFile(const std::string& path);
+    std::string normalizeModulePath(const std::string& path);
 };
 
 }  // namespace izi

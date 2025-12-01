@@ -174,6 +174,9 @@ TokenType Lexer::keywordType(std::string_view text) {
     if (text == "true") return TokenType::TRUE;
     if (text == "false") return TokenType::FALSE;
     if (text == "nil") return TokenType::NIL;
+    if (text == "and") return TokenType::AND;
+    if (text == "or") return TokenType::OR;
+    if (text== "import") return TokenType::IMPORT;
     return TokenType::IDENTIFIER;
 }
 }  // namespace izi

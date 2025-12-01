@@ -57,6 +57,7 @@ enum class TokenType {
     WHILE,
     BREAK,
     CONTINUE,
+    IMPORT,
 
     // Special
     END_OF_FILE,
