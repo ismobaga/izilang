@@ -31,6 +31,13 @@ class NativeFunction : public Callable {
 
 auto nativePrint(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 auto nativeClock(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeLen(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativePush(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativePop(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeKeys(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeValues(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeHasKey(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+
 
 void registerNativeFunctions(Interpreter& interpreter);
 

@@ -21,4 +21,10 @@ fn sumArray(a){
     return acc;
 }
 
+ab[1] = 10;
+var a = ab;
+print("len(a)", len(a));
+
+print("len(ismail)", len("ismail"));
+
 print(sumArray(ab));
