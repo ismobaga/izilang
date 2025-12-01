@@ -1,0 +1,67 @@
+#pragma once
+
+#include <memory>
+#include <stdexcept>
+
+#include "ast/stmt.hpp"
+#include "ast/visitor.hpp"
+#include "common/token.hpp"
+#include "common/value.hpp"
+#include "environment.hpp"
+#include "user_function.hpp"
+
+namespace izi {
+
+class RuntimeError : public std::runtime_error {
+   public:
+    Token token;
+
+    RuntimeError(const Token& token, const std::string& message)
+        : std::runtime_error(message), token(token) {}
+};
+
+struct ReturnSignal {
+    Value value;
+};
+
+class Interpreter : public ExprVisitor, public StmtVisitor {
+   public:
+    Interpreter();
+
+    void interpret(const std::vector<StmtPtr>& program);
+    void defineGlobal(const std::string& name, const Value& value) {
+        globals.define(name, value);
+    }
+
+    // ExprVisitor
+    Value visit(BinaryExpr& expr) override;
+    Value visit(UnaryExpr& expr) override;
+    Value visit(LiteralExpr& expr) override;
+    Value visit(GroupingExpr& expr) override;
+    Value visit(CallExpr& expr) override;
+    Value visit(VariableExpr& expr) override;
+    Value visit(AssignExpr& expr) override;
+    Value visit(ArrayExpr& expr) override;
+    Value visit(MapExpr& expr) override;
+    Value visit(IndexExpr& expr) override;
+
+    // StmVisitor
+
+    void visit(ExprStmt&) override;
+    void visit(BlockStmt&) override;
+    void visit(VarStmt&) override;
+    void visit(WhileStmt&) override;
+    void visit(IfStmt&) override;
+    void visit(FunctionStmt&) override;
+    void visit(ReturnStmt&) override;
+
+    void executeBlock(const std::vector<StmtPtr>& statements, Environment* newEnv);
+
+   private:
+    Environment globals;
+    Environment* env;
+    Value evaluate(Expr& expr);
+    void execute(Stmt& expr);
+};
+
+}  // namespace izi

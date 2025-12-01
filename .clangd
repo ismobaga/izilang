@@ -1,0 +1,29 @@
+CompileFlags:
+    Add:
+        - "-std=c++20"
+        - "-I/home/ismail/Projects/izilang/src"
+    CompilationDatabase: .
+
+Diagnostics:
+    UnusedIncludes: Warn
+    MissingIncludes: Strict
+    ClangTidy:
+        Add:
+            - modernize-*
+            # - performance-*
+            - readability-*
+            - bugprone-*
+        Remove:
+            # - modernize-use-trailing-return-type
+            - readability-identifier-length
+
+InlayHints:
+    Enabled: Yes
+    ParameterNames: Yes
+    DeducedTypes: Yes
+
+Hover:
+    ShowAKA: Yes
+
+Index:
+    Background: Build
