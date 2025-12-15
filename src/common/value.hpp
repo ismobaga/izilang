@@ -12,6 +12,7 @@ namespace izi {
 using Nil = std::monostate;
 
 class Callable;
+class VmCallable;
 struct Array;
 struct Map;
 
@@ -22,7 +23,10 @@ using Value = std::variant<
     std::string,
     std::shared_ptr<Array>,
     std::shared_ptr<Map>,
-    std::shared_ptr<Callable>>;
+    std::shared_ptr<Callable>,
+    std::shared_ptr<VmCallable>
+
+    >;
 
 
 // Forward declare to avoid circular dependency
@@ -30,6 +34,7 @@ using Value = std::variant<
 
 // Include after Value definition to avoid circular dependency
 #include "callable.hpp"
+#include "bytecode/mv_callable.hpp"
 
 
 
@@ -87,7 +92,11 @@ inline void printValue(const Value& v) {
         printArray(*std::get<std::shared_ptr<Array>>(v));
     } else if (std::holds_alternative<std::shared_ptr<Map>>(v)) {
         printMap(*std::get<std::shared_ptr<Map>>(v));
-    } else {
+    } else if(std::holds_alternative<std::shared_ptr<VmCallable>>(v)) {
+        std::cout << "<vm fn " << std::get<std::shared_ptr<VmCallable>>(v)->name() << ">";
+    }
+    
+    else {
         std::cout << "<unknown>";
     }
 }
