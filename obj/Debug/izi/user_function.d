@@ -219,9 +219,10 @@ obj/Debug/izi/user_function.o: src/interp/user_function.cpp \
  /usr/include/c++/13/bits/enable_special_members.h \
  /usr/include/c++/13/bits/node_handle.h \
  /usr/include/c++/13/bits/erase_if.h /usr/include/c++/13/variant \
- src/common/callable.hpp src/interp/environment.hpp src/ast/stmt.hpp \
- src/common/token.hpp src/ast/expr.hpp src/ast/visitor.hpp \
- src/interp/interpreter.hpp /usr/include/c++/13/unordered_set \
+ src/common/callable.hpp src/bytecode/mv_callable.hpp \
+ src/interp/environment.hpp src/ast/stmt.hpp src/common/token.hpp \
+ src/ast/expr.hpp src/ast/visitor.hpp src/interp/interpreter.hpp \
+ /usr/include/c++/13/unordered_set \
  /usr/include/c++/13/bits/unordered_set.h
 /usr/include/stdc-predef.h:
 src/interp/user_function.hpp:
@@ -501,6 +502,7 @@ src/common/value.hpp:
 /usr/include/c++/13/bits/erase_if.h:
 /usr/include/c++/13/variant:
 src/common/callable.hpp:
+src/bytecode/mv_callable.hpp:
 src/interp/environment.hpp:
 src/ast/stmt.hpp:
 src/common/token.hpp:

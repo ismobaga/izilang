@@ -224,8 +224,8 @@ obj/Debug/izi/native.o: src/interp/native.cpp /usr/include/stdc-predef.h \
  /usr/include/c++/13/bits/ranges_algobase.h \
  /usr/include/c++/13/pstl/glue_memory_defs.h \
  /usr/include/c++/13/pstl/execution_defs.h /usr/include/c++/13/variant \
- src/interp/../common/callable.hpp src/interp/interpreter.hpp \
- /usr/include/c++/13/unordered_set \
+ src/interp/../common/callable.hpp src/bytecode/mv_callable.hpp \
+ src/interp/interpreter.hpp /usr/include/c++/13/unordered_set \
  /usr/include/c++/13/bits/unordered_set.h src/ast/stmt.hpp \
  src/common/token.hpp src/ast/expr.hpp src/ast/visitor.hpp \
  src/interp/environment.hpp src/interp/user_function.hpp \
@@ -526,6 +526,7 @@ src/interp/../common/value.hpp:
 /usr/include/c++/13/pstl/execution_defs.h:
 /usr/include/c++/13/variant:
 src/interp/../common/callable.hpp:
+src/bytecode/mv_callable.hpp:
 src/interp/interpreter.hpp:
 /usr/include/c++/13/unordered_set:
 /usr/include/c++/13/bits/unordered_set.h:

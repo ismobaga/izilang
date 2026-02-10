@@ -227,8 +227,11 @@ obj/Debug/izi/main.o: src/main.cpp /usr/include/stdc-predef.h \
  /usr/include/c++/13/bits/std_function.h \
  /usr/include/c++/13/unordered_map \
  /usr/include/c++/13/bits/unordered_map.h /usr/include/c++/13/variant \
- src/common/callable.hpp src/ast/visitor.hpp src/interp/environment.hpp \
- src/interp/user_function.hpp src/parse/lexer.hpp src/parse/parser.hpp
+ src/common/callable.hpp src/bytecode/mv_callable.hpp src/ast/visitor.hpp \
+ src/interp/environment.hpp src/interp/user_function.hpp \
+ src/parse/lexer.hpp src/parse/parser.hpp src/compile/compiler.hpp \
+ src/bytecode/opcode.hpp src/bytecode/chunk.hpp src/bytecode/vm.hpp \
+ /usr/include/c++/13/array
 /usr/include/stdc-predef.h:
 /usr/include/c++/13/fstream:
 /usr/include/c++/13/bits/requires_hosted.h:
@@ -519,8 +522,14 @@ src/common/value.hpp:
 /usr/include/c++/13/bits/unordered_map.h:
 /usr/include/c++/13/variant:
 src/common/callable.hpp:
+src/bytecode/mv_callable.hpp:
 src/ast/visitor.hpp:
 src/interp/environment.hpp:
 src/interp/user_function.hpp:
 src/parse/lexer.hpp:
 src/parse/parser.hpp:
+src/compile/compiler.hpp:
+src/bytecode/opcode.hpp:
+src/bytecode/chunk.hpp:
+src/bytecode/vm.hpp:
+/usr/include/c++/13/array:

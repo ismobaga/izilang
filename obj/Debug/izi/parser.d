@@ -219,8 +219,8 @@ obj/Debug/izi/parser.o: src/parse/parser.cpp /usr/include/stdc-predef.h \
  /usr/include/c++/13/bits/enable_special_members.h \
  /usr/include/c++/13/bits/node_handle.h \
  /usr/include/c++/13/bits/erase_if.h /usr/include/c++/13/variant \
- src/common/callable.hpp src/ast/visitor.hpp /usr/include/c++/13/utility \
- /usr/include/c++/13/bits/stl_relops.h
+ src/common/callable.hpp src/bytecode/mv_callable.hpp src/ast/visitor.hpp \
+ /usr/include/c++/13/utility /usr/include/c++/13/bits/stl_relops.h
 /usr/include/stdc-predef.h:
 src/parse/parser.hpp:
 /usr/include/c++/13/initializer_list:
@@ -502,6 +502,7 @@ src/common/value.hpp:
 /usr/include/c++/13/bits/erase_if.h:
 /usr/include/c++/13/variant:
 src/common/callable.hpp:
+src/bytecode/mv_callable.hpp:
 src/ast/visitor.hpp:
 /usr/include/c++/13/utility:
 /usr/include/c++/13/bits/stl_relops.h:
