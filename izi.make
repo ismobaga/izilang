@@ -81,6 +81,7 @@ GENERATED += $(OBJDIR)/user_function.o
 GENERATED += $(OBJDIR)/value.o
 GENERATED += $(OBJDIR)/vm.o
 GENERATED += $(OBJDIR)/vm_native.o
+GENERATED += $(OBJDIR)/vm_user_function.o
 OBJECTS += $(OBJDIR)/compiler.o
 OBJECTS += $(OBJDIR)/interpreter.o
 OBJECTS += $(OBJDIR)/lexer.o
@@ -91,6 +92,7 @@ OBJECTS += $(OBJDIR)/user_function.o
 OBJECTS += $(OBJDIR)/value.o
 OBJECTS += $(OBJDIR)/vm.o
 OBJECTS += $(OBJDIR)/vm_native.o
+OBJECTS += $(OBJDIR)/vm_user_function.o
 
 # Rules
 # #############################################
@@ -158,6 +160,9 @@ $(OBJDIR)/vm.o: src/bytecode/vm.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/vm_native.o: src/bytecode/vm_native.cpp
+	@echo "$(notdir $<)"
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/vm_user_function.o: src/bytecode/vm_user_function.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/value.o: src/common/value.cpp

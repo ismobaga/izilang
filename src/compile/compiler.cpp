@@ -1,5 +1,6 @@
 #include "compiler.hpp"
 #include "common/value.hpp"
+#include "bytecode/vm_user_function.hpp"
 #include <stdexcept>
 
 namespace izi {
@@ -271,9 +272,35 @@ void BytecodeCompiler::visit(VarStmt& stmt) {
 }
 
 void BytecodeCompiler::visit(FunctionStmt& stmt) {
-    // Function compilation not implemented yet
-    throw std::runtime_error("Function compilation not implemented.");
-
+    // Compile function body into a separate chunk
+    BytecodeCompiler functionCompiler;
+    
+    // Compile the function body
+    for (const auto& bodyStmt : stmt.body) {
+        functionCompiler.emitStatement(*bodyStmt);
+    }
+    
+    // Ensure the function returns nil if it doesn't have an explicit return
+    functionCompiler.emitOp(OpCode::NIL);
+    functionCompiler.emitOp(OpCode::RETURN);
+    
+    // Create a VmUserFunction and store it as a constant
+    auto functionChunk = std::make_shared<Chunk>(std::move(functionCompiler.chunk));
+    auto vmFunction = std::make_shared<VmUserFunction>(
+        stmt.name,
+        stmt.params,
+        functionChunk
+    );
+    
+    // Store the function in a constant
+    uint8_t constantIndex = makeConstant(vmFunction);
+    emitOp(OpCode::CONSTANT);
+    emitByte(constantIndex);
+    
+    // Store it in a global variable
+    uint8_t nameIndex = makeName(stmt.name);
+    emitOp(OpCode::SET_GLOBAL);
+    emitByte(nameIndex);
 }
 void BytecodeCompiler::visit(ImportStmt& stmt) {
     // Import compilation not implemented yet

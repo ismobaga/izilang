@@ -33,10 +33,16 @@ uint16_t VM::readShort() {
 }
 
 Value VM::run(const Chunk& entry) {
-    stack.clear();
-    frames.clear();
+    bool wasRunning = isRunning;
+    isRunning = true;
+    
+    if (!wasRunning) {
+        stack.clear();
+        frames.clear();
+    }
 
-    CallFrame mainFrame{&entry, entry.code.data(), 0};
+    size_t startingFrameCount = frames.size();
+    CallFrame mainFrame{&entry, entry.code.data(), stack.size()};
 
     frames.push_back(mainFrame);
 
@@ -150,7 +156,15 @@ Value VM::run(const Chunk& entry) {
                     Value result = pop();
                     CallFrame finished = frames.back();
                     frames.pop_back();
+                    
+                    // Check if we've returned from the frame we pushed in this run() call
+                    if (frames.size() == startingFrameCount) {
+                        isRunning = wasRunning;
+                        return result;
+                    }
+                    
                     if (frames.empty()) {
+                        isRunning = wasRunning;
                         return result; // Exit the VM
                     }
                     // Clean up the stack
@@ -165,6 +179,7 @@ Value VM::run(const Chunk& entry) {
         }
     } catch (const std::runtime_error& e) {
         std::cerr << "Runtime Error: " << e.what() << '\n';
+        isRunning = wasRunning;
         return Nil{};
     }
 

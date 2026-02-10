@@ -34,6 +34,7 @@ private:
     std::vector<Value> stack;
     std::vector<CallFrame> frames;
     std::unordered_map<std::string, Value> globals;
+    bool isRunning = false;
 
     CallFrame* currentFrame();
     
