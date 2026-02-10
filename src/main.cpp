@@ -36,7 +36,7 @@ int main(int argc, char** argv) {
         auto tokens = lex.scanTokens();
         Parser parser(std::move(tokens), src);
         auto program = parser.parse();
-        bool useVM = true;
+        bool useVM = false;
 
         if (!useVM)
         {

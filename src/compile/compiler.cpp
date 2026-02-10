@@ -245,6 +245,10 @@ void BytecodeCompiler::visit(IfStmt& stmt) {
 }
  void BytecodeCompiler::visit(WhileStmt& stmt) {
     size_t loopStart = chunk.code.size();
+    
+    // Push new loop context for break/continue
+    loopStack.push_back(LoopContext{{}, loopStart});
+    
     emitExpression(*stmt.condition);
 
     size_t exitJump = emitJump(OpCode::JUMP_IF_FALSE);
@@ -255,7 +259,14 @@ void BytecodeCompiler::visit(IfStmt& stmt) {
 
     patchJump(exitJump);
     emitOp(OpCode::POP); // Pop condition
-
+    
+    // Patch all break jumps to exit the loop
+    for (size_t breakJump : loopStack.back().breakJumps) {
+        patchJump(breakJump);
+    }
+    
+    // Pop loop context
+    loopStack.pop_back();
  }
 void BytecodeCompiler::visit(BlockStmt& stmt) {
     for (const auto& statement : stmt.statements) {
@@ -338,6 +349,25 @@ void BytecodeCompiler::visit(ExportStmt& stmt) {
     // The declaration (function or variable) will be defined globally
     // In a future enhancement, we could track exported names for validation
     emitStatement(*stmt.declaration);
+}
+
+void BytecodeCompiler::visit(BreakStmt& /*stmt*/) {
+    if (loopStack.empty()) {
+        throw std::runtime_error("'break' statement outside of loop.");
+    }
+    
+    // Record this jump to be patched when we exit the loop
+    size_t breakJump = emitJump(OpCode::JUMP);
+    loopStack.back().breakJumps.push_back(breakJump);
+}
+
+void BytecodeCompiler::visit(ContinueStmt& /*stmt*/) {
+    if (loopStack.empty()) {
+        throw std::runtime_error("'continue' statement outside of loop.");
+    }
+    
+    // Emit a LOOP instruction to jump back to loop start
+    emitLoop(loopStack.back().loopStart);
 }
 
 std::string BytecodeCompiler::normalizeModulePath(const std::string& path) {

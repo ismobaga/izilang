@@ -257,7 +257,13 @@ void Interpreter::visit(IfStmt& stmt) {
 
 void Interpreter::visit(WhileStmt& stmt) {
     while (isTruthy(evaluate(*stmt.condition))) {
-        stmt.body->accept(*this);
+        try {
+            stmt.body->accept(*this);
+        } catch (const BreakSignal&) {
+            break;  // Exit the loop
+        } catch (const ContinueSignal&) {
+            continue;  // Continue to next iteration
+        }
     }
 }
 
@@ -320,4 +326,13 @@ void Interpreter::visit(ExportStmt& stmt) {
     // In a future enhancement, we could track exported names for validation
     execute(*stmt.declaration);
 }
+
+void Interpreter::visit(BreakStmt& /*stmt*/) {
+    throw BreakSignal{};
+}
+
+void Interpreter::visit(ContinueStmt& /*stmt*/) {
+    throw ContinueSignal{};
+}
+
 }  // namespace izi

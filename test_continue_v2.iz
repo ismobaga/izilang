@@ -1,0 +1,14 @@
+// Test continue statement
+var i = 0;
+print("Testing continue (should skip 3 and 7):");
+while (i < 10) {
+    i = i + 1;
+    if (i == 3) {
+        continue;
+    }
+    if (i == 7) {
+        continue;
+    }
+    print(i);
+}
+print("Loop complete");

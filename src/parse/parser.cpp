@@ -154,6 +154,8 @@ StmtPtr Parser::statement() {
     if (match({TokenType::WHILE})) return whileStatement();
     if (match({TokenType::FOR})) return forStatement();
     if (match({TokenType::RETURN})) return returnStatement();
+    if (match({TokenType::BREAK})) return breakStatement();
+    if (match({TokenType::CONTINUE})) return continueStatement();
     return expressionStatement();
 }
 
@@ -265,6 +267,16 @@ StmtPtr Parser::returnStatement() {
     }
     consume(TokenType::SEMICOLON, "Expect ';' after return value.");
     return std::make_unique<ReturnStmt>(std::move(value));
+}
+
+StmtPtr Parser::breakStatement() {
+    consume(TokenType::SEMICOLON, "Expect ';' after 'break'.");
+    return std::make_unique<BreakStmt>();
+}
+
+StmtPtr Parser::continueStatement() {
+    consume(TokenType::SEMICOLON, "Expect ';' after 'continue'.");
+    return std::make_unique<ContinueStmt>();
 }
 
 // Expression parsing (precedence climbing)
