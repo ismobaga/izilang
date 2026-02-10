@@ -364,15 +364,18 @@ ExprPtr Parser::call() {
             }
             consume(TokenType::RIGHT_PAREN, "Expect ')' after arguments.");
             expr = std::make_unique<CallExpr>(std::move(expr), std::move(args));
-        } else  if(match({TokenType::LEFT_BRACKET})){
+        } else if (match({TokenType::LEFT_BRACKET})) {
             // Index : expr[ expression ]
             ExprPtr index = expression();
             consume(TokenType::RIGHT_BRACKET, "Expect ']' after index expression.");
             expr = std::make_unique<IndexExpr>(std::move(expr), std::move(index));
-
-        }
-        else
-        {
+        } else if (match({TokenType::DOT})) {
+            // Property access: expr.property
+            // Desugar to expr["property"]
+            Token property = consume(TokenType::IDENTIFIER, "Expect property name after '.'.");
+            ExprPtr index = std::make_unique<LiteralExpr>(std::string(property.lexeme));
+            expr = std::make_unique<IndexExpr>(std::move(expr), std::move(index));
+        } else {
             break;
         }
     }

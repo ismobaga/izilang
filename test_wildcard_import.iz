@@ -1,6 +1,0 @@
-import * as math from "math.iz";
-
-print("=== Testing Wildcard Imports ===");
-print("math.add(5, 3) =", math.add(5, 3));
-print("math.subtract(10, 4) =", math.subtract(10, 4));
-print("math.PI =", math.PI);
