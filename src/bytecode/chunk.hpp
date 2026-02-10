@@ -7,6 +7,8 @@ namespace izi {
     struct Chunk {
         std::vector<uint8_t> code;
         std::vector<Value> constants;
+        std::vector<std::string> names;  
+
 
         void write(uint8_t byte) {
             code.push_back(byte);
@@ -15,6 +17,11 @@ namespace izi {
         size_t addConstant(const Value& value) {
             constants.push_back(value);
             return constants.size() - 1;
+        }
+
+        size_t addName(const std::string& name) {  
+            names.push_back(name);
+            return names.size() - 1;
         }
         
     };

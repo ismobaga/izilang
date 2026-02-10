@@ -23,8 +23,8 @@ public:
     
     Value run(const Chunk& chunk);
     
-    void push(Value value);
-    Value pop();
+    // void push(Value value);
+    // Value pop();
     
 private:
     std::vector<Value> stack;
@@ -41,7 +41,12 @@ private:
     static double asNumber(const Value& v);
 
     template<typename Fn>
-    void binaryNumeric(Fn fn);
+    void binaryNumeric(Fn fn) {
+        Value b = pop();
+        Value a = pop();
+        double result = fn(asNumber(a), asNumber(b));
+        push(result);
+    }
     
 };
 

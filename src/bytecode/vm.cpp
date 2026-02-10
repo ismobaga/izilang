@@ -37,7 +37,7 @@ Value VM::run(const Chunk& entry) {
 
     try {
         while (true) {
-            OpCode op = static_cast<OpCode>() readByte());
+            OpCode op = static_cast<OpCode>( readByte());
             switch (static_cast<OpCode>(op)) {
                 case OpCode::CONSTANT: {
                     uint8_t index = readByte();
@@ -101,35 +101,27 @@ Value VM::run(const Chunk& entry) {
                 case OpCode::CALL: {
                     uint8_t argCount = readByte();
                     Value callee = stack[stack.size() - 1 - argCount];
-                    if (!std::holds_alternative<std::shared_ptr<Callable>>(callee)) {
-                        throw std::runtime_error("Can only call functions and classes.");
+                    if (!std::holds_alternative<std::shared_ptr<VmCallable>>(callee)) {
+                        throw std::runtime_error("Can only call VM functions.");
                     }
-                    auto function = std::get<std::shared_ptr<Callable>>(callee);
+                    auto function = std::get<std::shared_ptr<VmCallable>>(callee);
                     int ar = function->arity();
-                    if (ar>=0 && argCount != ar) {
+                    if (ar >= 0 && argCount != ar) {
                         throw std::runtime_error("Expected " + std::to_string(function->arity()) +
                                                  " arguments but got " + std::to_string(argCount) + ".");
                     }
-                    if(auto nativeFn = std::dynamic_pointer_cast<NativeFunction>(function)) {
-                        std::vector<Value> args;
-                        args.reserve(argCount);
-                        for (size_t i = 0; i < argCount; ++i) {
-                            args.push_back(stack[stack.size() - argCount + i]);
-                        }
-
-                        // Pop arguments and callee
-                        for (size_t i = 0; i < argCount + 1; ++i) {
-                            pop();
-                        }
-                        Value result = nativeFn->call(*this, args);
-                        push(result);
-                    }else if(auto fn = std::dynamic_pointer_cast<BytecodeFunction>(function)) {
-                        CallFrame frame{&fn->chunk, fn->chunk.code.data(), stack.size() - argCount -1};
-                        frames.push_back(frame);
-                    } 
-                    else {
-                        throw std::runtime_error("Only native functions are supported in this VM version.");
+                    std::vector<Value> args;
+                    args.reserve(argCount);
+                    for (size_t i = 0; i < argCount; ++i) {
+                        args.push_back(stack[stack.size() - argCount + i]);
                     }
+
+                    // Pop arguments and callee
+                    for (size_t i = 0; i < argCount + 1; ++i) {
+                        pop();
+                    }
+                    Value result = function->call(*this, args);
+                    push(result);
                     break;
                 }
                 case OpCode::RETURN: {
@@ -154,5 +146,26 @@ Value VM::run(const Chunk& entry) {
         return Nil{};
     }
 
-
 }
+
+void VM::push(Value v) {
+    stack.push_back(std::move(v));
+}
+
+Value VM::pop() {
+    if (stack.empty()) {
+        throw std::runtime_error("Stack underflow.");
+    }
+    Value value = std::move(stack.back());
+    stack.pop_back();
+    return value;
+}
+
+double VM::asNumber(const Value& v) {
+    if (!std::holds_alternative<double>(v)) {
+        throw std::runtime_error("Expected number.");
+    }
+    return std::get<double>(v);
+}
+
+} // namespace izi
