@@ -1,8 +1,0 @@
-// Very simple break test
-print("Before loop");
-var i = 0;
-while (i < 5) {
-    print(i);
-    i = i + 1;
-}
-print("After loop");

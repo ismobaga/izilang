@@ -1,8 +1,0 @@
-// Very simple loop test without comparison
-print("Before loop");
-var i = true;
-while (i) {
-    print("In loop");
-    i = false;
-}
-print("After loop");

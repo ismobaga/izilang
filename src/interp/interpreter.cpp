@@ -327,11 +327,11 @@ void Interpreter::visit(ExportStmt& stmt) {
     execute(*stmt.declaration);
 }
 
-void Interpreter::visit(BreakStmt& stmt) {
+void Interpreter::visit(BreakStmt& /*stmt*/) {
     throw BreakSignal{};
 }
 
-void Interpreter::visit(ContinueStmt& stmt) {
+void Interpreter::visit(ContinueStmt& /*stmt*/) {
     throw ContinueSignal{};
 }
 

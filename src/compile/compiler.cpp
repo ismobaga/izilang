@@ -351,7 +351,7 @@ void BytecodeCompiler::visit(ExportStmt& stmt) {
     emitStatement(*stmt.declaration);
 }
 
-void BytecodeCompiler::visit(BreakStmt& stmt) {
+void BytecodeCompiler::visit(BreakStmt& /*stmt*/) {
     if (loopStack.empty()) {
         throw std::runtime_error("'break' statement outside of loop.");
     }
@@ -361,7 +361,7 @@ void BytecodeCompiler::visit(BreakStmt& stmt) {
     loopStack.back().breakJumps.push_back(breakJump);
 }
 
-void BytecodeCompiler::visit(ContinueStmt& stmt) {
+void BytecodeCompiler::visit(ContinueStmt& /*stmt*/) {
     if (loopStack.empty()) {
         throw std::runtime_error("'continue' statement outside of loop.");
     }
