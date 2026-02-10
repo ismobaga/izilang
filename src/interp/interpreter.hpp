@@ -58,6 +58,7 @@ class Interpreter : public ExprVisitor, public StmtVisitor {
     void visit(FunctionStmt&) override;
     void visit(ReturnStmt&) override;
     void visit(ImportStmt&) override;
+    void visit(ExportStmt&) override;
 
     void executeBlock(const std::vector<StmtPtr>& statements, Environment* newEnv);
 

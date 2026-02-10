@@ -313,4 +313,11 @@ std::string Interpreter::loadFile(const std::string& path) {
     buffer << file.rdbuf();
     return buffer.str();
 }
+
+void Interpreter::visit(ExportStmt& stmt) {
+    // For now, simply execute the underlying declaration
+    // The declaration (function or variable) will be defined globally
+    // In a future enhancement, we could track exported names for validation
+    execute(*stmt.declaration);
+}
 }  // namespace izi

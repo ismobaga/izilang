@@ -58,6 +58,9 @@ enum class TokenType {
     BREAK,
     CONTINUE,
     IMPORT,
+    EXPORT,
+    FROM,
+    AS,
 
     // Special
     END_OF_FILE,
@@ -166,6 +169,14 @@ inline const char* tokenTypeToString(TokenType type) {
             return "BREAK";
         case TokenType::CONTINUE:
             return "CONTINUE";
+        case TokenType::IMPORT:
+            return "IMPORT";
+        case TokenType::EXPORT:
+            return "EXPORT";
+        case TokenType::FROM:
+            return "FROM";
+        case TokenType::AS:
+            return "AS";
         case TokenType::END_OF_FILE:
             return "END_OF_FILE";
         case TokenType::ERROR:

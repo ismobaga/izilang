@@ -333,6 +333,13 @@ void BytecodeCompiler::visit(ImportStmt& stmt) {
     }
 }
 
+void BytecodeCompiler::visit(ExportStmt& stmt) {
+    // For now, simply emit the underlying declaration
+    // The declaration (function or variable) will be defined globally
+    // In a future enhancement, we could track exported names for validation
+    emitStatement(*stmt.declaration);
+}
+
 std::string BytecodeCompiler::normalizeModulePath(const std::string& path) {
     // Turn "math" into "math.iz"
     if (path.size() >= 3 && path.ends_with(".iz")) {

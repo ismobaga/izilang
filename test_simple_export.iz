@@ -1,0 +1,8 @@
+import "math.iz";
+
+print("=== Testing Simple Import ===");
+print("add(5, 3) =", add(5, 3));
+print("subtract(10, 4) =", subtract(10, 4));
+print("multiply(6, 7) =", multiply(6, 7));
+print("PI =", PI);
+print("E =", E);

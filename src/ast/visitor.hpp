@@ -23,6 +23,7 @@ struct ReturnStmt;
 struct FunctionStmt;
 struct IfStmt;
 struct ImportStmt;
+struct ExportStmt;
 
 
 class ExprVisitor {
@@ -54,6 +55,7 @@ class StmtVisitor {
     virtual void visit(VarStmt&) = 0;
     virtual void visit(FunctionStmt&) = 0;
     virtual void visit(ImportStmt&) = 0;
+    virtual void visit(ExportStmt&) = 0;
 };
 
 }  // namespace izi

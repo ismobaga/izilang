@@ -43,6 +43,7 @@ namespace izi
         void visit(VarStmt& stmt) override;
         void visit(FunctionStmt& stmt) override;
         void visit(ImportStmt& stmt) override;
+        void visit(ExportStmt& stmt) override;
 
     private:
         Chunk chunk;

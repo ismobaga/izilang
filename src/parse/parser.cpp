@@ -22,6 +22,7 @@ StmtPtr Parser::declaration() {
         if (match({TokenType::VAR})) return varDeclaration();
         if (match({TokenType::FN})) return functionDeclaration();
         if (match({TokenType::IMPORT})) return importStatement();
+        if (match({TokenType::EXPORT})) return exportStatement();
         return statement();
     } catch (const std::runtime_error& e) {
         synchronize();
@@ -71,14 +72,79 @@ StmtPtr Parser::functionDeclaration() {
 }
 
 StmtPtr Parser::importStatement() {
+    // Three possible syntaxes:
+    // 1. import "module.iz";  (simple import - backward compatible)
+    // 2. import { name1, name2 } from "module.iz";  (named imports)
+    // 3. import * as alias from "module.iz";  (wildcard import)
+    
+    // Check for wildcard import: import *
+    if (match({TokenType::STAR})) {
+        consume(TokenType::AS, "Expect 'as' after '*' in import statement.");
+        Token alias = consume(TokenType::IDENTIFIER, "Expect alias name after 'as'.");
+        consume(TokenType::FROM, "Expect 'from' after alias in import statement.");
+        Token moduleToken = consume(TokenType::STRING, "Expect module name as string.");
+        consume(TokenType::SEMICOLON, "Expect ';' after import statement.");
+        
+        // Remove quotes from string literal
+        std::string moduleName = std::string(moduleToken.lexeme);
+        if (moduleName.size() >= 2 && moduleName.front() == '"' && moduleName.back() == '"') {
+            moduleName = moduleName.substr(1, moduleName.size() - 2);
+        }
+        
+        return std::make_unique<ImportStmt>(std::move(moduleName), std::string(alias.lexeme), true);
+    }
+    
+    // Check for named imports: import {
+    if (match({TokenType::LEFT_BRACE})) {
+        std::vector<std::string> namedImports;
+        do {
+            Token name = consume(TokenType::IDENTIFIER, "Expect identifier in import list.");
+            namedImports.push_back(std::string(name.lexeme));
+        } while (match({TokenType::COMMA}));
+        
+        consume(TokenType::RIGHT_BRACE, "Expect '}' after import list.");
+        consume(TokenType::FROM, "Expect 'from' after import list.");
+        Token moduleToken = consume(TokenType::STRING, "Expect module name as string.");
+        consume(TokenType::SEMICOLON, "Expect ';' after import statement.");
+        
+        // Remove quotes from string literal
+        std::string moduleName = std::string(moduleToken.lexeme);
+        if (moduleName.size() >= 2 && moduleName.front() == '"' && moduleName.back() == '"') {
+            moduleName = moduleName.substr(1, moduleName.size() - 2);
+        }
+        
+        return std::make_unique<ImportStmt>(std::move(moduleName), std::move(namedImports));
+    }
+    
+    // Simple import: import "module.iz";
     Token moduleToken = consume(TokenType::STRING, "Expect module name as string.");
     consume(TokenType::SEMICOLON, "Expect ';' after import statement.");
+    
     // Remove quotes from string literal
     std::string moduleName = std::string(moduleToken.lexeme);
     if (moduleName.size() >= 2 && moduleName.front() == '"' && moduleName.back() == '"') {
         moduleName = moduleName.substr(1, moduleName.size() - 2);
     }
+    
     return std::make_unique<ImportStmt>(std::move(moduleName));
+}
+
+StmtPtr Parser::exportStatement() {
+    // Export must be followed by either 'fn' or 'var'
+    // export fn name() { ... }
+    // export var name = value;
+    
+    if (match({TokenType::FN})) {
+        auto funcDecl = functionDeclaration();
+        return std::make_unique<ExportStmt>(std::move(funcDecl));
+    }
+    
+    if (match({TokenType::VAR})) {
+        auto varDecl = varDeclaration();
+        return std::make_unique<ExportStmt>(std::move(varDecl));
+    }
+    
+    throw error(peek(), "Expect 'fn' or 'var' after 'export'.");
 }
 
 StmtPtr Parser::statement() {
