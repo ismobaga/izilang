@@ -1,7 +1,11 @@
 #include "compiler.hpp"
 #include "common/value.hpp"
 #include "bytecode/vm_user_function.hpp"
+#include "parse/lexer.hpp"
+#include "parse/parser.hpp"
 #include <stdexcept>
+#include <fstream>
+#include <sstream>
 
 namespace izi {
 Chunk BytecodeCompiler::compile(const std::vector<StmtPtr>& program) {
@@ -302,12 +306,50 @@ void BytecodeCompiler::visit(FunctionStmt& stmt) {
     emitOp(OpCode::SET_GLOBAL);
     emitByte(nameIndex);
 }
+
 void BytecodeCompiler::visit(ImportStmt& stmt) {
-    // Import compilation not implemented yet
-    throw std::runtime_error("Import compilation not implemented.");
+    std::string modulePath = normalizeModulePath(stmt.module);
+    
+    // Check if module is already imported
+    if (importedModules && importedModules->contains(modulePath)) {
+        return; // Module already imported, skip
+    }
+    
+    // Load and parse the module
+    std::string source = loadFile(modulePath);
+    Lexer lexer(source);
+    auto tokens = lexer.scanTokens();
+    Parser parser(std::move(tokens));
+    auto program = parser.parse();
+    
+    // Compile the module's statements inline
+    for (const auto& moduleStmt : program) {
+        emitStatement(*moduleStmt);
+    }
+    
+    // Mark module as imported
+    if (importedModules) {
+        importedModules->insert(modulePath);
+    }
 }
 
+std::string BytecodeCompiler::normalizeModulePath(const std::string& path) {
+    // Turn "math" into "math.iz"
+    if (path.size() >= 3 && path.ends_with(".iz")) {
+        return path;
+    }
+    return path + ".iz";
+}
 
+std::string BytecodeCompiler::loadFile(const std::string& path) {
+    std::ifstream file(path);
+    if (!file) {
+        throw std::runtime_error("Could not open file: " + path);
+    }
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    return buffer.str();
+}
 
 
 }

@@ -1,6 +1,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <unordered_set>
 
 #include "interp/interpreter.hpp"
 #include "parse/lexer.hpp"
@@ -45,7 +46,9 @@ int main(int argc, char** argv) {
         }
         else
         {
+            std::unordered_set<std::string> importedModules;
             BytecodeCompiler compiler;
+            compiler.setImportedModules(&importedModules);
             Chunk chunk = compiler.compile(program);
             VM vm;
             registerVmNatives(vm);
