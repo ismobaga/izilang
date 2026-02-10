@@ -7,6 +7,7 @@
 #include "parse/parser.hpp"
 #include "compile/compiler.hpp"
 #include "bytecode/vm.hpp"
+#include "bytecode/vm_native.hpp"
 
 using namespace izi;
 
@@ -47,6 +48,7 @@ int main(int argc, char** argv) {
             BytecodeCompiler compiler;
             Chunk chunk = compiler.compile(program);
             VM vm;
+            registerVmNatives(vm);
             Value result = vm.run(chunk);
         }
     } catch (const std::exception& e) {

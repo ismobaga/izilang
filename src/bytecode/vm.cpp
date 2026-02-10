@@ -1,5 +1,6 @@
 #include "vm.hpp"
 #include "bytecode/opcode.hpp"
+#include "bytecode/mv_callable.hpp"
 
 
 
@@ -8,6 +9,10 @@ namespace izi {
 VM::VM() : stack(), frames() {
     stack.reserve(STACK_MAX);
     frames.reserve(64); // Arbitrary limit on call frames
+}
+
+void VM::setGlobal(const std::string& name, const Value& value) {
+    globals[name] = value;
 }
 
 CallFrame* VM::currentFrame() {
@@ -57,6 +62,23 @@ Value VM::run(const Chunk& entry) {
                 case OpCode::POP:
                     pop();
                     break;
+                case OpCode::GET_GLOBAL: {
+                    uint8_t nameIndex = readByte();
+                    const std::string& name = currentFrame()->chunk->names[nameIndex];
+                    auto it = globals.find(name);
+                    if (it == globals.end()) {
+                        throw std::runtime_error("Undefined variable '" + name + "'.");
+                    }
+                    push(it->second);
+                    break;
+                }
+                case OpCode::SET_GLOBAL: {
+                    uint8_t nameIndex = readByte();
+                    const std::string& name = currentFrame()->chunk->names[nameIndex];
+                    Value value = stack.back(); // Peek at the value
+                    globals[name] = value;
+                    break;
+                }
                 case OpCode::PRINT: {
                     Value value = pop();
                     printValue(value);

@@ -4,6 +4,8 @@
 #include "bytecode/chunk.hpp"
 #include <vector>
 #include <array>
+#include <unordered_map>
+#include <string>
 
 namespace izi {
 
@@ -23,12 +25,15 @@ public:
     
     Value run(const Chunk& chunk);
     
+    void setGlobal(const std::string& name, const Value& value);
+    
     // void push(Value value);
     // Value pop();
     
 private:
     std::vector<Value> stack;
     std::vector<CallFrame> frames;
+    std::unordered_map<std::string, Value> globals;
 
     CallFrame* currentFrame();
     
