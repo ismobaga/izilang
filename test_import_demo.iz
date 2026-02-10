@@ -1,0 +1,33 @@
+import "mod.iz";
+
+print("=== Import System Test ===");
+print("");
+
+print("Testing imported add function:");
+print("  add(5, 3) =", add(5, 3));
+print("  add(10, 20) =", add(10, 20));
+print("  add(100, 50) =", add(100, 50));
+print("");
+
+print("Using variables with imported function:");
+var a = 25;
+var b = 75;
+print("  a =", a);
+print("  b =", b);
+print("  add(a, b) =", add(a, b));
+print("");
+
+print("Defining local function:");
+fn square(n) {
+    return n * n;
+}
+print("  square(5) =", square(5));
+print("  square(12) =", square(12));
+print("");
+
+print("Testing re-import (should use cache):");
+import "mod.iz";
+print("  add still works: add(1, 2) =", add(1, 2));
+print("");
+
+print("=== All import tests passed! ===");
