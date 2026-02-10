@@ -3,6 +3,8 @@
 #include "ast/stmt.hpp"
 #include "bytecode/opcode.hpp"
 #include "bytecode/chunk.hpp"
+#include <unordered_set>
+#include <string>
 
 
 
@@ -13,6 +15,11 @@ namespace izi
     public:
         BytecodeCompiler() = default;
         Chunk compile(const std::vector<StmtPtr>& program);
+        
+        // Set the imported modules cache (shared across compiler instances)
+        void setImportedModules(std::unordered_set<std::string>* modules) {
+            importedModules = modules;
+        }
 
         // Expression visitors
         auto visit(BinaryExpr& expr) -> Value override;
@@ -39,6 +46,8 @@ namespace izi
 
     private:
         Chunk chunk;
+        std::unordered_set<std::string>* importedModules = nullptr;
+        
         void emitByte(uint8_t byte){chunk.write(byte); }
         void emitOp(OpCode op) { emitByte(static_cast<uint8_t>(op)); }
 
@@ -53,6 +62,10 @@ namespace izi
         size_t emitJump(OpCode op);
         void patchJump(size_t offset);
         void emitLoop(size_t loopStart);
+        
+        // Import helpers
+        std::string normalizeModulePath(const std::string& path);
+        std::string loadFile(const std::string& path);
 
     };
 } // namespace izi
