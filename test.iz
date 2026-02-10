@@ -9,7 +9,7 @@ if(x>y){
 }
 var ab = [1,2,3];
 
-print("add importeed", add(2,3));
+
 
 print(ab, "\\n hell");
 
