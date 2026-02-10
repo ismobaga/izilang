@@ -3,14 +3,25 @@
 #include <initializer_list>
 #include <memory>
 #include <vector>
+#include <string>
 
 #include "ast/stmt.hpp"
 #include "common/token.hpp"
 
 namespace izi {
+
+class ParserError : public std::runtime_error {
+public:
+    Token token;
+    
+    ParserError(const Token& token, const std::string& message)
+        : std::runtime_error(message), token(token) {}
+};
+
 class Parser {
    public:
-    explicit Parser(std::vector<Token> tokens) : tokens(std::move(tokens)) {}
+    explicit Parser(std::vector<Token> tokens, std::string_view source = "")
+        : tokens(std::move(tokens)), source_(source) {}
 
     std::vector<StmtPtr> parse();
 
@@ -51,9 +62,10 @@ class Parser {
     Token consume(TokenType type, const std::string& message);
     void synchronize();
 
-    std::runtime_error error(const Token& token, const std::string& message);
+    ParserError error(const Token& token, const std::string& message);
 
     std::vector<Token> tokens;
     size_t current = 0;
+    std::string_view source_;
 };
 }  // namespace izi

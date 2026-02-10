@@ -28,7 +28,7 @@ struct ReturnSignal {
 
 class Interpreter : public ExprVisitor, public StmtVisitor {
    public:
-    Interpreter();
+    explicit Interpreter(std::string_view source = "");
 
     void interpret(const std::vector<StmtPtr>& program);
     void defineGlobal(const std::string& name, const Value& value) {
@@ -62,12 +62,15 @@ class Interpreter : public ExprVisitor, public StmtVisitor {
     void executeBlock(const std::vector<StmtPtr>& statements, Environment* newEnv);
 
    private:
+    std::string_view source_;
     Environment globals;
     Environment* env;
 
     Value evaluate(Expr& expr);
     void execute(Stmt& expr);
     
+    // Helper to convert value to number with proper error
+    double toNumber(const Value& v, const Token& token);
       
     
     // for imports

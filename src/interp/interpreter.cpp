@@ -1,4 +1,3 @@
-
 #include "interpreter.hpp"
 
 #include <iostream>
@@ -18,21 +17,17 @@
 #include "parse/lexer.hpp"
 namespace izi {
 
-Interpreter::Interpreter() : globals(nullptr), env(&globals) {
-registerNativeFunctions(*this);
-
+// Constructor needs to be defined to call registerNativeFunctions
+Interpreter::Interpreter(std::string_view source) 
+    : source_(source), globals(nullptr), env(&globals) {
+    registerNativeFunctions(*this);
 }
 
 void Interpreter::interpret(const std::vector<StmtPtr>& program) {
-    try {
-        for (auto& s : program) {
-            if (s) {  // Skip null statements from parser errors
-                execute(*s);
-            }
+    for (auto& s : program) {
+        if (s) {  // Skip null statements from parser errors
+            execute(*s);
         }
-
-    } catch (const std::runtime_error& e) {
-        std::cerr << "Runtime Error: " << e.what() << '\n';
     }
 }
 
@@ -41,6 +36,13 @@ Value Interpreter::evaluate(Expr& expr) {
 }
 void Interpreter::execute(Stmt& stmt) {
     stmt.accept(*this);
+}
+
+double Interpreter::toNumber(const Value& v, const Token& token) {
+    if (!std::holds_alternative<double>(v)) {
+        throw RuntimeError(token, "Expected number, got " + getTypeName(v) + ".");
+    }
+    return std::get<double>(v);
 }
 
 void Interpreter::executeBlock(const std::vector<StmtPtr>& statements, Environment* newEnv) {
@@ -71,28 +73,28 @@ Value Interpreter::visit(BinaryExpr& expr) {
             if (std::holds_alternative<std::string>(left) && std::holds_alternative<std::string>(right)) {
                 return std::get<std::string>(left) + std::get<std::string>(right);
             }
-            throw std::runtime_error("Operands must be two numbers or two strings.");
+            throw RuntimeError(expr.op, "Cannot add " + getTypeName(left) + " and " + getTypeName(right) + ". Operands must be two numbers or two strings.");
 
         case TokenType::MINUS:
-            return Value{asNumber(left) - asNumber(right)};
+            return Value{toNumber(left, expr.op) - toNumber(right, expr.op)};
 
         case TokenType::STAR:
-            return asNumber(left) * asNumber(right);
+            return toNumber(left, expr.op) * toNumber(right, expr.op);
 
         case TokenType::SLASH:
-            return asNumber(left) / asNumber(right);
+            return toNumber(left, expr.op) / toNumber(right, expr.op);
 
         case TokenType::GREATER:
-            return asNumber(left) > asNumber(right);
+            return toNumber(left, expr.op) > toNumber(right, expr.op);
 
         case TokenType::GREATER_EQUAL:
-            return asNumber(left) >= asNumber(right);
+            return toNumber(left, expr.op) >= toNumber(right, expr.op);
 
         case TokenType::LESS:
-            return asNumber(left) < asNumber(right);
+            return toNumber(left, expr.op) < toNumber(right, expr.op);
 
         case TokenType::LESS_EQUAL:
-            return asNumber(left) <= asNumber(right);
+            return toNumber(left, expr.op) <= toNumber(right, expr.op);
 
         case TokenType::EQUAL_EQUAL:
             return left == right;
@@ -101,7 +103,7 @@ Value Interpreter::visit(BinaryExpr& expr) {
             return left != right;
 
         default:
-            throw std::runtime_error("Unknown binary operator.");
+            throw RuntimeError(expr.op, "Unknown binary operator.");
     }
 }
 
@@ -110,7 +112,7 @@ Value Interpreter::visit(UnaryExpr& expr) {
 
     switch (expr.op.type) {
         case TokenType::MINUS:
-            return -asNumber(right);
+            return -toNumber(right, expr.op);
 
         case TokenType::BANG:
             return !isTruthy(right);
