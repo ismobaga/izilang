@@ -106,7 +106,7 @@ print("Max size:", MAX_SIZE);
 
 1. **No namespace isolation**: Currently all exports become global after import. Named imports accept any identifiers but don't restrict access to non-imported names.
 
-2. **Wildcard imports**: While `import * as name from "module"` syntax is parsed, namespace objects are not yet created. A future enhancement will add proper namespace support with member access (e.g., `math.add()`).
+2. **Wildcard imports**: While `import * as name from "module"` syntax is parsed and dot notation (e.g., `obj.property`) is supported for maps, wildcard imports do not create namespace objects. Therefore, you cannot use `math.add()` after `import * as math from "module"`. The parser will accept the syntax but runtime will fail because no namespace object is created. This requires tracking module exports separately and creating a map object, which is planned for a future enhancement.
 
 3. **Circular dependencies**: While module caching prevents infinite loops, circular dependencies may cause issues if modules depend on each other's exports during initialization.
 
