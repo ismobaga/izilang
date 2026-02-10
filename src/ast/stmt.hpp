@@ -134,4 +134,15 @@ struct ExportStmt : public Stmt {
     
     void accept(StmtVisitor& v) override { v.visit(*this); }
 };
+
+// Break statement (e.g., "break;")
+struct BreakStmt : public Stmt {
+    void accept(StmtVisitor& v) override { v.visit(*this); }
+};
+
+// Continue statement (e.g., "continue;")
+struct ContinueStmt : public Stmt {
+    void accept(StmtVisitor& v) override { v.visit(*this); }
+};
+
 }  // namespace izi

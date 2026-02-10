@@ -49,6 +49,8 @@ class Parser {
     StmtPtr whileStatement();
     StmtPtr forStatement();
     StmtPtr returnStatement();
+    StmtPtr breakStatement();
+    StmtPtr continueStatement();
     StmtPtr functionDeclaration();
     StmtPtr importStatement();
     StmtPtr exportStatement();

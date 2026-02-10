@@ -1,0 +1,5 @@
+print("Test 1");
+var i = true;
+print("Test 2");
+print(i);
+print("Test 3");

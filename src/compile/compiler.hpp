@@ -44,10 +44,19 @@ namespace izi
         void visit(FunctionStmt& stmt) override;
         void visit(ImportStmt& stmt) override;
         void visit(ExportStmt& stmt) override;
+        void visit(BreakStmt& stmt) override;
+        void visit(ContinueStmt& stmt) override;
 
     private:
         Chunk chunk;
         std::unordered_set<std::string>* importedModules = nullptr;
+        
+        // Loop context for break/continue
+        struct LoopContext {
+            std::vector<size_t> breakJumps;
+            size_t loopStart;
+        };
+        std::vector<LoopContext> loopStack;
         
         void emitByte(uint8_t byte){chunk.write(byte); }
         void emitOp(OpCode op) { emitByte(static_cast<uint8_t>(op)); }

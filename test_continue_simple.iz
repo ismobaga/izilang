@@ -1,0 +1,9 @@
+// Test continue statement
+var i = 0;
+print("Testing continue:");
+while (i) {
+    print("Before continue");
+    continue;
+    print("After continue (should not print)");
+}
+print("Loop complete");

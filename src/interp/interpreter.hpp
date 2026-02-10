@@ -26,6 +26,10 @@ struct ReturnSignal {
     Value value;
 };
 
+struct BreakSignal {};
+
+struct ContinueSignal {};
+
 class Interpreter : public ExprVisitor, public StmtVisitor {
    public:
     explicit Interpreter(std::string_view source = "");
@@ -59,6 +63,8 @@ class Interpreter : public ExprVisitor, public StmtVisitor {
     void visit(ReturnStmt&) override;
     void visit(ImportStmt&) override;
     void visit(ExportStmt&) override;
+    void visit(BreakStmt&) override;
+    void visit(ContinueStmt&) override;
 
     void executeBlock(const std::vector<StmtPtr>& statements, Environment* newEnv);
 
