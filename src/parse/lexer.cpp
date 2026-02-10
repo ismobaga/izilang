@@ -8,6 +8,8 @@ namespace izi {
 std::vector<Token> Lexer::scanTokens() {
     while (!isAtEnd()) {
         start = current;
+        startLine = line;
+        startColumn = column;
         scanToken();
     }
 
@@ -76,9 +78,7 @@ void Lexer::scanToken() {
         case ' ':
         case '\r':
         case '\t':
-            break;
         case '\n':
-            line++;
             break;
         case '"':
             string();
@@ -89,7 +89,7 @@ void Lexer::scanToken() {
             } else if (isalpha(c) || c == '_') {
                 identifier();
             } else {
-                throw std::runtime_error("Unexpected character at line " + std::to_string(line));
+                throw LexerError(startLine, startColumn, "Unexpected character '" + std::string(1, c) + "'");
             }
             break;
     }
@@ -100,7 +100,13 @@ bool Lexer::isAtEnd() const {
 }
 
 char Lexer::advance() {
-    return source[current++];
+    char c = source[current++];
+    column++;
+    if (c == '\n') {
+        line++;
+        column = 0;
+    }
+    return c;
 }
 
 bool Lexer::match(char expected) {
@@ -121,7 +127,7 @@ char Lexer::peekNext() const {
 
 void Lexer::addToken(TokenType type) {
     std::string lexeme = source.substr(start, current - start);
-    tokens.emplace_back(type, lexeme, line, column);
+    tokens.emplace_back(type, lexeme, startLine, startColumn);
 }
 
 void Lexer::string() {
@@ -131,13 +137,13 @@ void Lexer::string() {
     }
 
     if (isAtEnd()) {
-        throw std::runtime_error("Unterminated string at line " + std::to_string(line));
+        throw LexerError(startLine, startColumn, "Unterminated string");
     }
 
     advance();  // Closing "
 
     std::string lexeme = source.substr(start, current - start);
-    tokens.emplace_back(TokenType::STRING, lexeme, line, column);
+    tokens.emplace_back(TokenType::STRING, lexeme, startLine, startColumn);
 }
 
 void Lexer::number() {
@@ -149,7 +155,7 @@ void Lexer::number() {
     }
 
     std::string_view lexeme = source.substr(start, current - start);
-    tokens.emplace_back(TokenType::NUMBER, lexeme, line, column);
+    tokens.emplace_back(TokenType::NUMBER, lexeme, startLine, startColumn);
 }
 
 void Lexer::identifier() {
@@ -157,7 +163,7 @@ void Lexer::identifier() {
 
     std::string_view lexeme = source.substr(start, current - start);
     TokenType type = keywordType(lexeme);
-    tokens.emplace_back(type, lexeme, line, column);
+    tokens.emplace_back(type, lexeme, startLine, startColumn);
 }
 
 TokenType Lexer::keywordType(std::string_view text) {

@@ -103,4 +103,25 @@ inline double asNumber(const Value& v) {
     return std::get<double>(v);
 }
 
+inline std::string getTypeName(const Value& v) {
+    if (std::holds_alternative<Nil>(v)) {
+        return "nil";
+    } else if (std::holds_alternative<bool>(v)) {
+        return "boolean";
+    } else if (std::holds_alternative<double>(v)) {
+        return "number";
+    } else if (std::holds_alternative<std::string>(v)) {
+        return "string";
+    } else if (std::holds_alternative<std::shared_ptr<Array>>(v)) {
+        return "array";
+    } else if (std::holds_alternative<std::shared_ptr<Map>>(v)) {
+        return "map";
+    } else if (std::holds_alternative<std::shared_ptr<Callable>>(v)) {
+        return "function";
+    } else if (std::holds_alternative<std::shared_ptr<VmCallable>>(v)) {
+        return "function";
+    }
+    return "unknown";
+}
+
 }  // namespace izi

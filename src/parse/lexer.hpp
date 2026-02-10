@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -7,6 +8,15 @@
 #include "common/token.hpp"
 
 namespace izi {
+
+class LexerError : public std::runtime_error {
+public:
+    int line;
+    int column;
+    
+    LexerError(int line, int column, const std::string& message)
+        : std::runtime_error(message), line(line), column(column) {}
+};
 
 class Lexer {
    public:
@@ -43,6 +53,8 @@ class Lexer {
     int current = 0;
     int line = 1;
     int column = 1;
+    int startLine = 1;    // Line where current token starts
+    int startColumn = 1;  // Column where current token starts
 };
 
 }  // namespace izi

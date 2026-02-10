@@ -440,10 +440,8 @@ void Parser::synchronize() {
     }
 }
 
-std::runtime_error Parser::error(const Token& token, const std::string& message) {
-    std::string errorMsg = "Error at line " + std::to_string(token.line) +
-                           ", column " + std::to_string(token.column) + ": " + message;
-    return std::runtime_error(errorMsg);
+ParserError Parser::error(const Token& token, const std::string& message) {
+    return ParserError(token, message);
 }
 
 }  // namespace izi
