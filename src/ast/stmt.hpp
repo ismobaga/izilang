@@ -96,12 +96,42 @@ struct IfStmt : public Stmt {
     void accept(StmtVisitor& v) override { v.visit(*this); }
 };
 
-// Import statement (e.g., "import 'module';")
+// Import statement with named/wildcard imports
+// Supports:
+// - import "module.iz";               (simple import)
+// - import { name1, name2 } from "module.iz";  (named imports)
+// - import * as name from "module.iz"; (wildcard import)
 struct ImportStmt : public Stmt {
-    std::string module; 
+    std::string module;
+    std::vector<std::string> namedImports; // Empty for simple imports
+    std::string wildcardAlias;              // Empty unless "import * as name"
+    bool isWildcard;
+    
+    // Simple import: import "module";
     explicit ImportStmt(std::string modName)
-        : module(std::move(modName)) {}
+        : module(std::move(modName)), isWildcard(false) {}
+    
+    // Named imports: import { a, b } from "module";
+    ImportStmt(std::string modName, std::vector<std::string> imports)
+        : module(std::move(modName)), namedImports(std::move(imports)), isWildcard(false) {}
+    
+    // Wildcard import: import * as name from "module";
+    ImportStmt(std::string modName, std::string alias, bool wildcard)
+        : module(std::move(modName)), wildcardAlias(std::move(alias)), isWildcard(wildcard) {}
 
+    void accept(StmtVisitor& v) override { v.visit(*this); }
+};
+
+// Export statement
+// Supports:
+// - export fn name() { ... }    (export function)
+// - export var name = value;    (export variable)
+struct ExportStmt : public Stmt {
+    StmtPtr declaration; // The function or variable being exported
+    
+    explicit ExportStmt(StmtPtr decl)
+        : declaration(std::move(decl)) {}
+    
     void accept(StmtVisitor& v) override { v.visit(*this); }
 };
 }  // namespace izi
