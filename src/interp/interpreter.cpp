@@ -261,7 +261,9 @@ Value Interpreter::visit(MatchExpr& expr) {
     Value matchValue = evaluate(*expr.value);
     
     // Try each case in order
-    for (auto& matchCase : expr.cases) {
+    for (size_t i = 0; i < expr.cases.size(); ++i) {
+        auto& matchCase = expr.cases[i];
+        
         bool matched = false;
         Value boundValue = Nil{};
         std::string varName;

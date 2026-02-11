@@ -169,6 +169,14 @@ struct MatchCase {
     
     MatchCase(PatternPtr p, ExprPtr g, ExprPtr r)
         : pattern(std::move(p)), guard(std::move(g)), result(std::move(r)) {}
+    
+    // Move constructor
+    MatchCase(MatchCase&&) = default;
+    MatchCase& operator=(MatchCase&&) = default;
+    
+    // Delete copy constructor/assignment
+    MatchCase(const MatchCase&) = delete;
+    MatchCase& operator=(const MatchCase&) = delete;
 };
 
 // Match expression
