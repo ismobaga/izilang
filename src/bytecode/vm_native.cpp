@@ -30,6 +30,9 @@ Value vmNativeLen(VM& vm, const std::vector<Value>& arguments) {
     } else if (std::holds_alternative<std::shared_ptr<Map>>(arg)) {
         auto map = std::get<std::shared_ptr<Map>>(arg);
         return static_cast<double>(map->entries.size());
+    } else if (std::holds_alternative<std::shared_ptr<Set>>(arg)) {
+        auto set = std::get<std::shared_ptr<Set>>(arg);
+        return static_cast<double>(set->values.size());
     } else if (std::holds_alternative<std::string>(arg)) {
         auto str = std::get<std::string>(arg);
         return static_cast<double>(str.size());
@@ -73,6 +76,74 @@ Value vmNativePop(VM& vm, const std::vector<Value>& arguments) {
     Value elem = arr->elements.back();
     arr->elements.pop_back();
     return elem;
+}
+
+Value vmNativeShift(VM& vm, const std::vector<Value>& arguments) {
+    if (arguments.size() != 1) {
+        throw std::runtime_error("shift() takes exactly one argument.");
+    }
+    const Value& arrVal = arguments[0];
+    if (!std::holds_alternative<std::shared_ptr<Array>>(arrVal)) {
+        throw std::runtime_error("Argument to shift() must be an array.");
+    }
+    auto arr = std::get<std::shared_ptr<Array>>(arrVal);
+    if (arr->elements.empty()) {
+        throw std::runtime_error("Cannot shift from an empty array.");
+    }
+    Value elem = arr->elements.front();
+    arr->elements.erase(arr->elements.begin());
+    return elem;
+}
+
+Value vmNativeUnshift(VM& vm, const std::vector<Value>& arguments) {
+    if (arguments.size() != 2) {
+        throw std::runtime_error("unshift() takes exactly two arguments.");
+    }
+    const Value& arrVal = arguments[0];
+    const Value& elem = arguments[1];
+    if (!std::holds_alternative<std::shared_ptr<Array>>(arrVal)) {
+        throw std::runtime_error("First argument to unshift() must be an array.");
+    }
+    auto arr = std::get<std::shared_ptr<Array>>(arrVal);
+    arr->elements.insert(arr->elements.begin(), elem);
+    return arr;
+}
+
+Value vmNativeSplice(VM& vm, const std::vector<Value>& arguments) {
+    if (arguments.size() < 2 || arguments.size() > 3) {
+        throw std::runtime_error("splice() takes 2 or 3 arguments.");
+    }
+    const Value& arrVal = arguments[0];
+    if (!std::holds_alternative<std::shared_ptr<Array>>(arrVal)) {
+        throw std::runtime_error("First argument to splice() must be an array.");
+    }
+    
+    auto arr = std::get<std::shared_ptr<Array>>(arrVal);
+    size_t start = static_cast<size_t>(asNumber(arguments[1]));
+    
+    if (start >= arr->elements.size()) {
+        return std::make_shared<Array>();
+    }
+    
+    size_t deleteCount;
+    if (arguments.size() == 3) {
+        deleteCount = static_cast<size_t>(asNumber(arguments[2]));
+    } else {
+        deleteCount = arr->elements.size() - start;
+    }
+    
+    // Create result array with removed elements
+    auto result = std::make_shared<Array>();
+    size_t end = std::min(start + deleteCount, arr->elements.size());
+    
+    for (size_t i = start; i < end; ++i) {
+        result->elements.push_back(arr->elements[i]);
+    }
+    
+    // Remove elements from original array
+    arr->elements.erase(arr->elements.begin() + start, arr->elements.begin() + end);
+    
+    return result;
 }
 
 Value vmNativeKeys(VM& vm, const std::vector<Value>& arguments) {
@@ -123,6 +194,164 @@ Value vmNativeHasKey(VM& vm, const std::vector<Value>& arguments) {
     std::string key = std::get<std::string>(keyVal);
     bool hasKey = (map->entries.find(key) != map->entries.end());
     return hasKey;
+}
+
+Value vmNativeHas(VM& vm, const std::vector<Value>& arguments) {
+    // Alias for hasKey() for map compatibility
+    return vmNativeHasKey(vm, arguments);
+}
+
+Value vmNativeDelete(VM& vm, const std::vector<Value>& arguments) {
+    if (arguments.size() != 2) {
+        throw std::runtime_error("delete() takes exactly two arguments.");
+    }
+    const Value& mapVal = arguments[0];
+    const Value& keyVal = arguments[1];
+    if (!std::holds_alternative<std::shared_ptr<Map>>(mapVal)) {
+        throw std::runtime_error("First argument to delete() must be a map.");
+    }
+    if (!std::holds_alternative<std::string>(keyVal)) {
+        throw std::runtime_error("Second argument to delete() must be a string.");
+    }
+    auto map = std::get<std::shared_ptr<Map>>(mapVal);
+    std::string key = std::get<std::string>(keyVal);
+    bool existed = (map->entries.find(key) != map->entries.end());
+    if (existed) {
+        map->entries.erase(key);
+    }
+    return existed;
+}
+
+Value vmNativeEntries(VM& vm, const std::vector<Value>& arguments) {
+    if (arguments.size() != 1) {
+        throw std::runtime_error("entries() takes exactly one argument.");
+    }
+    const Value& mapVal = arguments[0];
+    if (!std::holds_alternative<std::shared_ptr<Map>>(mapVal)) {
+        throw std::runtime_error("Argument to entries() must be a map.");
+    }
+    auto map = std::get<std::shared_ptr<Map>>(mapVal);
+    auto entriesArray = std::make_shared<Array>();
+    for (const auto& [key, value] : map->entries) {
+        auto entry = std::make_shared<Array>();
+        entry->elements.push_back(key);
+        entry->elements.push_back(value);
+        entriesArray->elements.push_back(entry);
+    }
+    return entriesArray;
+}
+
+// ============ Set functions ============
+
+Value vmNativeSetAdd(VM& vm, const std::vector<Value>& arguments) {
+    if (arguments.size() != 2) {
+        throw std::runtime_error("setAdd() takes exactly two arguments.");
+    }
+    const Value& setVal = arguments[0];
+    const Value& valueVal = arguments[1];
+    if (!std::holds_alternative<std::shared_ptr<Set>>(setVal)) {
+        throw std::runtime_error("First argument to setAdd() must be a set.");
+    }
+    
+    auto set = std::get<std::shared_ptr<Set>>(setVal);
+    
+    // Convert value to string for key (using a simple serialization)
+    std::string key;
+    if (std::holds_alternative<std::string>(valueVal)) {
+        key = std::get<std::string>(valueVal);
+    } else if (std::holds_alternative<double>(valueVal)) {
+        key = std::to_string(std::get<double>(valueVal));
+    } else if (std::holds_alternative<bool>(valueVal)) {
+        key = std::get<bool>(valueVal) ? "true" : "false";
+    } else if (std::holds_alternative<Nil>(valueVal)) {
+        key = "nil";
+    } else {
+        throw std::runtime_error("setAdd() only supports primitive types (string, number, boolean, nil).");
+    }
+    
+    set->values[key] = valueVal;
+    return set;
+}
+
+Value vmNativeSetHas(VM& vm, const std::vector<Value>& arguments) {
+    if (arguments.size() != 2) {
+        throw std::runtime_error("setHas() takes exactly two arguments.");
+    }
+    const Value& setVal = arguments[0];
+    const Value& valueVal = arguments[1];
+    if (!std::holds_alternative<std::shared_ptr<Set>>(setVal)) {
+        throw std::runtime_error("First argument to setHas() must be a set.");
+    }
+    
+    auto set = std::get<std::shared_ptr<Set>>(setVal);
+    
+    // Convert value to string for key lookup
+    std::string key;
+    if (std::holds_alternative<std::string>(valueVal)) {
+        key = std::get<std::string>(valueVal);
+    } else if (std::holds_alternative<double>(valueVal)) {
+        key = std::to_string(std::get<double>(valueVal));
+    } else if (std::holds_alternative<bool>(valueVal)) {
+        key = std::get<bool>(valueVal) ? "true" : "false";
+    } else if (std::holds_alternative<Nil>(valueVal)) {
+        key = "nil";
+    } else {
+        return false;
+    }
+    
+    return (set->values.find(key) != set->values.end());
+}
+
+Value vmNativeSetDelete(VM& vm, const std::vector<Value>& arguments) {
+    if (arguments.size() != 2) {
+        throw std::runtime_error("setDelete() takes exactly two arguments.");
+    }
+    const Value& setVal = arguments[0];
+    const Value& valueVal = arguments[1];
+    if (!std::holds_alternative<std::shared_ptr<Set>>(setVal)) {
+        throw std::runtime_error("First argument to setDelete() must be a set.");
+    }
+    
+    auto set = std::get<std::shared_ptr<Set>>(setVal);
+    
+    // Convert value to string for key lookup
+    std::string key;
+    if (std::holds_alternative<std::string>(valueVal)) {
+        key = std::get<std::string>(valueVal);
+    } else if (std::holds_alternative<double>(valueVal)) {
+        key = std::to_string(std::get<double>(valueVal));
+    } else if (std::holds_alternative<bool>(valueVal)) {
+        key = std::get<bool>(valueVal) ? "true" : "false";
+    } else if (std::holds_alternative<Nil>(valueVal)) {
+        key = "nil";
+    } else {
+        return false;
+    }
+    
+    bool existed = (set->values.find(key) != set->values.end());
+    if (existed) {
+        set->values.erase(key);
+    }
+    return existed;
+}
+
+Value vmNativeSetSize(VM& vm, const std::vector<Value>& arguments) {
+    if (arguments.size() != 1) {
+        throw std::runtime_error("setSize() takes exactly one argument.");
+    }
+    const Value& setVal = arguments[0];
+    if (!std::holds_alternative<std::shared_ptr<Set>>(setVal)) {
+        throw std::runtime_error("Argument to setSize() must be a set.");
+    }
+    auto set = std::get<std::shared_ptr<Set>>(setVal);
+    return static_cast<double>(set->values.size());
+}
+
+Value vmNativeSet(VM& vm, const std::vector<Value>& arguments) {
+    if (arguments.size() != 0) {
+        throw std::runtime_error("Set() takes no arguments.");
+    }
+    return std::make_shared<Set>();
 }
 
 // ============ std.math functions ============
@@ -660,11 +889,28 @@ void registerVmNatives(VM& vm) {
     vm.setGlobal("print", std::make_shared<VmNativeFunction>("print", -1, vmNativePrint));
     vm.setGlobal("len", std::make_shared<VmNativeFunction>("len", 1, vmNativeLen));
     vm.setGlobal("clock", std::make_shared<VmNativeFunction>("clock", 0, vmNativeClock));
+    
+    // Array functions
     vm.setGlobal("push", std::make_shared<VmNativeFunction>("push", 2, vmNativePush));
     vm.setGlobal("pop", std::make_shared<VmNativeFunction>("pop", 1, vmNativePop));
+    vm.setGlobal("shift", std::make_shared<VmNativeFunction>("shift", 1, vmNativeShift));
+    vm.setGlobal("unshift", std::make_shared<VmNativeFunction>("unshift", 2, vmNativeUnshift));
+    vm.setGlobal("splice", std::make_shared<VmNativeFunction>("splice", -1, vmNativeSplice));
+    
+    // Map functions
     vm.setGlobal("keys", std::make_shared<VmNativeFunction>("keys", 1, vmNativeKeys));
     vm.setGlobal("values", std::make_shared<VmNativeFunction>("values", 1, vmNativeValues));
     vm.setGlobal("hasKey", std::make_shared<VmNativeFunction>("hasKey", 2, vmNativeHasKey));
+    vm.setGlobal("has", std::make_shared<VmNativeFunction>("has", 2, vmNativeHas));
+    vm.setGlobal("delete", std::make_shared<VmNativeFunction>("delete", 2, vmNativeDelete));
+    vm.setGlobal("entries", std::make_shared<VmNativeFunction>("entries", 1, vmNativeEntries));
+    
+    // Set functions
+    vm.setGlobal("Set", std::make_shared<VmNativeFunction>("Set", 0, vmNativeSet));
+    vm.setGlobal("setAdd", std::make_shared<VmNativeFunction>("setAdd", 2, vmNativeSetAdd));
+    vm.setGlobal("setHas", std::make_shared<VmNativeFunction>("setHas", 2, vmNativeSetHas));
+    vm.setGlobal("setDelete", std::make_shared<VmNativeFunction>("setDelete", 2, vmNativeSetDelete));
+    vm.setGlobal("setSize", std::make_shared<VmNativeFunction>("setSize", 1, vmNativeSetSize));
     
     // std.math functions
     vm.setGlobal("sqrt", std::make_shared<VmNativeFunction>("sqrt", 1, vmNativeSqrt));

@@ -1,0 +1,2 @@
+var person = {"name": "Alice"};
+print("Test:", has(person, "name"));

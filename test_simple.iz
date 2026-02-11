@@ -1,0 +1,11 @@
+// Simple test for unshift
+var arr = [2, 3];
+print("Before:", arr);
+unshift(arr, 1);
+print("After unshift(1):", arr);
+
+// Simple test for has
+var person = {"name": "Alice"};
+print("Person:", person);
+var result = has(person, "name");
+print("has(person, 'name'):", result);

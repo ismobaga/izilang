@@ -1,0 +1,7 @@
+var person = {"name": "Alice", "age": 30};
+print("Person:", person);
+print("Line 1");
+print("has(person, 'name'):", has(person, "name"));
+print("Line 2");
+print("has(person, 'country'):", has(person, "country"));
+print("Line 3");

@@ -1,0 +1,13 @@
+// Exact copy of first part of test_collections.iz
+print("=== Array Methods ===");
+
+var arr = [1, 2, 3, 4, 5];
+print("Original array:", arr);
+
+// Test shift()
+var first = shift(arr);
+print("After shift():", arr, "- removed:", first);
+
+// Test unshift()
+unshift(arr, 0);
+print("After unshift(0):", arr);

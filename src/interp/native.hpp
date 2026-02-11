@@ -34,9 +34,20 @@ auto nativeClock(Interpreter& interp, const std::vector<Value>& arguments) -> Va
 auto nativeLen(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 auto nativePush(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 auto nativePop(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeShift(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeUnshift(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeSplice(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 auto nativeKeys(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 auto nativeValues(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 auto nativeHasKey(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeHas(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeDelete(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeEntries(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeSetAdd(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeSetHas(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeSetDelete(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeSetSize(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeSet(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 
 // std.math functions
 auto nativeSqrt(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
