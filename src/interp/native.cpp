@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <fstream>
 #include <sstream>
+#include <iomanip>
 #include <cctype>
 #include <sys/stat.h>
 
@@ -261,13 +262,16 @@ auto nativeSetAdd(Interpreter& interp, const std::vector<Value>& arguments) -> V
     if (std::holds_alternative<std::string>(valueVal)) {
         key = std::get<std::string>(valueVal);
     } else if (std::holds_alternative<double>(valueVal)) {
-        key = std::to_string(std::get<double>(valueVal));
+        // Use stringstream for consistent number formatting
+        std::ostringstream oss;
+        oss << std::fixed << std::setprecision(15) << std::get<double>(valueVal);
+        key = oss.str();
     } else if (std::holds_alternative<bool>(valueVal)) {
         key = std::get<bool>(valueVal) ? "true" : "false";
     } else if (std::holds_alternative<Nil>(valueVal)) {
         key = "nil";
     } else {
-        throw std::runtime_error("setAdd() only supports primitive types (string, number, boolean, nil).");
+        throw std::runtime_error("setAdd() only supports primitive types (string, number, boolean, nil), but got: " + getTypeName(valueVal));
     }
     
     set->values[key] = valueVal;
@@ -291,7 +295,10 @@ auto nativeSetHas(Interpreter& interp, const std::vector<Value>& arguments) -> V
     if (std::holds_alternative<std::string>(valueVal)) {
         key = std::get<std::string>(valueVal);
     } else if (std::holds_alternative<double>(valueVal)) {
-        key = std::to_string(std::get<double>(valueVal));
+        // Use stringstream for consistent number formatting
+        std::ostringstream oss;
+        oss << std::fixed << std::setprecision(15) << std::get<double>(valueVal);
+        key = oss.str();
     } else if (std::holds_alternative<bool>(valueVal)) {
         key = std::get<bool>(valueVal) ? "true" : "false";
     } else if (std::holds_alternative<Nil>(valueVal)) {
@@ -320,7 +327,10 @@ auto nativeSetDelete(Interpreter& interp, const std::vector<Value>& arguments) -
     if (std::holds_alternative<std::string>(valueVal)) {
         key = std::get<std::string>(valueVal);
     } else if (std::holds_alternative<double>(valueVal)) {
-        key = std::to_string(std::get<double>(valueVal));
+        // Use stringstream for consistent number formatting
+        std::ostringstream oss;
+        oss << std::fixed << std::setprecision(15) << std::get<double>(valueVal);
+        key = oss.str();
     } else if (std::holds_alternative<bool>(valueVal)) {
         key = std::get<bool>(valueVal) ? "true" : "false";
     } else if (std::holds_alternative<Nil>(valueVal)) {
