@@ -15,6 +15,7 @@ class Callable;
 class VmCallable;
 struct Array;
 struct Map;
+struct Set;
 
 using Value = std::variant<
     Nil,
@@ -23,6 +24,7 @@ using Value = std::variant<
     std::string,
     std::shared_ptr<Array>,
     std::shared_ptr<Map>,
+    std::shared_ptr<Set>,
     std::shared_ptr<Callable>,
     std::shared_ptr<VmCallable>
 
@@ -44,6 +46,9 @@ namespace izi {
     };
     struct Map {
         std::unordered_map<std::string, Value> entries;
+    };
+    struct Set {
+        std::unordered_map<std::string, Value> values;  // Using string keys for uniqueness
     };
 
 
@@ -74,6 +79,19 @@ inline void printMap(const Map& map) {
     std::cout << "}";
 }   
 
+inline void printSet(const Set& set) {
+    std::cout << "Set{";
+    size_t count = 0;
+    for (const auto& [key, _] : set.values) {
+        std::cout << key;
+        if (count < set.values.size() - 1) {
+            std::cout << ", ";
+        }
+        ++count;
+    }
+    std::cout << "}";
+}
+
 
 
 void printValue(const Value& v);
@@ -91,6 +109,8 @@ inline bool isTruthy(const Value& v) {
         return !std::get<std::shared_ptr<Array>>(v)->elements.empty();
     } else if (std::holds_alternative<std::shared_ptr<Map>>(v)) {
         return !std::get<std::shared_ptr<Map>>(v)->entries.empty();
+    } else if (std::holds_alternative<std::shared_ptr<Set>>(v)) {
+        return !std::get<std::shared_ptr<Set>>(v)->values.empty();
     }
     return false;
 }
@@ -116,6 +136,8 @@ inline std::string getTypeName(const Value& v) {
         return "array";
     } else if (std::holds_alternative<std::shared_ptr<Map>>(v)) {
         return "map";
+    } else if (std::holds_alternative<std::shared_ptr<Set>>(v)) {
+        return "set";
     } else if (std::holds_alternative<std::shared_ptr<Callable>>(v)) {
         return "function";
     } else if (std::holds_alternative<std::shared_ptr<VmCallable>>(v)) {

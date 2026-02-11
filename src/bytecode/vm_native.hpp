@@ -32,9 +32,20 @@ Value vmNativeLen(VM& vm, const std::vector<Value>& arguments);
 Value vmNativeClock(VM& vm, const std::vector<Value>& arguments);
 Value vmNativePush(VM& vm, const std::vector<Value>& arguments);
 Value vmNativePop(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeShift(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeUnshift(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeSplice(VM& vm, const std::vector<Value>& arguments);
 Value vmNativeKeys(VM& vm, const std::vector<Value>& arguments);
 Value vmNativeValues(VM& vm, const std::vector<Value>& arguments);
 Value vmNativeHasKey(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeHas(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeDelete(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeEntries(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeSetAdd(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeSetHas(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeSetDelete(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeSetSize(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeSet(VM& vm, const std::vector<Value>& arguments);
 
 // std.math native functions
 Value vmNativeSqrt(VM& vm, const std::vector<Value>& arguments);
