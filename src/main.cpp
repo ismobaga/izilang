@@ -68,7 +68,9 @@ int main(int argc, char** argv) {
         std::cerr << reporter.formatError(e.token, e.what()) << '\n';
         return 1;
     } catch (const ThrowSignal& e) {
-        std::cerr << "Uncaught exception: ";
+        ErrorReporter reporter(src);
+        std::cerr << reporter.formatError(e.token, "Uncaught exception") << '\n';
+        std::cerr << "Exception value: ";
         printValue(e.exception);
         std::cerr << '\n';
         return 1;

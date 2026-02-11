@@ -356,6 +356,7 @@ void Interpreter::visit(ContinueStmt& /*stmt*/) {
 void Interpreter::visit(TryStmt& stmt) {
     bool exceptionCaught = false;
     Value caughtException;
+    Token exceptionToken(TokenType::ERROR, "", 0, 0);
     
     // Execute try block
     try {
@@ -363,6 +364,7 @@ void Interpreter::visit(TryStmt& stmt) {
     } catch (const ThrowSignal& e) {
         exceptionCaught = true;
         caughtException = e.exception;
+        exceptionToken = e.token;
         
         // Execute catch block if present
         if (stmt.catchBlock != nullptr) {
@@ -390,15 +392,13 @@ void Interpreter::visit(TryStmt& stmt) {
     
     // Re-throw if exception wasn't caught
     if (exceptionCaught) {
-        Token errorToken(TokenType::ERROR, "throw", 0, 0);
-        throw ThrowSignal(caughtException, errorToken);
+        throw ThrowSignal(caughtException, exceptionToken);
     }
 }
 
 void Interpreter::visit(ThrowStmt& stmt) {
     Value exceptionValue = evaluate(*stmt.value);
-    Token errorToken(TokenType::THROW, "throw", 0, 0);
-    throw ThrowSignal(exceptionValue, errorToken);
+    throw ThrowSignal(exceptionValue, stmt.keyword);
 }
 
 }  // namespace izi

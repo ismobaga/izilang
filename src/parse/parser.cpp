@@ -318,9 +318,10 @@ StmtPtr Parser::tryStatement() {
 }
 
 StmtPtr Parser::throwStatement() {
+    Token throwToken = previous();  // Get the 'throw' token
     ExprPtr value = expression();
     consume(TokenType::SEMICOLON, "Expect ';' after throw value.");
-    return std::make_unique<ThrowStmt>(std::move(value));
+    return std::make_unique<ThrowStmt>(std::move(throwToken), std::move(value));
 }
 
 // Expression parsing (precedence climbing)

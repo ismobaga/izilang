@@ -163,10 +163,11 @@ struct TryStmt : public Stmt {
 
 // Throw statement (e.g., "throw 'error message';")
 struct ThrowStmt : public Stmt {
+    Token keyword;  // The 'throw' token for error reporting
     ExprPtr value;
     
-    explicit ThrowStmt(ExprPtr val)
-        : value(std::move(val)) {}
+    ThrowStmt(Token kw, ExprPtr val)
+        : keyword(std::move(kw)), value(std::move(val)) {}
     
     void accept(StmtVisitor& v) override { v.visit(*this); }
 };
