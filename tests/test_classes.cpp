@@ -44,7 +44,7 @@ TEST_CASE("Classes: Basic instantiation", "[classes]") {
         REQUIRE_NOTHROW(interp.interpret(stmts));
         
         std::string output = capture.getOutput();
-        REQUIRE(output.find("Empty instance") != std::string::npos);
+        REQUIRE(output.find("<Empty instance>") != std::string::npos);
     }
     
     SECTION("Class with fields") {
