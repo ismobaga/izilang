@@ -80,7 +80,9 @@ GENERATED += $(OBJDIR)/parser.o
 GENERATED += $(OBJDIR)/test_integration.o
 GENERATED += $(OBJDIR)/test_lexer.o
 GENERATED += $(OBJDIR)/test_main.o
+GENERATED += $(OBJDIR)/test_try_catch.o
 GENERATED += $(OBJDIR)/test_value.o
+GENERATED += $(OBJDIR)/test_vm_simple.o
 GENERATED += $(OBJDIR)/user_function.o
 GENERATED += $(OBJDIR)/value.o
 GENERATED += $(OBJDIR)/vm.o
@@ -95,7 +97,9 @@ OBJECTS += $(OBJDIR)/parser.o
 OBJECTS += $(OBJDIR)/test_integration.o
 OBJECTS += $(OBJDIR)/test_lexer.o
 OBJECTS += $(OBJDIR)/test_main.o
+OBJECTS += $(OBJDIR)/test_try_catch.o
 OBJECTS += $(OBJDIR)/test_value.o
+OBJECTS += $(OBJDIR)/test_vm_simple.o
 OBJECTS += $(OBJDIR)/user_function.o
 OBJECTS += $(OBJDIR)/value.o
 OBJECTS += $(OBJDIR)/vm.o
@@ -206,7 +210,13 @@ $(OBJDIR)/test_lexer.o: test_lexer.cpp
 $(OBJDIR)/test_main.o: test_main.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/test_try_catch.o: test_try_catch.cpp
+	@echo "$(notdir $<)"
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/test_value.o: test_value.cpp
+	@echo "$(notdir $<)"
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/test_vm_simple.o: test_vm_simple.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 

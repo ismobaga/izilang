@@ -370,16 +370,102 @@ void BytecodeCompiler::visit(ContinueStmt& /*stmt*/) {
     emitLoop(loopStack.back().loopStart);
 }
 
-void BytecodeCompiler::visit(TryStmt& /*stmt*/) {
-    // TODO: Implement try-catch-finally for bytecode VM
-    // For now, this is a placeholder that will throw an error
-    throw std::runtime_error("Try-catch-finally is not yet implemented in bytecode VM.");
+void BytecodeCompiler::visit(TryStmt& stmt) {
+    // Emit TRY opcode with placeholders for offsets
+    size_t tryOpcodePos = chunk.code.size();
+    emitOp(OpCode::TRY);
+    size_t catchOffsetPos = chunk.code.size();
+    emitByte(0xff);  // Placeholder for catch offset high byte
+    emitByte(0xff);  // Placeholder for catch offset low byte
+    size_t finallyOffsetPos = chunk.code.size();
+    emitByte(0xff);  // Placeholder for finally offset high byte
+    emitByte(0xff);  // Placeholder for finally offset low byte
+    
+    // Emit catch variable name index (0 if no catch)
+    uint8_t catchVarIndex = 0;
+    if (stmt.catchBlock != nullptr && !stmt.catchVariable.empty()) {
+        catchVarIndex = makeName(stmt.catchVariable);
+    }
+    emitByte(catchVarIndex);
+    
+    // Now IP is at tryOpcodePos + 6 (1 opcode + 2 + 2 + 1 bytes)
+    size_t ipAfterTry = chunk.code.size();
+    
+    // Emit try block
+    emitStatement(*stmt.tryBlock);
+    
+    // Jump over catch and finally blocks after successful try execution
+    size_t tryEndJump = emitJump(OpCode::JUMP);
+    
+    // Emit catch block if present
+    if (stmt.catchBlock != nullptr) {
+        size_t catchStart = chunk.code.size();
+        uint16_t catchOffset = catchStart - ipAfterTry;
+        chunk.code[catchOffsetPos] = (catchOffset >> 8) & 0xff;
+        chunk.code[catchOffsetPos + 1] = catchOffset & 0xff;
+        
+        // Pop exception from stack - it was pushed by the exception handler
+        // and bound to the catch variable as a global
+        emitOp(OpCode::POP);
+        
+        // Emit catch block body
+        emitStatement(*stmt.catchBlock);
+        
+        // If there's no finally, jump to after the finally block
+        if (stmt.finallyBlock == nullptr) {
+            size_t catchEndJump = emitJump(OpCode::JUMP);
+            patchJump(tryEndJump);
+            patchJump(catchEndJump);
+        } else {
+            // Jump to finally block
+            size_t catchToFinallyJump = emitJump(OpCode::JUMP);
+            patchJump(tryEndJump);
+            
+            // Emit finally block
+            size_t finallyStart = chunk.code.size();
+            uint16_t finallyOffset = finallyStart - ipAfterTry;
+            chunk.code[finallyOffsetPos] = (finallyOffset >> 8) & 0xff;
+            chunk.code[finallyOffsetPos + 1] = finallyOffset & 0xff;
+            
+            emitStatement(*stmt.finallyBlock);
+            
+            // Patch the jumps to finally
+            patchJump(catchToFinallyJump);
+        }
+    } else if (stmt.finallyBlock != nullptr) {
+        // No catch, but there's finally
+        // Set catch offset to 0 (no catch)
+        chunk.code[catchOffsetPos] = 0;
+        chunk.code[catchOffsetPos + 1] = 0;
+        
+        patchJump(tryEndJump);
+        
+        // Emit finally block
+        size_t finallyStart = chunk.code.size();
+        uint16_t finallyOffset = finallyStart - ipAfterTry;
+        chunk.code[finallyOffsetPos] = (finallyOffset >> 8) & 0xff;
+        chunk.code[finallyOffsetPos + 1] = finallyOffset & 0xff;
+        
+        emitStatement(*stmt.finallyBlock);
+    } else {
+        // No catch or finally - just patch the try end jump
+        chunk.code[catchOffsetPos] = 0;
+        chunk.code[catchOffsetPos + 1] = 0;
+        chunk.code[finallyOffsetPos] = 0;
+        chunk.code[finallyOffsetPos + 1] = 0;
+        patchJump(tryEndJump);
+    }
+    
+    // Emit END_TRY to clean up the exception handler
+    emitOp(OpCode::END_TRY);
 }
 
-void BytecodeCompiler::visit(ThrowStmt& /*stmt*/) {
-    // TODO: Implement throw for bytecode VM
-    // For now, this is a placeholder that will throw an error
-    throw std::runtime_error("Throw statement is not yet implemented in bytecode VM.");
+void BytecodeCompiler::visit(ThrowStmt& stmt) {
+    // Evaluate the expression to throw
+    emitExpression(*stmt.value);
+    
+    // Emit THROW opcode
+    emitOp(OpCode::THROW);
 }
 
 std::string BytecodeCompiler::normalizeModulePath(const std::string& path) {

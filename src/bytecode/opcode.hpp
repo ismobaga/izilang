@@ -50,6 +50,11 @@ enum class OpCode : uint8_t {
     // Stack manipulation
     POP,           // Pop top of stack
     PRINT,         // Print statement
+    
+    // Exception handling
+    TRY,           // Set up exception handler (followed by catch offset and finally offset)
+    THROW,         // Throw an exception
+    END_TRY,       // End try-catch-finally block
 };
 
 } // namespace izi

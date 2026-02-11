@@ -1,0 +1,65 @@
+// Comprehensive try-catch-finally demonstration
+print("=== Try-Catch-Finally VM Implementation Demo ===");
+print("");
+
+// Test 1: Basic exception catching
+print("Test 1: Basic exception catching");
+try {
+    print("  In try block");
+    throw "Something went wrong!";
+    print("  This should not print");
+} catch(error) {
+    print("  Caught exception: " + error);
+}
+print("  Execution continues after catch");
+print("");
+
+// Test 2: Try-finally without exception
+print("Test 2: Try-finally without exception");
+try {
+    print("  Try block executed");
+} finally {
+    print("  Finally block always executes");
+}
+print("");
+
+// Test 3: Try-catch-finally
+print("Test 3: Try-catch-finally");
+try {
+    print("  Try block");
+    throw "Error occurred";
+} catch(e) {
+    print("  Catch block: " + e);
+} finally {
+    print("  Finally block for cleanup");
+}
+print("");
+
+// Test 4: Nested try-catch
+print("Test 4: Nested exception handling");
+try {
+    print("  Outer try");
+    try {
+        print("    Inner try");
+        throw "Inner exception";
+    } catch(inner_err) {
+        print("    Inner catch: " + inner_err);
+    }
+    print("  Back in outer try");
+} catch(outer_err) {
+    print("  Outer catch should not execute");
+}
+print("");
+
+// Test 5: No exception path
+print("Test 5: No exception thrown");
+try {
+    print("  Normal execution");
+    var x = 10 + 20;
+} catch(e) {
+    print("  This catch should not execute");
+}
+print("  Program continues normally");
+print("");
+
+print("=== All tests completed successfully! ===");
