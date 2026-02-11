@@ -157,9 +157,9 @@ Current test statistics:
 - **100% pass rate**
 
 Coverage by component:
-- Lexer: 8 test cases
-- Values: 6 test cases  
-- Integration: 7 test cases
+- Lexer: 7 test cases
+- Values: 5 test cases  
+- Integration: 9 test cases
 
 ## Continuous Integration
 
