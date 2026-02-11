@@ -77,6 +77,7 @@ GENERATED += $(OBJDIR)/interpreter.o
 GENERATED += $(OBJDIR)/lexer.o
 GENERATED += $(OBJDIR)/main.o
 GENERATED += $(OBJDIR)/native.o
+GENERATED += $(OBJDIR)/native_modules.o
 GENERATED += $(OBJDIR)/parser.o
 GENERATED += $(OBJDIR)/user_function.o
 GENERATED += $(OBJDIR)/value.o
@@ -89,6 +90,7 @@ OBJECTS += $(OBJDIR)/interpreter.o
 OBJECTS += $(OBJDIR)/lexer.o
 OBJECTS += $(OBJDIR)/main.o
 OBJECTS += $(OBJDIR)/native.o
+OBJECTS += $(OBJDIR)/native_modules.o
 OBJECTS += $(OBJDIR)/parser.o
 OBJECTS += $(OBJDIR)/user_function.o
 OBJECTS += $(OBJDIR)/value.o
@@ -180,6 +182,9 @@ $(OBJDIR)/interpreter.o: src/interp/interpreter.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/native.o: src/interp/native.cpp
+	@echo "$(notdir $<)"
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/native_modules.o: src/interp/native_modules.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/user_function.o: src/interp/user_function.cpp

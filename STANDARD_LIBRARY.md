@@ -4,20 +4,38 @@ The IziLang standard library provides essential functionality for common program
 
 ## Overview
 
-All standard library functions are registered as native functions and are available globally without requiring any imports. The `std/math.iz` module provides mathematical constants that can be imported when needed.
+IziLang now supports a **modular standard library system**. You can import modules in three ways:
 
-## std.math - Mathematical Functions
+1. **Simple import**: `import "math";` - Creates a module object (e.g., `math.sqrt(16)`)
+2. **Named imports**: `import { sqrt, pi } from "math";` - Import specific functions/constants
+3. **Wildcard import**: `import * as m from "math";` - Import module with custom alias
+
+All standard library functions remain available globally for backward compatibility, but the modular approach is recommended for better code organization.
+
+## math - Mathematical Functions
 
 Mathematical constants and functions for numerical computations.
 
-### Constants (requires `import "std/math.iz"`)
+### Module Import
 
-- **PI** = 3.14159265 - The mathematical constant π (8 decimal places)
-- **E** = 2.71828183 - Euler's number (8 decimal places)
+```izilang
+import "math";
+var result = math.sqrt(16);  // 4
+var pi_value = math.pi;      // 3.14159...
+```
 
-*Note: Due to a current limitation in the lexer, floating-point constants are limited to 10 digits total. For higher-precision calculations, define your own constants or use the pow() function.*
+Or import specific items:
+```izilang
+import { sqrt, sin, cos, pi } from "math";
+var result = sqrt(16);
+```
 
-### Functions (available globally)
+### Constants
+
+- **pi** / **PI** = 3.14159265358979... - The mathematical constant π
+- **e** / **E** = 2.71828182845905... - Euler's number
+
+### Functions
 
 **Power and Root:**
 - `sqrt(x)` - Square root (x must be non-negative)
@@ -41,20 +59,42 @@ Mathematical constants and functions for numerical computations.
 ### Example
 
 ```izilang
-import "std/math.iz";
+import "math";
 
-print("PI =", PI);
-print("sqrt(16) =", sqrt(16));
-print("pow(2, 3) =", pow(2, 3));
-print("sin(PI/2) =", sin(PI / 2));
-print("min(1, 2, 3) =", min(1, 2, 3));
+print("math.pi =", math.pi);
+print("math.sqrt(16) =", math.sqrt(16));
+print("math.pow(2, 3) =", math.pow(2, 3));
+print("math.sin(math.pi/2) =", math.sin(math.pi / 2));
+print("math.min(1, 2, 3) =", math.min(1, 2, 3));
 ```
 
-## std.string - String Manipulation
+Or with named imports:
+```izilang
+import { sqrt, sin, pi } from "math";
+
+print("pi =", pi);
+print("sqrt(16) =", sqrt(16));
+print("sin(pi/2) =", sin(pi / 2));
+```
+
+## string - String Manipulation
 
 Functions for working with strings.
 
-### Functions (available globally)
+### Module Import
+
+```izilang
+import "string";
+var upper = string.toUpper("hello");  // "HELLO"
+```
+
+Or import specific functions:
+```izilang
+import { toUpper, split, trim } from "string";
+var upper = toUpper("hello");
+```
+
+### Functions
 
 **Extraction:**
 - `substring(str, start, length?)` - Extract substring (length optional, defaults to end of string)
@@ -79,18 +119,32 @@ Functions for working with strings.
 ### Example
 
 ```izilang
+import "string";
+
 var str = "Hello, World!";
-print(substring(str, 0, 5));
-print(toUpper(str));
-print(split(str, ", "));
-print(replace(str, "World", "IziLang"));
+print(string.substring(str, 0, 5));      // "Hello"
+print(string.toUpper(str));              // "HELLO, WORLD!"
+print(string.split(str, ", "));          // ["Hello", "World!"]
+print(string.replace(str, "World", "IziLang"));  // "Hello, IziLang!"
 ```
 
-## std.array - Array Utilities
+## array - Array Utilities
 
 Functions for array manipulation and functional programming.
 
-### Functions (available globally)
+### Module Import
+
+```izilang
+import "array";
+var doubled = array.map([1, 2, 3], fn(x) { return x * 2; });
+```
+
+Or import specific functions:
+```izilang
+import { map, filter, reduce } from "array";
+```
+
+### Functions
 
 **Higher-Order Functions:**
 - `map(array, fn)` - Apply function to each element, return new array
@@ -111,35 +165,50 @@ Functions for array manipulation and functional programming.
 ### Example
 
 ```izilang
+import { map, filter, reduce } from "array";
+
 var numbers = [1, 2, 3, 4, 5];
 
 fn double(x) {
     return x * 2;
 }
-print(map(numbers, double));
+print(map(numbers, double));  // [2, 4, 6, 8, 10]
 
 fn isEven(x) {
     return x - floor(x / 2) * 2 == 0;
 }
-print(filter(numbers, isEven));
+print(filter(numbers, isEven));  // [2, 4]
 
 fn add(a, b) {
     return a + b;
 }
-print(reduce(numbers, add, 0));
+print(reduce(numbers, add, 0));  // 15
 ```
 
-## std.io - File I/O
+## io - File I/O
 
 Functions for file operations.
 
-### Functions (available globally)
+### Module Import
+
+```izilang
+import "io";
+io.writeFile("/tmp/test.txt", "Hello!");
+var content = io.readFile("/tmp/test.txt");
+```
+
+Or import specific functions:
+```izilang
+import { readFile, writeFile, exists } from "io";
+```
+
+### Functions
 
 **File Operations:**
 - `readFile(filename)` - Read entire file as string
 - `writeFile(filename, content)` - Write string to file (overwrites existing file)
 - `appendFile(filename, content)` - Append string to file
-- `fileExists(filename)` - Check if file exists (returns boolean)
+- `fileExists(filename)` / `exists(filename)` - Check if file exists (returns boolean)
 
 **Console:**
 - `print(...values)` - Print values to console (variadic, values separated by spaces)
@@ -147,18 +216,41 @@ Functions for file operations.
 ### Example
 
 ```izilang
-writeFile("/tmp/test.txt", "Hello, World!");
+import "io";
 
-if (fileExists("/tmp/test.txt")) {
-    var content = readFile("/tmp/test.txt");
-    print(content);
+io.writeFile("/tmp/test.txt", "Hello, World!");
+
+if (io.exists("/tmp/test.txt")) {
+    var content = io.readFile("/tmp/test.txt");
+    print(content);  // "Hello, World!"
 }
 
-appendFile("/tmp/test.txt", "
-New line added.");
+io.appendFile("/tmp/test.txt", "\nNew line added.");
+```
+
+## json - JSON Parsing (Placeholder)
+
+JSON parsing and generation module. *Coming soon.*
+
+### Module Import
+
+```izilang
+import "json";
+```
+
+## http - HTTP Client (Placeholder)
+
+Basic HTTP client functionality. *Coming soon.*
+
+### Module Import
+
+```izilang
+import "http";
 ```
 
 ## Additional Built-in Functions
+
+These functions are available globally without imports:
 
 **Utility:**
 - `clock()` - Get current time in seconds since epoch (as floating point)
@@ -171,7 +263,8 @@ New line added.");
 
 ## Notes
 
-- All functions except those in `std/math.iz` are available globally without imports
+- **Module System**: All standard library modules can be imported using `import "moduleName"`, `import { item } from "moduleName"`, or `import * as alias from "moduleName"`
+- **Backward Compatibility**: All functions remain available globally without imports for backward compatibility
 - Functions are implemented as native C++ code for performance
 - Array functions (map, filter, reduce, sort, reverse, concat, slice) return new arrays and don't mutate originals
 - Exception: `push` and `pop` mutate the array in-place
@@ -180,16 +273,47 @@ New line added.");
 
 ## Known Limitations
 
-- Mathematical constants (PI, E) are limited to 8 decimal places due to a lexer limitation
 - The `fileExists()` function uses `<sys/stat.h>` which is POSIX-specific and may not work on all platforms
+- JSON and HTTP modules are placeholders for future implementation
+
+## Module System Examples
+
+### Three Ways to Import
+
+```izilang
+import "math";
+var result1 = math.sqrt(16);
+
+import { sqrt, pi } from "math";
+var result2 = sqrt(25);
+
+import * as m from "math";
+var result3 = m.sqrt(36);
+```
+
+### Combining Multiple Modules
+
+```izilang
+import "math";
+import "string";
+import { map, filter } from "array";
+
+var nums = [1, 2, 3, 4];
+var doubled = map(nums, fn(x) { return x * 2; });
+var text = string.join(doubled, ", ");
+print(text);  // "2, 4, 6, 8"
+```
 
 ## Running Tests
 
-Test files are provided for each module:
+Test files are provided:
 
 ```bash
-./bin/Debug/izi/izi test_std_math.iz
-./bin/Debug/izi/izi test_std_string.iz
-./bin/Debug/izi/izi test_std_array.iz
-./bin/Debug/izi/izi test_std_io.iz
+./bin/Debug/izi/izi test_modules.iz
+```
+
+Or run the integrated test suite:
+
+```bash
+./bin/Debug/tests/tests
 ```

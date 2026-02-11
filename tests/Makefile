@@ -76,12 +76,14 @@ GENERATED += $(OBJDIR)/error_reporter.o
 GENERATED += $(OBJDIR)/interpreter.o
 GENERATED += $(OBJDIR)/lexer.o
 GENERATED += $(OBJDIR)/native.o
+GENERATED += $(OBJDIR)/native_modules.o
 GENERATED += $(OBJDIR)/parser.o
 GENERATED += $(OBJDIR)/test_collections.o
 GENERATED += $(OBJDIR)/test_first_class_functions.o
 GENERATED += $(OBJDIR)/test_integration.o
 GENERATED += $(OBJDIR)/test_lexer.o
 GENERATED += $(OBJDIR)/test_main.o
+GENERATED += $(OBJDIR)/test_modules.o
 GENERATED += $(OBJDIR)/test_try_catch.o
 GENERATED += $(OBJDIR)/test_value.o
 GENERATED += $(OBJDIR)/test_vm_simple.o
@@ -95,12 +97,14 @@ OBJECTS += $(OBJDIR)/error_reporter.o
 OBJECTS += $(OBJDIR)/interpreter.o
 OBJECTS += $(OBJDIR)/lexer.o
 OBJECTS += $(OBJDIR)/native.o
+OBJECTS += $(OBJDIR)/native_modules.o
 OBJECTS += $(OBJDIR)/parser.o
 OBJECTS += $(OBJDIR)/test_collections.o
 OBJECTS += $(OBJDIR)/test_first_class_functions.o
 OBJECTS += $(OBJDIR)/test_integration.o
 OBJECTS += $(OBJDIR)/test_lexer.o
 OBJECTS += $(OBJDIR)/test_main.o
+OBJECTS += $(OBJDIR)/test_modules.o
 OBJECTS += $(OBJDIR)/test_try_catch.o
 OBJECTS += $(OBJDIR)/test_value.o
 OBJECTS += $(OBJDIR)/test_vm_simple.o
@@ -196,6 +200,9 @@ $(OBJDIR)/interpreter.o: ../src/interp/interpreter.cpp
 $(OBJDIR)/native.o: ../src/interp/native.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/native_modules.o: ../src/interp/native_modules.cpp
+	@echo "$(notdir $<)"
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/user_function.o: ../src/interp/user_function.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
@@ -218,6 +225,9 @@ $(OBJDIR)/test_lexer.o: test_lexer.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/test_main.o: test_main.cpp
+	@echo "$(notdir $<)"
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/test_modules.o: test_modules.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/test_try_catch.o: test_try_catch.cpp
