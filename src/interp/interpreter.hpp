@@ -30,6 +30,14 @@ struct BreakSignal {};
 
 struct ContinueSignal {};
 
+struct ThrowSignal {
+    Value exception;
+    Token token;  // For error reporting
+    
+    ThrowSignal(Value ex, Token tok)
+        : exception(std::move(ex)), token(std::move(tok)) {}
+};
+
 class Interpreter : public ExprVisitor, public StmtVisitor {
    public:
     explicit Interpreter(std::string_view source = "");
@@ -65,6 +73,8 @@ class Interpreter : public ExprVisitor, public StmtVisitor {
     void visit(ExportStmt&) override;
     void visit(BreakStmt&) override;
     void visit(ContinueStmt&) override;
+    void visit(TryStmt&) override;
+    void visit(ThrowStmt&) override;
 
     void executeBlock(const std::vector<StmtPtr>& statements, Environment* newEnv);
 

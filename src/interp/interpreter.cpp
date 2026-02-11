@@ -353,4 +353,52 @@ void Interpreter::visit(ContinueStmt& /*stmt*/) {
     throw ContinueSignal{};
 }
 
+void Interpreter::visit(TryStmt& stmt) {
+    bool exceptionCaught = false;
+    Value caughtException;
+    Token exceptionToken(TokenType::ERROR, "", 0, 0);
+    
+    // Execute try block
+    try {
+        execute(*stmt.tryBlock);
+    } catch (const ThrowSignal& e) {
+        exceptionCaught = true;
+        caughtException = e.exception;
+        exceptionToken = e.token;
+        
+        // Execute catch block if present
+        if (stmt.catchBlock != nullptr) {
+            // Extract statements from BlockStmt
+            auto* blockPtr = dynamic_cast<BlockStmt*>(stmt.catchBlock.get());
+            if (blockPtr) {
+                // Create new environment for catch block with exception variable
+                Environment catchEnv(env);
+                
+                // Bind exception to catch variable
+                if (!stmt.catchVariable.empty()) {
+                    catchEnv.define(stmt.catchVariable, caughtException);
+                }
+                
+                executeBlock(blockPtr->statements, &catchEnv);
+                exceptionCaught = false;  // Exception was handled
+            }
+        }
+    }
+    
+    // Execute finally block if present (always executes)
+    if (stmt.finallyBlock != nullptr) {
+        execute(*stmt.finallyBlock);
+    }
+    
+    // Re-throw if exception wasn't caught
+    if (exceptionCaught) {
+        throw ThrowSignal(caughtException, exceptionToken);
+    }
+}
+
+void Interpreter::visit(ThrowStmt& stmt) {
+    Value exceptionValue = evaluate(*stmt.value);
+    throw ThrowSignal(exceptionValue, stmt.keyword);
+}
+
 }  // namespace izi

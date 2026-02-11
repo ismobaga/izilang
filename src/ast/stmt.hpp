@@ -145,4 +145,31 @@ struct ContinueStmt : public Stmt {
     void accept(StmtVisitor& v) override { v.visit(*this); }
 };
 
+// Try-Catch-Finally statement
+struct TryStmt : public Stmt {
+    StmtPtr tryBlock;
+    std::string catchVariable;  // Variable name to bind the exception to (e.g., "e" in catch(e))
+    StmtPtr catchBlock;         // Can be nullptr if no catch
+    StmtPtr finallyBlock;       // Can be nullptr if no finally
+    
+    TryStmt(StmtPtr tryB, std::string catchVar, StmtPtr catchB, StmtPtr finallyB)
+        : tryBlock(std::move(tryB)),
+          catchVariable(std::move(catchVar)),
+          catchBlock(std::move(catchB)),
+          finallyBlock(std::move(finallyB)) {}
+    
+    void accept(StmtVisitor& v) override { v.visit(*this); }
+};
+
+// Throw statement (e.g., "throw 'error message';")
+struct ThrowStmt : public Stmt {
+    Token keyword;  // The 'throw' token for error reporting
+    ExprPtr value;
+    
+    ThrowStmt(Token kw, ExprPtr val)
+        : keyword(std::move(kw)), value(std::move(val)) {}
+    
+    void accept(StmtVisitor& v) override { v.visit(*this); }
+};
+
 }  // namespace izi

@@ -156,6 +156,8 @@ StmtPtr Parser::statement() {
     if (match({TokenType::RETURN})) return returnStatement();
     if (match({TokenType::BREAK})) return breakStatement();
     if (match({TokenType::CONTINUE})) return continueStatement();
+    if (match({TokenType::TRY})) return tryStatement();
+    if (match({TokenType::THROW})) return throwStatement();
     return expressionStatement();
 }
 
@@ -277,6 +279,49 @@ StmtPtr Parser::breakStatement() {
 StmtPtr Parser::continueStatement() {
     consume(TokenType::SEMICOLON, "Expect ';' after 'continue'.");
     return std::make_unique<ContinueStmt>();
+}
+
+StmtPtr Parser::tryStatement() {
+    // Parse try block
+    consume(TokenType::LEFT_BRACE, "Expect '{' after 'try'.");
+    StmtPtr tryBlock = blockStatement();
+    
+    // Parse optional catch block
+    StmtPtr catchBlock = nullptr;
+    std::string catchVariable;
+    if (match({TokenType::CATCH})) {
+        consume(TokenType::LEFT_PAREN, "Expect '(' after 'catch'.");
+        Token varToken = consume(TokenType::IDENTIFIER, "Expect variable name in catch.");
+        catchVariable = std::string(varToken.lexeme);
+        consume(TokenType::RIGHT_PAREN, "Expect ')' after catch variable.");
+        consume(TokenType::LEFT_BRACE, "Expect '{' after catch clause.");
+        catchBlock = blockStatement();
+    }
+    
+    // Parse optional finally block
+    StmtPtr finallyBlock = nullptr;
+    if (match({TokenType::FINALLY})) {
+        consume(TokenType::LEFT_BRACE, "Expect '{' after 'finally'.");
+        finallyBlock = blockStatement();
+    }
+    
+    // Must have at least catch or finally
+    if (catchBlock == nullptr && finallyBlock == nullptr) {
+        throw error(previous(), "Expected 'catch' or 'finally' after 'try' block.");
+    }
+    
+    return std::make_unique<TryStmt>(
+        std::move(tryBlock),
+        std::move(catchVariable),
+        std::move(catchBlock),
+        std::move(finallyBlock));
+}
+
+StmtPtr Parser::throwStatement() {
+    Token throwToken = previous();  // Get the 'throw' token
+    ExprPtr value = expression();
+    consume(TokenType::SEMICOLON, "Expect ';' after throw value.");
+    return std::make_unique<ThrowStmt>(std::move(throwToken), std::move(value));
 }
 
 // Expression parsing (precedence climbing)

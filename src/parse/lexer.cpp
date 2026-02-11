@@ -186,6 +186,10 @@ TokenType Lexer::keywordType(std::string_view text) {
     if (text == "export") return TokenType::EXPORT;
     if (text == "from") return TokenType::FROM;
     if (text == "as") return TokenType::AS;
+    if (text == "try") return TokenType::TRY;
+    if (text == "catch") return TokenType::CATCH;
+    if (text == "finally") return TokenType::FINALLY;
+    if (text == "throw") return TokenType::THROW;
     return TokenType::IDENTIFIER;
 }
 }  // namespace izi

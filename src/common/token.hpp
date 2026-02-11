@@ -61,6 +61,10 @@ enum class TokenType {
     EXPORT,
     FROM,
     AS,
+    TRY,
+    CATCH,
+    FINALLY,
+    THROW,
 
     // Special
     END_OF_FILE,
@@ -177,6 +181,14 @@ inline const char* tokenTypeToString(TokenType type) {
             return "FROM";
         case TokenType::AS:
             return "AS";
+        case TokenType::TRY:
+            return "TRY";
+        case TokenType::CATCH:
+            return "CATCH";
+        case TokenType::FINALLY:
+            return "FINALLY";
+        case TokenType::THROW:
+            return "THROW";
         case TokenType::END_OF_FILE:
             return "END_OF_FILE";
         case TokenType::ERROR:

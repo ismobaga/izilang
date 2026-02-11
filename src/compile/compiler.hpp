@@ -46,6 +46,8 @@ namespace izi
         void visit(ExportStmt& stmt) override;
         void visit(BreakStmt& stmt) override;
         void visit(ContinueStmt& stmt) override;
+        void visit(TryStmt& stmt) override;
+        void visit(ThrowStmt& stmt) override;
 
     private:
         Chunk chunk;

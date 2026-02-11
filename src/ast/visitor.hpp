@@ -26,6 +26,8 @@ struct ImportStmt;
 struct ExportStmt;
 struct BreakStmt;
 struct ContinueStmt;
+struct TryStmt;
+struct ThrowStmt;
 
 
 class ExprVisitor {
@@ -60,6 +62,8 @@ class StmtVisitor {
     virtual void visit(ExportStmt&) = 0;
     virtual void visit(BreakStmt&) = 0;
     virtual void visit(ContinueStmt&) = 0;
+    virtual void visit(TryStmt&) = 0;
+    virtual void visit(ThrowStmt&) = 0;
 };
 
 }  // namespace izi

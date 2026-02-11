@@ -532,3 +532,280 @@ TEST_CASE("Integration: Short-circuit evaluation", "[integration]") {
         REQUIRE(capture.getOutput() == "0\n");
     }
 }
+
+TEST_CASE("Exception handling: Basic try-catch", "[integration][exceptions]") {
+    SECTION("Catch simple string exception") {
+        std::string source = R"(
+            try {
+                throw "error message";
+            } catch (e) {
+                print(e);
+            }
+        )";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        REQUIRE(capture.getOutput() == "error message\n");
+    }
+    
+    SECTION("Try block without exception") {
+        std::string source = R"(
+            var executed = false;
+            try {
+                executed = true;
+                print("in try");
+            } catch (e) {
+                print("in catch");
+            }
+        )";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        REQUIRE(capture.getOutput() == "in try\n");
+    }
+    
+    SECTION("Exception propagates if not caught") {
+        std::string source = R"(
+            throw "uncaught error";
+        )";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        Interpreter interp(source);
+        REQUIRE_THROWS_AS(interp.interpret(program), ThrowSignal);
+    }
+}
+
+TEST_CASE("Exception handling: Try-catch-finally", "[integration][exceptions]") {
+    SECTION("Finally always executes with no exception") {
+        std::string source = R"(
+            try {
+                print("try");
+            } finally {
+                print("finally");
+            }
+        )";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        REQUIRE(capture.getOutput() == "try\nfinally\n");
+    }
+    
+    SECTION("Finally always executes with exception") {
+        std::string source = R"(
+            try {
+                print("try");
+                throw "error";
+            } catch (e) {
+                print("catch");
+            } finally {
+                print("finally");
+            }
+        )";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        REQUIRE(capture.getOutput() == "try\ncatch\nfinally\n");
+    }
+    
+    SECTION("Finally executes even if exception not caught") {
+        std::string source = R"(
+            try {
+                throw "error";
+            } finally {
+                print("cleanup");
+            }
+        )";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        REQUIRE_THROWS_AS(interp.interpret(program), ThrowSignal);
+        
+        // Finally block should have executed before exception propagated
+        REQUIRE(capture.getOutput() == "cleanup\n");
+    }
+}
+
+TEST_CASE("Exception handling: Nested try-catch", "[integration][exceptions]") {
+    SECTION("Inner catch handles exception") {
+        std::string source = R"(
+            try {
+                print("outer try");
+                try {
+                    print("inner try");
+                    throw "inner error";
+                } catch (e) {
+                    print("inner catch");
+                }
+                print("after inner");
+            } catch (e) {
+                print("outer catch");
+            }
+        )";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        REQUIRE(capture.getOutput() == "outer try\ninner try\ninner catch\nafter inner\n");
+    }
+    
+    SECTION("Exception propagates to outer catch") {
+        std::string source = R"(
+            try {
+                print("outer try");
+                try {
+                    print("inner try");
+                    throw "error";
+                } finally {
+                    print("inner finally");
+                }
+            } catch (e) {
+                print("outer catch");
+                print(e);
+            }
+        )";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        REQUIRE(capture.getOutput() == "outer try\ninner try\ninner finally\nouter catch\nerror\n");
+    }
+}
+
+TEST_CASE("Exception handling: Function with try-catch", "[integration][exceptions]") {
+    SECTION("Exception thrown in function") {
+        std::string source = R"(
+            fn riskyOperation() {
+                throw "operation failed";
+            }
+            
+            try {
+                riskyOperation();
+            } catch (e) {
+                print("caught:");
+                print(e);
+            }
+        )";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        REQUIRE(capture.getOutput() == "caught:\noperation failed\n");
+    }
+    
+    SECTION("Division by zero with custom error") {
+        std::string source = R"(
+            fn divide(a, b) {
+                if (b == 0) {
+                    throw "Division by zero";
+                }
+                return a / b;
+            }
+            
+            try {
+                var result = divide(10, 0);
+                print(result);
+            } catch (e) {
+                print("Error:");
+                print(e);
+            }
+        )";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        REQUIRE(capture.getOutput() == "Error:\nDivision by zero\n");
+    }
+}
+
+TEST_CASE("Exception handling: Different value types", "[integration][exceptions]") {
+    SECTION("Throw number") {
+        std::string source = R"(
+            try {
+                throw 42;
+            } catch (e) {
+                print(e);
+            }
+        )";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        REQUIRE(capture.getOutput() == "42\n");
+    }
+    
+    SECTION("Throw boolean") {
+        std::string source = R"(
+            try {
+                throw true;
+            } catch (e) {
+                print(e);
+            }
+        )";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        REQUIRE(capture.getOutput() == "true\n");
+    }
+}
