@@ -18,7 +18,7 @@ using namespace izi;
 namespace fs = std::filesystem;
 
 
-void runCode(const std::string& src, bool useVM, bool debug) {
+void runCode(const std::string& src, bool useVM, bool debug, const std::string& filename = "<stdin>") {
     try {
         if (debug) {
             std::cout << "[DEBUG] Lexing and parsing...\n";
@@ -47,18 +47,22 @@ void runCode(const std::string& src, bool useVM, bool debug) {
         }
     } catch (const LexerError& e) {
         ErrorReporter reporter(src);
+        std::cerr << "In file '" << filename << "':\n";
         std::cerr << reporter.formatError(e.line, e.column, e.what(), "Lexer Error") << '\n';
         throw;
     } catch (const ParserError& e) {
         ErrorReporter reporter(src);
+        std::cerr << "In file '" << filename << "':\n";
         std::cerr << reporter.formatError(e.token, e.what(), "Parse Error") << '\n';
         throw;
     } catch (const RuntimeError& e) {
         ErrorReporter reporter(src);
+        std::cerr << "In file '" << filename << "':\n";
         std::cerr << reporter.formatError(e.token, e.what()) << '\n';
         throw;
     } catch (const ThrowSignal& e) {
         ErrorReporter reporter(src);
+        std::cerr << "In file '" << filename << "':\n";
         std::cerr << reporter.formatError(e.token, "Uncaught exception") << '\n';
         std::cerr << "Exception value: ";
         printValue(e.exception);
@@ -185,7 +189,7 @@ int runTests(const CliOptions& options) {
             std::streambuf* oldCout = std::cout.rdbuf(capturedOutput.rdbuf());
             
             try {
-                runCode(src, useVM, options.debug);
+                runCode(src, useVM, options.debug, testFile.string());
                 
                 // Restore stdout
                 std::cout.rdbuf(oldCout);
@@ -279,7 +283,7 @@ int main(int argc, char** argv) {
     if (options.command == CliOptions::Command::Run) {
         // Execute the code
         try {
-            runCode(src, useVM, options.debug);
+            runCode(src, useVM, options.debug, options.input);
         } catch (...) {
             return 1;
         }
@@ -317,10 +321,12 @@ int main(int argc, char** argv) {
             std::cout << "Build successful: " << options.input << "\n";
         } catch (const LexerError& e) {
             ErrorReporter reporter(src);
+            std::cerr << "In file '" << options.input << "':\n";
             std::cerr << reporter.formatError(e.line, e.column, e.what(), "Lexer Error") << '\n';
             return 1;
         } catch (const ParserError& e) {
             ErrorReporter reporter(src);
+            std::cerr << "In file '" << options.input << "':\n";
             std::cerr << reporter.formatError(e.token, e.what(), "Parse Error") << '\n';
             return 1;
         } catch (const std::exception& e) {
@@ -351,10 +357,12 @@ int main(int argc, char** argv) {
             std::cout << "Check successful: " << options.input << "\n";
         } catch (const LexerError& e) {
             ErrorReporter reporter(src);
+            std::cerr << "In file '" << options.input << "':\n";
             std::cerr << reporter.formatError(e.line, e.column, e.what(), "Lexer Error") << '\n';
             return 1;
         } catch (const ParserError& e) {
             ErrorReporter reporter(src);
+            std::cerr << "In file '" << options.input << "':\n";
             std::cerr << reporter.formatError(e.token, e.what(), "Parse Error") << '\n';
             return 1;
         } catch (const std::exception& e) {
