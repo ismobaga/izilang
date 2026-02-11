@@ -191,6 +191,13 @@ Value BytecodeCompiler::visit(SetIndexExpr& expr) {
     emitOp(OpCode::SET_INDEX);
     return Nil{};
 }
+
+Value BytecodeCompiler::visit(FunctionExpr& expr) {
+    // For now, we don't support function expressions in bytecode mode
+    // This would require compiling the function body to bytecode and creating
+    // a VmCallable at runtime
+    throw std::runtime_error("Function expressions are not yet supported in bytecode mode.");
+}
 Value BytecodeCompiler::visit(ArrayExpr& expr) {
     for (const auto& element : expr.elements) {
         emitExpression(*element);

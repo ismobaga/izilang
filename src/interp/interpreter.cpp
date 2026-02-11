@@ -19,7 +19,7 @@ namespace izi {
 
 // Constructor needs to be defined to call registerNativeFunctions
 Interpreter::Interpreter(std::string_view source) 
-    : source_(source), globals(nullptr), env(&globals) {
+    : source_(source), globals(std::make_shared<Environment>()), env(globals) {
     registerNativeFunctions(*this);
 }
 
@@ -45,8 +45,8 @@ double Interpreter::toNumber(const Value& v, const Token& token) {
     return std::get<double>(v);
 }
 
-void Interpreter::executeBlock(const std::vector<StmtPtr>& statements, Environment* newEnv) {
-    Environment* previous = env;
+void Interpreter::executeBlock(const std::vector<StmtPtr>& statements, std::shared_ptr<Environment> newEnv) {
+    std::shared_ptr<Environment> previous = env;
     env = newEnv;
 
     try {
@@ -246,6 +246,14 @@ Value Interpreter::visit(SetIndexExpr& expr) {
         throw std::runtime_error("Index assignment is only supported on arrays and maps.");
 }
 
+Value Interpreter::visit(FunctionExpr& expr) {
+    // Create a UserFunction that directly references the FunctionExpr
+    // The FunctionExpr is part of the AST and lives for the duration of the program
+    // so this pointer will remain valid
+    auto func = std::make_shared<UserFunction>(&expr, env);
+    return func;
+}
+
 // Statement visitors
 void Interpreter::visit(ExprStmt& stmt) {
     evaluate(*stmt.expr);
@@ -260,8 +268,8 @@ void Interpreter::visit(VarStmt& stmt) {
 }
 
 void Interpreter::visit(BlockStmt& stmt) {
-    Environment blockEnv(env);
-    executeBlock(stmt.statements, &blockEnv);
+    auto blockEnv = std::make_shared<Environment>(env);
+    executeBlock(stmt.statements, blockEnv);
 }
 
 void Interpreter::visit(IfStmt& stmt) {
@@ -372,14 +380,14 @@ void Interpreter::visit(TryStmt& stmt) {
             auto* blockPtr = dynamic_cast<BlockStmt*>(stmt.catchBlock.get());
             if (blockPtr) {
                 // Create new environment for catch block with exception variable
-                Environment catchEnv(env);
+                auto catchEnv = std::make_shared<Environment>(env);
                 
                 // Bind exception to catch variable
                 if (!stmt.catchVariable.empty()) {
-                    catchEnv.define(stmt.catchVariable, caughtException);
+                    catchEnv->define(stmt.catchVariable, caughtException);
                 }
                 
-                executeBlock(blockPtr->statements, &catchEnv);
+                executeBlock(blockPtr->statements, catchEnv);
                 exceptionCaught = false;  // Exception was handled
             }
         }

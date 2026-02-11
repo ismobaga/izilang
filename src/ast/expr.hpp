@@ -140,4 +140,23 @@ struct SetIndexExpr : Expr {
         return v.visit(*this);
     }
 };
+
+// Forward declaration for statement types (from stmt.hpp)
+// We only need FunctionExpr to reference these types, full definition is in stmt.hpp
+struct Stmt;
+using StmtPtr = std::unique_ptr<Stmt>;
+
+// Function expression for anonymous functions
+// e.g., fn(a, b) { return a + b; }
+struct FunctionExpr : Expr {
+    std::vector<std::string> params;
+    std::vector<StmtPtr> body;
+
+    FunctionExpr(std::vector<std::string> p, std::vector<StmtPtr> b)
+        : params(std::move(p)), body(std::move(b)) {}
+
+    Value accept(ExprVisitor& v) override {
+        return v.visit(*this);
+    }
+};
 }  // namespace izi

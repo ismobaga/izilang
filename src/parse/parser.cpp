@@ -482,6 +482,32 @@ ExprPtr Parser::primary() {
         return std::make_unique<LiteralExpr>(value);
     }
 
+    // Function expression: fn(params) { body }
+    if (match({TokenType::FN})) {
+        consume(TokenType::LEFT_PAREN, "Expect '(' after 'fn' in function expression.");
+        
+        std::vector<std::string> params;
+        if (!check(TokenType::RIGHT_PAREN)) {
+            do {
+                Token param = consume(TokenType::IDENTIFIER, "Expect parameter name.");
+                params.push_back(std::string(param.lexeme));
+            } while (match({TokenType::COMMA}));
+        }
+        consume(TokenType::RIGHT_PAREN, "Expect ')' after parameters.");
+        
+        consume(TokenType::LEFT_BRACE, "Expect '{' before function body.");
+        auto body = blockStatement();
+        
+        // Extract statements from BlockStmt
+        auto* blockPtr = dynamic_cast<BlockStmt*>(body.get());
+        std::vector<StmtPtr> bodyStmts;
+        if (blockPtr) {
+            bodyStmts = std::move(blockPtr->statements);
+        }
+        
+        return std::make_unique<FunctionExpr>(std::move(params), std::move(bodyStmts));
+    }
+
     if (match({TokenType::IDENTIFIER})) {
         Token name = previous();
         return std::make_unique<VariableExpr>(std::string(name.lexeme), nullptr);
