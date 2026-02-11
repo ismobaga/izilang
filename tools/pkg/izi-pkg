@@ -1,0 +1,261 @@
+#!/usr/bin/env bash
+
+# IziLang Package Manager
+# A simple package manager for IziLang projects
+
+set -e
+
+VERSION="0.1.0"
+PACKAGE_DIR="izi_modules"
+GLOBAL_DIR="$HOME/.izi/packages"
+LOCK_FILE="package-lock.json"
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Print colored output
+info() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
+
+success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
+
+warn() {
+    echo -e "${YELLOW}[WARN]${NC} $1"
+}
+
+error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+    exit 1
+}
+
+# Show help
+show_help() {
+    cat << EOF
+IziLang Package Manager v${VERSION}
+
+Usage: izi-pkg <command> [options]
+
+Commands:
+  init                  Initialize a new package.json
+  install [package]     Install dependencies
+  list                  List installed packages
+  search <query>        Search for packages
+  update [package]      Update packages
+  remove <package>      Remove a package
+  publish               Publish package to registry
+  help                  Show this help message
+  version               Show version
+
+Options:
+  -g, --global          Install package globally
+  -v, --verbose         Verbose output
+  -h, --help           Show help
+
+Examples:
+  izi-pkg init
+  izi-pkg install
+  izi-pkg install std-math
+  izi-pkg install std-math@1.0.0
+  izi-pkg remove std-math
+  izi-pkg list
+
+For more information, visit: https://github.com/ismobaga/izilang
+EOF
+}
+
+# Initialize a new package
+cmd_init() {
+    if [ -f "package.json" ]; then
+        warn "package.json already exists"
+        read -p "Overwrite? (y/N) " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            exit 0
+        fi
+    fi
+
+    info "Initializing package.json..."
+    
+    read -p "Package name: " name
+    read -p "Version (1.0.0): " version
+    version=${version:-1.0.0}
+    read -p "Description: " description
+    read -p "Entry point (index.iz): " main
+    main=${main:-index.iz}
+    read -p "Author: " author
+    read -p "License (MIT): " license
+    license=${license:-MIT}
+
+    cat > package.json << EOF
+{
+  "name": "$name",
+  "version": "$version",
+  "description": "$description",
+  "main": "$main",
+  "author": "$author",
+  "license": "$license",
+  "dependencies": {},
+  "devDependencies": {},
+  "scripts": {
+    "test": "izi test"
+  }
+}
+EOF
+
+    success "Created package.json"
+}
+
+# Install packages
+cmd_install() {
+    local package=$1
+    local global=$2
+
+    if [ -z "$package" ]; then
+        # Install all dependencies from package.json
+        if [ ! -f "package.json" ]; then
+            error "package.json not found. Run 'izi-pkg init' first."
+        fi
+
+        info "Installing dependencies from package.json..."
+        mkdir -p "$PACKAGE_DIR"
+        
+        # Parse dependencies (basic implementation)
+        warn "Dependency installation not yet fully implemented"
+        warn "This is a placeholder for future implementation"
+        
+        success "Dependencies installed"
+    else
+        # Install specific package
+        info "Installing $package..."
+        
+        local install_dir
+        if [ "$global" = "-g" ] || [ "$global" = "--global" ]; then
+            install_dir="$GLOBAL_DIR"
+            mkdir -p "$install_dir"
+        else
+            install_dir="$PACKAGE_DIR"
+            mkdir -p "$install_dir"
+        fi
+        
+        warn "Package installation not yet fully implemented"
+        warn "This is a placeholder for future implementation"
+        
+        success "Installed $package"
+    fi
+}
+
+# List installed packages
+cmd_list() {
+    info "Installed packages:"
+    
+    if [ -d "$PACKAGE_DIR" ]; then
+        echo "Local packages ($PACKAGE_DIR):"
+        ls -1 "$PACKAGE_DIR" 2>/dev/null || echo "  (none)"
+    fi
+    
+    if [ -d "$GLOBAL_DIR" ]; then
+        echo ""
+        echo "Global packages ($GLOBAL_DIR):"
+        ls -1 "$GLOBAL_DIR" 2>/dev/null || echo "  (none)"
+    fi
+}
+
+# Search for packages
+cmd_search() {
+    local query=$1
+    if [ -z "$query" ]; then
+        error "Search query required"
+    fi
+    
+    info "Searching for: $query"
+    warn "Package registry not yet available"
+    warn "This is a placeholder for future implementation"
+}
+
+# Update packages
+cmd_update() {
+    local package=$1
+    
+    if [ -z "$package" ]; then
+        info "Updating all packages..."
+    else
+        info "Updating $package..."
+    fi
+    
+    warn "Package update not yet fully implemented"
+    warn "This is a placeholder for future implementation"
+}
+
+# Remove package
+cmd_remove() {
+    local package=$1
+    if [ -z "$package" ]; then
+        error "Package name required"
+    fi
+    
+    info "Removing $package..."
+    
+    if [ -d "$PACKAGE_DIR/$package" ]; then
+        rm -rf "$PACKAGE_DIR/$package"
+        success "Removed $package"
+    else
+        error "Package $package not found"
+    fi
+}
+
+# Publish package
+cmd_publish() {
+    if [ ! -f "package.json" ]; then
+        error "package.json not found"
+    fi
+    
+    info "Publishing package..."
+    warn "Package publishing not yet available"
+    warn "This is a placeholder for future implementation"
+}
+
+# Main command dispatcher
+main() {
+    case "$1" in
+        init)
+            cmd_init
+            ;;
+        install)
+            shift
+            cmd_install "$@"
+            ;;
+        list)
+            cmd_list
+            ;;
+        search)
+            cmd_search "$2"
+            ;;
+        update)
+            cmd_update "$2"
+            ;;
+        remove)
+            cmd_remove "$2"
+            ;;
+        publish)
+            cmd_publish
+            ;;
+        version)
+            echo "IziLang Package Manager v${VERSION}"
+            ;;
+        help|--help|-h|"")
+            show_help
+            ;;
+        *)
+            error "Unknown command: $1. Run 'izi-pkg help' for usage."
+            ;;
+    esac
+}
+
+main "$@"
