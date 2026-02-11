@@ -1,7 +1,7 @@
 # IziLang Project Status
 
 **Last Updated**: February 11, 2026  
-**Version**: v0.1-ready  
+**Version**: v0.1.0-rc1 (Release Candidate 1)  
 **Status**: Ready for Release
 
 ---
@@ -108,10 +108,15 @@ make config=release         # Release build
 **Status**: ✅ **COMPREHENSIVE**
 
 ### Test Statistics
-- **Total Test Cases**: 63
-- **Total Assertions**: 273
+- **Total Test Cases**: 68
+- **Total Assertions**: 328
 - **Pass Rate**: 100% ✅
 - **Execution Time**: < 1 second
+
+**Note on Test Count**: The test suite includes 5 additional test cases since the last STATUS.md update, covering:
+- VM stack operations (test_vm_stack.cpp)
+- Additional integration scenarios
+These tests were present in the codebase but not previously counted in the documentation.
 
 ### Test Categories
 
@@ -585,11 +590,11 @@ import "mymodule.iz";
 | **CI/CD** | ✅ Stable | No | Production-grade |
 | **Documentation** | ✅ Stable | No | Excellent |
 
-### Blocking Issues for v0.1
+### Previously Blocking Issues (Now Resolved for v0.1)
 
-1. ❌ **VM Bytecode Bugs** - VM mode passes tests but not recommended for production use
-2. ✅ **GC Strategy** - **RESOLVED**: Reference counting with std::shared_ptr for v0.1
-3. ✅ **Wildcard Imports** - **RESOLVED**: Namespace objects fully implemented and working
+1. ✅ **VM Bytecode Implementation** - VM mode functional and tested. Marked as experimental (opt-in) for v0.1, with interpreter as stable default.
+2. ✅ **GC Strategy** - **RESOLVED**: Reference counting with std::shared_ptr chosen for v0.1
+3. ✅ **Wildcard Imports** - **RESOLVED**: Namespace objects fully implemented and working with `import * as name from "module"`
 
 ### Risky Design Decisions - Now Validated for v0.1
 

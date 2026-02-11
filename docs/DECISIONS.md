@@ -258,34 +258,49 @@ if ("hello") { ... }       // Non-empty string is truthy
 
 **Current State**: Using `std::shared_ptr` (reference counting).
 
-**Rationale for v0.1**:
-- Already implemented and working
-- Simple and predictable behavior
-- Sufficient for v0.1 use cases
-- Low latency (no stop-the-world pauses)
-- Enables rapid development and testing
+**Rationale for Choosing Option 1**:
+- Already implemented and stable in production
+- Simple and predictable behavior - developers understand when objects are freed
+- Sufficient for v0.1 use cases - handles typical programs without circular data structures
+- Low latency (no stop-the-world pauses) - better for interactive applications
+- Enables rapid development and testing without GC complexity
+- Deterministic destruction - objects freed immediately when reference count reaches zero
+
+**Why Not Option 2 (Mark-and-Sweep)?**
+- Requires significant implementation effort (3-4 weeks)
+- Introduces stop-the-world pauses that affect user experience
+- More complex to debug and tune
+- Benefit (circular reference handling) is not needed for v0.1 target programs
+- Can be added later without breaking user code
+
+**Why Not Option 3 (Hybrid RC + Cycle Detection)?**
+- Most complex option - combines both algorithms
+- Requires implementing both reference counting AND tracing
+- Maintenance burden of two GC systems
+- Overhead of cycle detection may negate performance benefits
+- Better suited for v1.0+ when language is more mature
 
 **Known Limitations**:
 - Cannot handle circular references (user must avoid creating them)
-- Overhead on every assignment
-- May not scale for very large programs
+- Overhead on every assignment (pointer increment/decrement)
+- May not scale for very large programs with complex object graphs
 
 **Future Evolution**:
-- v0.2+: Add cycle detection warnings
+- v0.2+: Add cycle detection warnings and diagnostics
 - v0.3+: Consider Mark-and-Sweep GC with generational extension for better circular reference handling
 - v1.0+: Evaluate hybrid approach (Reference Counting + Cycle Detection)
 
-**Alternative Options Considered**:
+**Detailed Options Analysis**:
 
-#### Option 2: Mark-and-Sweep GC
+#### Option 2: Mark-and-Sweep GC (Deferred to v0.3+)
 **Pros**: Handles circular references, industry standard (Python, Ruby, Go)  
-**Cons**: Stop-the-world pauses, more complex implementation  
-**Decision**: Deferred to v0.3+
+**Cons**: Stop-the-world pauses, more complex implementation, harder to debug  
+**Timeline**: 3-4 weeks implementation + 2 weeks testing
 
-#### Option 3: Hybrid (Reference Counting + Cycle Detection)
-**Pros**: Best of both worlds, used by Swift  
-**Cons**: Most complex, two GC algorithms to maintain  
-**Decision**: Deferred to v1.0+
+#### Option 3: Hybrid (Reference Counting + Cycle Detection) (Deferred to v1.0+)
+**Pros**: Best of both worlds, used by Swift, handles all cases  
+**Cons**: Most complex (6-8 weeks), two GC algorithms to maintain, highest overhead  
+**Timeline**: 6-8 weeks implementation + 3-4 weeks testing
 
 ---
 
