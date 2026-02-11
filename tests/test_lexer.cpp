@@ -147,3 +147,58 @@ TEST_CASE("Lexer handles whitespace", "[lexer]") {
         REQUIRE(tokens[3].type == TokenType::NUMBER);
     }
 }
+
+TEST_CASE("Lexer handles string interpolation", "[lexer]") {
+    SECTION("Simple variable interpolation") {
+        Lexer lexer("\"Hello, ${name}!\"");
+        auto tokens = lexer.scanTokens();
+        
+        // Should tokenize to: "Hello, " + str( name ) + "!" EOF
+        REQUIRE(tokens.size() == 9);
+        REQUIRE(tokens[0].type == TokenType::STRING);
+        REQUIRE(tokens[0].lexeme == "\"Hello, \"");
+        REQUIRE(tokens[1].type == TokenType::PLUS);
+        REQUIRE(tokens[2].type == TokenType::IDENTIFIER);
+        REQUIRE(tokens[2].lexeme == "str");
+        REQUIRE(tokens[3].type == TokenType::LEFT_PAREN);
+        REQUIRE(tokens[4].type == TokenType::IDENTIFIER);
+        REQUIRE(tokens[4].lexeme == "name");
+        REQUIRE(tokens[5].type == TokenType::RIGHT_PAREN);
+        REQUIRE(tokens[6].type == TokenType::PLUS);
+        REQUIRE(tokens[7].type == TokenType::STRING);
+        REQUIRE(tokens[7].lexeme == "\"!\"");
+        REQUIRE(tokens[8].type == TokenType::END_OF_FILE);
+    }
+    
+    SECTION("Multiple interpolations") {
+        Lexer lexer("\"${x} and ${y}\"");
+        auto tokens = lexer.scanTokens();
+        
+        // Should have: str(x) + " and " + str(y)
+        REQUIRE(tokens[0].type == TokenType::IDENTIFIER); // str
+        REQUIRE(tokens[1].type == TokenType::LEFT_PAREN);
+        REQUIRE(tokens[2].type == TokenType::IDENTIFIER); // x
+        REQUIRE(tokens[3].type == TokenType::RIGHT_PAREN);
+        REQUIRE(tokens[4].type == TokenType::PLUS);
+        REQUIRE(tokens[5].type == TokenType::STRING); // " and "
+        REQUIRE(tokens[5].lexeme == "\" and \"");
+        REQUIRE(tokens[6].type == TokenType::PLUS);
+        REQUIRE(tokens[7].type == TokenType::IDENTIFIER); // str
+    }
+    
+    SECTION("Expression in interpolation") {
+        Lexer lexer("\"Result: ${x + y}\"");
+        auto tokens = lexer.scanTokens();
+        
+        // Should tokenize expression inside interpolation
+        REQUIRE(tokens[0].type == TokenType::STRING);
+        REQUIRE(tokens[0].lexeme == "\"Result: \"");
+        REQUIRE(tokens[1].type == TokenType::PLUS);
+        REQUIRE(tokens[2].type == TokenType::IDENTIFIER); // str
+        REQUIRE(tokens[3].type == TokenType::LEFT_PAREN);
+        REQUIRE(tokens[4].type == TokenType::IDENTIFIER); // x
+        REQUIRE(tokens[5].type == TokenType::PLUS);
+        REQUIRE(tokens[6].type == TokenType::IDENTIFIER); // y
+        REQUIRE(tokens[7].type == TokenType::RIGHT_PAREN);
+    }
+}

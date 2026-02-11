@@ -95,6 +95,7 @@ inline void printSet(const Set& set) {
 
 
 void printValue(const Value& v);
+std::string valueToString(const Value& v);
 
 inline bool isTruthy(const Value& v) {
     if (std::holds_alternative<Nil>(v)) {

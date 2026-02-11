@@ -1,0 +1,48 @@
+// String Interpolation Examples for IziLang
+
+// Basic variable interpolation
+var name = "Alice";
+var greeting = "Hello, ${name}!";
+print(greeting);
+
+// Number interpolation
+var age = 30;
+var message = "You are ${age} years old.";
+print(message);
+
+// Multiple interpolations
+var firstName = "Bob";
+var lastName = "Smith";
+var fullName = "${firstName} ${lastName}";
+print("Full name: " + fullName);
+
+// Expression interpolation
+var x = 5;
+var y = 10;
+print("Sum: ${x + y}");
+print("Product: ${x * y}");
+print("Expression: ${x} + ${y} = ${x + y}");
+
+// Boolean interpolation
+var isActive = true;
+print("Status: ${isActive}");
+
+// Function call interpolation
+fn getTemperature() {
+    return 72;
+}
+print("Temperature: ${getTemperature()}°F");
+
+// Complex expression
+var price = 100;
+var taxRate = 0.08;
+print("Total: $${price + (price * taxRate)}");
+
+// Nested operations
+var a = 2;
+var b = 3;
+var c = 4;
+print("Result: ${a + b * c}");
+
+print("");
+print("All string interpolation tests passed!");

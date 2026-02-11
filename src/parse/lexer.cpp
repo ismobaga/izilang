@@ -137,19 +137,105 @@ void Lexer::addToken(TokenType type) {
 }
 
 void Lexer::string() {
+    int stringStart = start;
+    int stringStartLine = startLine;
+    int stringStartColumn = startColumn;
+    
+    // Track parts of the interpolated string
+    bool hasInterpolation = false;
+    bool emittedTokenForThisString = false;  // Track if we've emitted any tokens for this string
+    int partStart = current;  // Start of current string part (after opening quote)
+    
     while (peek() != '"' && !isAtEnd()) {
         if (peek() == '\n') line++;
+        
+        // Check for interpolation: ${
+        if (peek() == '$' && peekNext() == '{') {
+            hasInterpolation = true;
+            
+            // Emit the string part before the interpolation
+            if (current > partStart) {
+                std::string strPart = "\"" + source.substr(partStart, current - partStart) + "\"";
+                tokens.emplace_back(TokenType::STRING, strPart, stringStartLine, stringStartColumn);
+                
+                // Emit PLUS for concatenation
+                tokens.emplace_back(TokenType::PLUS, "+", line, column);
+                emittedTokenForThisString = true;
+            } else if (!emittedTokenForThisString) {
+                // Empty string at the beginning of this specific string - no token needed yet
+            } else {
+                // Empty string in the middle, emit empty string
+                tokens.emplace_back(TokenType::STRING, "\"\"", stringStartLine, stringStartColumn);
+                tokens.emplace_back(TokenType::PLUS, "+", line, column);
+            }
+            
+            // Skip ${ 
+            advance();  // $
+            advance();  // {
+            
+            // Emit str( to wrap the expression
+            tokens.emplace_back(TokenType::IDENTIFIER, "str", line, column);
+            tokens.emplace_back(TokenType::LEFT_PAREN, "(", line, column);
+            emittedTokenForThisString = true;
+            
+            // Tokenize the expression inside ${}
+            int braceDepth = 1;
+            while (braceDepth > 0 && !isAtEnd()) {
+                if (peek() == '{') {
+                    braceDepth++;
+                } else if (peek() == '}') {
+                    braceDepth--;
+                    if (braceDepth == 0) {
+                        advance();  // Consume closing }
+                        break;
+                    }
+                }
+                
+                // Scan the token normally
+                start = current;
+                startLine = line;
+                startColumn = column;
+                scanToken();
+            }
+            
+            if (braceDepth != 0) {
+                throw LexerError(stringStartLine, stringStartColumn, "Unterminated interpolation in string");
+            }
+            
+            // Emit ) to close str() call
+            tokens.emplace_back(TokenType::RIGHT_PAREN, ")", line, column);
+            
+            // Emit PLUS for concatenation with next part
+            tokens.emplace_back(TokenType::PLUS, "+", line, column);
+            
+            // Update partStart to continue scanning the rest of the string
+            partStart = current;
+            continue;
+        }
+        
         advance();
     }
 
     if (isAtEnd()) {
-        throw LexerError(startLine, startColumn, "Unterminated string");
+        throw LexerError(stringStartLine, stringStartColumn, "Unterminated string");
     }
 
     advance();  // Closing "
 
-    std::string lexeme = source.substr(start, current - start);
-    tokens.emplace_back(TokenType::STRING, lexeme, startLine, startColumn);
+    if (hasInterpolation) {
+        // Emit the final string part
+        if (current - 1 > partStart) {
+            std::string strPart = "\"" + source.substr(partStart, current - 1 - partStart) + "\"";
+            tokens.emplace_back(TokenType::STRING, strPart, line, column);
+        } else {
+            // Empty string at the end
+            tokens.emplace_back(TokenType::STRING, "\"\"", line, column);
+        }
+    } else {
+        // No interpolation, emit the whole string as before
+        std::string lexeme = source.substr(stringStart, current - stringStart);
+        tokens.emplace_back(TokenType::STRING, lexeme, stringStartLine, stringStartColumn);
+    }
 }
 
 void Lexer::number() {
