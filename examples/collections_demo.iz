@@ -1,0 +1,102 @@
+// Comprehensive Collections Feature Test
+
+print("====================================");
+print("  IziLang Collections Features Demo");
+print("====================================");
+print("");
+
+// ========== ARRAY ENHANCEMENTS ==========
+print("1. ARRAY METHODS");
+print("   ---------------");
+
+var fruits = ["apple", "banana", "cherry", "date"];
+print("   Initial array:", fruits);
+
+// shift - remove from front
+var firstFruit = shift(fruits);
+print("   After shift():", fruits, "(removed:", firstFruit, ")");
+
+// unshift - add to front
+unshift(fruits, "apricot");
+print("   After unshift(apricot):", fruits);
+
+// splice - remove middle elements
+var removed = splice(fruits, 1, 2);
+print("   After splice(1, 2):", fruits, "(removed:", removed, ")");
+
+print("");
+
+// ========== MAP ENHANCEMENTS ==========
+print("2. MAP METHODS");
+print("   ---------------");
+
+var user = {
+    "name": "Alice",
+    "age": 30,
+    "email": "alice@example.com",
+    "role": "admin"
+};
+print("   User map:", user);
+
+// has - check key existence
+print("   has(user, email):", has(user, "email"));
+print("   has(user, phone):", has(user, "phone"));
+
+// delete - remove key
+var wasDeleted = delete(user, "role");
+print("   After delete(role):", user, "(existed:", wasDeleted, ")");
+
+// entries - get key-value pairs
+var userEntries = entries(user);
+print("   entries():", userEntries);
+
+print("");
+
+// ========== SET TYPE ==========
+print("3. SET OPERATIONS");
+print("   ---------------");
+
+var uniqueNumbers = Set();
+setAdd(uniqueNumbers, 1);
+setAdd(uniqueNumbers, 2);
+setAdd(uniqueNumbers, 3);
+setAdd(uniqueNumbers, 2); // duplicate
+setAdd(uniqueNumbers, 1); // duplicate
+
+print("   Number set:", uniqueNumbers);
+print("   setSize():", setSize(uniqueNumbers));
+print("   setHas(2):", setHas(uniqueNumbers, 2));
+print("   setHas(5):", setHas(uniqueNumbers, 5));
+
+// Remove an element
+setDelete(uniqueNumbers, 2);
+print("   After setDelete(2):", uniqueNumbers);
+print("   New size:", setSize(uniqueNumbers));
+
+print("");
+
+// ========== PRACTICAL EXAMPLE ==========
+print("4. PRACTICAL EXAMPLE: Tag Management");
+print("   ------------------------------------");
+
+var postTags = Set();
+var tagList = ["javascript", "coding", "tutorial", "javascript"];
+
+print("   Adding tags from list:", tagList);
+var i = 0;
+while (i < len(tagList)) {
+    setAdd(postTags, tagList[i]);
+    i = i + 1;
+}
+
+print("   Unique tags:", postTags);
+print("   Total unique tags:", setSize(postTags));
+
+// Check if post has specific tag
+print("   Has javascript tag?", setHas(postTags, "javascript"));
+print("   Has python tag?", setHas(postTags, "python"));
+
+print("");
+print("====================================");
+print("  All Collections Features Working!");
+print("====================================");
