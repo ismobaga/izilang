@@ -8,6 +8,7 @@
 #include <string>
 
 #include "ast/expr.hpp"
+#include "ast/pattern.hpp"
 #include "ast/visitor.hpp"
 #include "common/callable.hpp"
 #include "common/token.hpp"
@@ -253,6 +254,78 @@ Value Interpreter::visit(FunctionExpr& expr) {
     // so this pointer will remain valid
     auto func = std::make_shared<UserFunction>(&expr, env);
     return func;
+}
+
+Value Interpreter::visit(MatchExpr& expr) {
+    // Evaluate the value to match against
+    Value matchValue = evaluate(*expr.value);
+    
+    // Try each case in order
+    for (size_t i = 0; i < expr.cases.size(); ++i) {
+        auto& matchCase = expr.cases[i];
+        
+        bool matched = false;
+        Value boundValue = Nil{};
+        std::string varName;
+        
+        // Check if pattern matches
+        if (auto* wildcard = dynamic_cast<WildcardPattern*>(matchCase.pattern.get())) {
+            // Wildcard always matches
+            matched = true;
+        } else if (auto* literal = dynamic_cast<LiteralPattern*>(matchCase.pattern.get())) {
+            // Literal pattern: check for equality
+            matched = (matchValue == literal->value);
+        } else if (auto* variable = dynamic_cast<VariablePattern*>(matchCase.pattern.get())) {
+            // Variable pattern: always matches and binds the value
+            matched = true;
+            boundValue = matchValue;
+            varName = variable->name;
+        }
+        
+        // If pattern matched, check guard condition if present
+        if (matched && matchCase.guard) {
+            // Create a new environment for guard evaluation
+            auto guardEnv = std::make_shared<Environment>(env);
+            
+            // If variable pattern, bind the variable in guard scope
+            if (!varName.empty()) {
+                guardEnv->define(varName, boundValue);
+            }
+            
+            // Evaluate guard in the new environment
+            auto previousEnv = env;
+            env = guardEnv;
+            Value guardResult = evaluate(*matchCase.guard);
+            env = previousEnv;
+            
+            // Check if guard evaluates to truthy value
+            if (!isTruthy(guardResult)) {
+                matched = false;
+            }
+        }
+        
+        // If everything matched, evaluate and return the result
+        if (matched) {
+            // Create a new environment for result evaluation
+            auto resultEnv = std::make_shared<Environment>(env);
+            
+            // If variable pattern, bind the variable in result scope
+            if (!varName.empty()) {
+                resultEnv->define(varName, boundValue);
+            }
+            
+            // Evaluate result in the new environment
+            auto previousEnv = env;
+            env = resultEnv;
+            Value result = evaluate(*matchCase.result);
+            env = previousEnv;
+            
+            return result;
+        }
+    }
+    
+    // No pattern matched
+    throw std::runtime_error("No matching pattern found in match expression");
 }
 
 // Statement visitors

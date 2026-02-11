@@ -40,6 +40,9 @@ class Parser {
 
     ExprPtr primary();
 
+    // Pattern parsing for match expressions
+    PatternPtr parsePattern();
+
     // Statement parsing
     StmtPtr statement();
     StmtPtr declaration();
