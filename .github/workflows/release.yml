@@ -1,0 +1,110 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false
+
+  build-release:
+    name: Build Release (${{ matrix.os }})
+    needs: create-release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact_name: izilang-linux-x64
+            binary_path: bin/Release/izi/izi
+          - os: macos-latest
+            artifact_name: izilang-macos-x64
+            binary_path: bin/Release/izi/izi
+          - os: windows-latest
+            artifact_name: izilang-windows-x64
+            binary_path: bin/Release/izi/izi.exe
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install premake5 (Ubuntu)
+      if: runner.os == 'Linux'
+      run: |
+        wget https://github.com/premake/premake-core/releases/download/v5.0.0-beta2/premake-5.0.0-beta2-linux.tar.gz
+        tar -xzf premake-5.0.0-beta2-linux.tar.gz
+        sudo mv premake5 /usr/local/bin/
+
+    - name: Install premake5 (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        brew install premake
+
+    - name: Install premake5 (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        choco install premake --version=5.0.0-beta2
+
+    - name: Build Release (Unix)
+      if: runner.os != 'Windows'
+      run: |
+        premake5 gmake2
+        make config=release -j$(nproc 2>/dev/null || sysctl -n hw.ncpu)
+
+    - name: Build Release (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        premake5 vs2022
+        msbuild IziLang.sln /p:Configuration=Release /m
+
+    - name: Package binary (Unix)
+      if: runner.os != 'Windows'
+      run: |
+        tar -czf ${{ matrix.artifact_name }}.tar.gz -C bin/Release/izi izi
+
+    - name: Package binary (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        7z a ${{ matrix.artifact_name }}.zip bin/Release/izi/izi.exe
+
+    - name: Upload Release Asset (Unix)
+      if: runner.os != 'Windows'
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        asset_path: ./${{ matrix.artifact_name }}.tar.gz
+        asset_name: ${{ matrix.artifact_name }}.tar.gz
+        asset_content_type: application/gzip
+
+    - name: Upload Release Asset (Windows)
+      if: runner.os == 'Windows'
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        asset_path: ./${{ matrix.artifact_name }}.zip
+        asset_name: ${{ matrix.artifact_name }}.zip
+        asset_content_type: application/zip

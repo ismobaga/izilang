@@ -16,3 +16,26 @@ test_simple_try.iz
 test_try_catch.iz
 test_try_no_exception.iz
 test_try_with_exception.iz
+
+# Build artifacts
+*.make
+Makefile
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+compile_commands.json
+
+# Package manager
+packages/
+.izi/
+node_modules/
+
+# LSP
+.clangd/
+.cache/
+
+# Temporary files
+/tmp/
+*.tmp
+*.log
