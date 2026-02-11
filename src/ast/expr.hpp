@@ -141,7 +141,8 @@ struct SetIndexExpr : Expr {
     }
 };
 
-// Forward declaration for statement types
+// Forward declaration for statement types (from stmt.hpp)
+// We only need FunctionExpr to reference these types, full definition is in stmt.hpp
 struct Stmt;
 using StmtPtr = std::unique_ptr<Stmt>;
 

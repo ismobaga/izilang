@@ -10,7 +10,7 @@ namespace izi {
 
 class Environment : public std::enable_shared_from_this<Environment> {
    public:
-    Environment() : parent(nullptr) {}
+    Environment() = default;
 
     explicit Environment(std::shared_ptr<Environment> enclosing)
         : parent(std::move(enclosing)) {}
