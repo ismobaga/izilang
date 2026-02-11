@@ -302,7 +302,9 @@ Value vmNativeToUpper(VM& vm, const std::vector<Value>& arguments) {
         throw std::runtime_error("Argument to toUpper() must be a string.");
     }
     std::string str = std::get<std::string>(arguments[0]);
-    std::transform(str.begin(), str.end(), str.begin(), ::toupper);
+    std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) {
+        return std::toupper(c);
+    });
     return str;
 }
 
@@ -314,7 +316,9 @@ Value vmNativeToLower(VM& vm, const std::vector<Value>& arguments) {
         throw std::runtime_error("Argument to toLower() must be a string.");
     }
     std::string str = std::get<std::string>(arguments[0]);
-    std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+    std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) {
+        return std::tolower(c);
+    });
     return str;
 }
 

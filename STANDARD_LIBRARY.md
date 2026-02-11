@@ -12,8 +12,10 @@ Mathematical constants and functions for numerical computations.
 
 ### Constants (requires `import "std/math.iz"`)
 
-- **PI** = 3.14159265 - The mathematical constant π
-- **E** = 2.71828183 - Euler's number
+- **PI** = 3.14159265 - The mathematical constant π (8 decimal places)
+- **E** = 2.71828183 - Euler's number (8 decimal places)
+
+*Note: Due to a current limitation in the lexer, floating-point constants are limited to 10 digits total. For higher-precision calculations, define your own constants or use the pow() function.*
 
 ### Functions (available globally)
 
@@ -174,6 +176,12 @@ New line added.");
 - Array functions (map, filter, reduce, sort, reverse, concat, slice) return new arrays and don't mutate originals
 - Exception: `push` and `pop` mutate the array in-place
 - String functions return new strings (strings are immutable)
+- File I/O functions use POSIX `stat` for `fileExists()`, which may have platform limitations on Windows
+
+## Known Limitations
+
+- Mathematical constants (PI, E) are limited to 8 decimal places due to a lexer limitation
+- The `fileExists()` function uses `<sys/stat.h>` which is POSIX-specific and may not work on all platforms
 
 ## Running Tests
 
