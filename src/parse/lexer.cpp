@@ -143,6 +143,7 @@ void Lexer::string() {
     
     // Track parts of the interpolated string
     bool hasInterpolation = false;
+    bool emittedTokenForThisString = false;  // Track if we've emitted any tokens for this string
     int partStart = current;  // Start of current string part (after opening quote)
     
     while (peek() != '"' && !isAtEnd()) {
@@ -159,8 +160,9 @@ void Lexer::string() {
                 
                 // Emit PLUS for concatenation
                 tokens.emplace_back(TokenType::PLUS, "+", line, column);
-            } else if (partStart == stringStart + 1 && tokens.empty()) {
-                // Empty string at the beginning - no token needed yet
+                emittedTokenForThisString = true;
+            } else if (!emittedTokenForThisString) {
+                // Empty string at the beginning of this specific string - no token needed yet
             } else {
                 // Empty string in the middle, emit empty string
                 tokens.emplace_back(TokenType::STRING, "\"\"", stringStartLine, stringStartColumn);
@@ -174,27 +176,26 @@ void Lexer::string() {
             // Emit str( to wrap the expression
             tokens.emplace_back(TokenType::IDENTIFIER, "str", line, column);
             tokens.emplace_back(TokenType::LEFT_PAREN, "(", line, column);
+            emittedTokenForThisString = true;
             
             // Tokenize the expression inside ${}
             int braceDepth = 1;
             while (braceDepth > 0 && !isAtEnd()) {
-                start = current;
-                startLine = line;
-                startColumn = column;
-                
                 if (peek() == '{') {
                     braceDepth++;
-                    scanToken();
                 } else if (peek() == '}') {
                     braceDepth--;
                     if (braceDepth == 0) {
                         advance();  // Consume closing }
                         break;
                     }
-                    scanToken();
-                } else {
-                    scanToken();
                 }
+                
+                // Scan the token normally
+                start = current;
+                startLine = line;
+                startColumn = column;
+                scanToken();
             }
             
             if (braceDepth != 0) {

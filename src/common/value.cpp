@@ -1,6 +1,7 @@
 #include "value.hpp"
 #include "bytecode/mv_callable.hpp"
 #include <sstream>
+#include <cmath>
 
 namespace izi {
 
@@ -9,7 +10,13 @@ std::string valueToString(const Value& v) {
     if (std::holds_alternative<Nil>(v)) {
         oss << "nil";
     } else if (std::holds_alternative<double>(v)) {
-        oss << std::get<double>(v);
+        double num = std::get<double>(v);
+        // Check if it's a whole number to avoid trailing .0
+        if (num == std::floor(num) && std::isfinite(num)) {
+            oss << static_cast<long long>(num);
+        } else {
+            oss << num;
+        }
     } else if (std::holds_alternative<bool>(v)) {
         oss << (std::get<bool>(v) ? "true" : "false");
     } else if (std::holds_alternative<std::string>(v)) {
