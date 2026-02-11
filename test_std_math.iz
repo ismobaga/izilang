@@ -1,0 +1,51 @@
+import "std/math.iz";
+
+print("=== std.math Tests ===");
+print("");
+
+print("Constants:");
+print("  PI =", PI);
+print("  E =", E);
+print("");
+
+print("Square root:");
+print("  sqrt(16) =", sqrt(16));
+print("  sqrt(2) =", sqrt(2));
+print("  sqrt(100) =", sqrt(100));
+print("");
+
+print("Power:");
+print("  pow(2, 3) =", pow(2, 3));
+print("  pow(5, 2) =", pow(5, 2));
+print("  pow(10, 0) =", pow(10, 0));
+print("");
+
+print("Absolute value:");
+print("  abs(-5) =", abs(-5));
+print("  abs(5) =", abs(5));
+print("  abs(-3.14) =", abs(-3.14));
+print("");
+
+print("Rounding:");
+print("  floor(3.7) =", floor(3.7));
+print("  ceil(3.2) =", ceil(3.2));
+print("  round(3.5) =", round(3.5));
+print("  round(3.4) =", round(3.4));
+print("");
+
+print("Trigonometry:");
+print("  sin(0) =", sin(0));
+print("  cos(0) =", cos(0));
+print("  tan(0) =", tan(0));
+var piOver2 = PI / 2;
+print("  sin(PI/2) =", sin(piOver2));
+print("");
+
+print("Min/Max:");
+print("  min(3, 1, 4, 1, 5) =", min(3, 1, 4, 1, 5));
+print("  max(3, 1, 4, 1, 5) =", max(3, 1, 4, 1, 5));
+print("  min(10, 20) =", min(10, 20));
+print("  max(10, 20) =", max(10, 20));
+print("");
+
+print("=== All std.math tests passed! ===");

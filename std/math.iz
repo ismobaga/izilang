@@ -1,7 +1,2 @@
-// std.math - Mathematical functions
-// All native mathematical functions (sqrt, pow, abs, floor, ceil, round, sin, cos, tan, min, max)
-// are registered in the VM and available globally.
-// This module provides common mathematical constants.
-
 export var PI = 3.14159265;
 export var E = 2.71828183;

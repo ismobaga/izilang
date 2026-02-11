@@ -1,4 +1,0 @@
-import "std/math.iz";
-print("=== std.math Tests ===");
-print("");
-print("PI =", PI);

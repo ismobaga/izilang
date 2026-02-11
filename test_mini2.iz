@@ -1,3 +1,0 @@
-import "std/math.iz";
-print("Testing import");
-print("PI =", PI);
