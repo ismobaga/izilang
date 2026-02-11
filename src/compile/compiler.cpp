@@ -404,7 +404,8 @@ void BytecodeCompiler::visit(TryStmt& stmt) {
         chunk.code[catchOffsetPos] = (catchOffset >> 8) & 0xff;
         chunk.code[catchOffsetPos + 1] = catchOffset & 0xff;
         
-        // Pop exception from stack (it was pushed by handler)
+        // Pop exception from stack - it was pushed by the exception handler
+        // and bound to the catch variable as a global
         emitOp(OpCode::POP);
         
         // Emit catch block body

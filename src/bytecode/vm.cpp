@@ -411,7 +411,9 @@ bool VM::handleException(const Value& exception) {
             // Push exception value to stack
             push(exception);
             
-            // Set the catch variable as a global (simplified approach)
+            // Set the catch variable as a global
+            // NOTE: This is a simplification - ideally catch variables should be local to the catch block
+            // However, the current VM implementation uses globals for all variables accessed by name
             globals[handler.catchVariable] = exception;
             
             // Jump to catch block
@@ -422,8 +424,8 @@ bool VM::handleException(const Value& exception) {
         }
         
         // If there's only a finally block (no catch), jump to it
-        // But in this case, we should re-throw after finally
-        // For now, we'll just execute finally and return true
+        // NOTE: In a full implementation, the exception should be re-thrown after finally executes
+        // For this initial implementation, we execute the finally block and consider the exception handled
         if (handler.finallyIp != nullptr) {
             // Jump to finally block
             currentFrame()->ip = handler.finallyIp;
