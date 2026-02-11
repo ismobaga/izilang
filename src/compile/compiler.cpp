@@ -370,6 +370,18 @@ void BytecodeCompiler::visit(ContinueStmt& /*stmt*/) {
     emitLoop(loopStack.back().loopStart);
 }
 
+void BytecodeCompiler::visit(TryStmt& /*stmt*/) {
+    // TODO: Implement try-catch-finally for bytecode VM
+    // For now, this is a placeholder that will throw an error
+    throw std::runtime_error("Try-catch-finally is not yet implemented in bytecode VM.");
+}
+
+void BytecodeCompiler::visit(ThrowStmt& /*stmt*/) {
+    // TODO: Implement throw for bytecode VM
+    // For now, this is a placeholder that will throw an error
+    throw std::runtime_error("Throw statement is not yet implemented in bytecode VM.");
+}
+
 std::string BytecodeCompiler::normalizeModulePath(const std::string& path) {
     // Turn "math" into "math.iz"
     if (path.size() >= 3 && path.ends_with(".iz")) {
