@@ -77,6 +77,7 @@ GENERATED += $(OBJDIR)/interpreter.o
 GENERATED += $(OBJDIR)/lexer.o
 GENERATED += $(OBJDIR)/native.o
 GENERATED += $(OBJDIR)/parser.o
+GENERATED += $(OBJDIR)/test_collections.o
 GENERATED += $(OBJDIR)/test_integration.o
 GENERATED += $(OBJDIR)/test_lexer.o
 GENERATED += $(OBJDIR)/test_main.o
@@ -94,6 +95,7 @@ OBJECTS += $(OBJDIR)/interpreter.o
 OBJECTS += $(OBJDIR)/lexer.o
 OBJECTS += $(OBJDIR)/native.o
 OBJECTS += $(OBJDIR)/parser.o
+OBJECTS += $(OBJDIR)/test_collections.o
 OBJECTS += $(OBJDIR)/test_integration.o
 OBJECTS += $(OBJDIR)/test_lexer.o
 OBJECTS += $(OBJDIR)/test_main.o
@@ -199,6 +201,9 @@ $(OBJDIR)/lexer.o: ../src/parse/lexer.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/parser.o: ../src/parse/parser.cpp
+	@echo "$(notdir $<)"
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/test_collections.o: test_collections.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/test_integration.o: test_integration.cpp

@@ -1,4 +1,0 @@
-var arr = [2, 3];
-print("Before:", arr);
-arr = unshift(arr, 1);
-print("After unshift(1):", arr);

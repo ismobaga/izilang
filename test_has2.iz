@@ -1,3 +1,0 @@
-var person = {"name": "Alice"};
-var result = has(person, "name");
-print("Result:", result);
