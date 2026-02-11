@@ -534,9 +534,9 @@ ExprPtr Parser::primary() {
             
             cases.emplace_back(std::move(pattern), std::move(guard), std::move(result));
             
-            // Consume comma if present (allows trailing comma)
+            // Consume comma if present (allows trailing comma and optional commas)
             if (!check(TokenType::RIGHT_BRACE)) {
-                consume(TokenType::COMMA, "Expect ',' or '}' after match case.");
+                match({TokenType::COMMA});  // Comma is optional
             }
         }
         

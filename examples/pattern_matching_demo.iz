@@ -1,0 +1,101 @@
+// Pattern Matching Demo for IziLang
+
+print("=== IziLang Pattern Matching Demo ===\n");
+
+// Example 1: Basic literal patterns
+print("1. Basic Literal Patterns:");
+fn greet(lang) {
+    return match lang {
+        "en" => "Hello",
+        "fr" => "Bonjour",
+        "es" => "Hola",
+        "de" => "Guten Tag",
+        _ => "Unknown language"
+    };
+}
+print("  greet('en') = " + greet("en"));
+print("  greet('fr') = " + greet("fr"));
+print("  greet('jp') = " + greet("jp"));
+print("");
+
+// Example 2: Variable patterns with guards
+print("2. Variable Patterns with Guards:");
+fn describe(value) {
+    return match value {
+        0 => "zero",
+        1 => "one",
+        x if x > 0 => "positive",
+        x if x < 0 => "negative",
+        _ => "unknown"
+    };
+}
+print("  describe(0) = " + describe(0));
+print("  describe(1) = " + describe(1));
+print("  describe(42) = " + describe(42));
+print("  describe(-10) = " + describe(-10));
+print("");
+
+// Example 3: Range classification
+print("3. Range Classification:");
+fn classify(n) {
+    return match n {
+        x if x > 0 and x < 10 => "small positive",
+        x if x >= 10 and x < 100 => "medium positive",
+        x if x >= 100 => "large positive",
+        x if x < 0 and x > -10 => "small negative",
+        x if x <= -10 => "large negative",
+        _ => "zero"
+    };
+}
+print("  classify(5) = " + classify(5));
+print("  classify(50) = " + classify(50));
+print("  classify(500) = " + classify(500));
+print("  classify(-3) = " + classify(-3));
+print("  classify(-50) = " + classify(-50));
+print("  classify(0) = " + classify(0));
+print("");
+
+// Example 4: Nested match expressions
+print("4. Nested Match Expressions:");
+fn checkPair(x, y) {
+    return match x {
+        0 => match y {
+            0 => "both zero",
+            _ => "x is zero"
+        },
+        _ => match y {
+            0 => "y is zero",
+            _ => "neither zero"
+        }
+    };
+}
+print("  checkPair(0, 0) = " + checkPair(0, 0));
+print("  checkPair(0, 5) = " + checkPair(0, 5));
+print("  checkPair(3, 0) = " + checkPair(3, 0));
+print("  checkPair(3, 7) = " + checkPair(3, 7));
+print("");
+
+// Example 5: Boolean patterns
+print("5. Boolean Patterns:");
+fn boolToWord(b) {
+    return match b {
+        true => "yes",
+        false => "no",
+        _ => "not a boolean"
+    };
+}
+print("  boolToWord(true) = " + boolToWord(true));
+print("  boolToWord(false) = " + boolToWord(false));
+print("");
+
+// Example 6: Match as expression (not in function)
+print("6. Match as Direct Expression:");
+var result = match 42 {
+    0 => "nothing",
+    x if x < 50 => "less than 50",
+    _ => "50 or more"
+};
+print("  result = " + result);
+print("");
+
+print("=== Demo Complete ===");
