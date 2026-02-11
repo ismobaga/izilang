@@ -38,3 +38,47 @@ make config=release
 # Run
 ./bin/Debug/izi/izi test.iz
 ```
+
+### Testing
+
+The project includes comprehensive unit and integration tests using the Catch2 framework.
+
+#### Running Tests
+
+```bash
+# Build the tests
+make config=debug
+
+# Run all tests
+./bin/Debug/tests/tests
+
+# Run specific tests by tag
+./bin/Debug/tests/tests [lexer]
+./bin/Debug/tests/tests [value]
+./bin/Debug/tests/tests [integration]
+
+# List all available tests
+./bin/Debug/tests/tests --list-tests
+
+# Run tests with verbose output
+./bin/Debug/tests/tests -s
+```
+
+#### Test Coverage
+
+The test suite includes:
+
+- **Unit Tests**:
+  - Lexer tests: Tokenization of operators, keywords, literals, strings, and numbers
+  - Value tests: Type checking, truthiness, and operations on different value types
+  
+- **Integration Tests**:
+  - Arithmetic expressions (addition, subtraction, multiplication, division)
+  - Variable declaration and assignment
+  - String operations and concatenation
+  - Boolean operations and comparisons
+  - Control flow (if/else statements)
+  - Loops (while loops)
+  - Functions (declaration, calls, recursion)
+  - Arrays (creation, access, assignment)
+  - Maps (creation, access, assignment)

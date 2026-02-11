@@ -32,3 +32,40 @@ systemversion "latest"
 
 filter "system:linux"
 links {"m", "dl", "pthread"}
+
+project "tests"
+location "tests"
+kind "ConsoleApp"
+language "C++"
+staticruntime "on"
+
+targetdir("bin/" .. outputdir .. "/%{prj.name}")
+objdir("obj/" .. outputdir .. "/%{prj.name}")
+
+files {
+    "tests/**.cpp",
+    "src/**.cpp"
+}
+
+removefiles {
+    "src/main.cpp"  -- Exclude main.cpp as we have our own test main
+}
+
+includedirs {
+    "src",
+    "tests"
+}
+
+filter "configurations:Debug"
+runtime "Debug"
+symbols "on"
+
+filter "configurations:Release"
+runtime "Release"
+optimize "on"
+
+filter "system:windows"
+systemversion "latest"
+
+filter "system:linux"
+links {"m", "dl", "pthread"}
