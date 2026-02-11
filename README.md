@@ -2,28 +2,170 @@
 
 # IziLang
 
-A programming language interpreter with improved error reporting.
+**Version 0.2.0** - A modern, expressive programming language with excellent tooling and developer experience.
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/ismobaga/izilang/actions)
 
 ## Features
 
-### Improved Error Messages
+### 🚀 Professional CLI Toolchain
 
-IziLang provides clear, context-rich error messages with:
-- **Source location tracking**: Errors show line and column numbers
-- **Code snippets**: See the exact line where the error occurred  
-- **Visual indicators**: Carets (^) point to the error location
-- **Color-coded output**: Errors are highlighted for easy reading
-- **Descriptive messages**: Clear explanations of what went wrong
+IziLang provides a complete command-line interface for modern development workflows:
 
-Example error output:
-```
-Runtime Error at line 3, column 18:
-  3 | var result = name + age;
-    |                  ^
-Cannot add string and number. Operands must be two numbers or two strings.
+```bash
+izi run script.iz      # Execute code
+izi build app.iz       # Compile without running
+izi check src/*.iz     # Fast syntax validation
+izi test               # Run test suite
+izi repl               # Interactive REPL
 ```
 
-### Build Instructions
+**[→ See CLI Reference](docs/CLI_REFERENCE.md)**
+
+### 🎯 Excellent Error Messages
+
+Clear, actionable error messages with file location, line numbers, and visual indicators:
+
+```
+In file 'script.iz':
+Runtime Error at line 3, column 10:
+  3 | var z = x + y;
+    |          ^
+Cannot add number and string. Operands must be two numbers or two strings.
+```
+
+**[→ See Error Guide](docs/ERRORS_TROUBLESHOOTING.md)**
+
+### 💻 Interactive REPL
+
+Powerful REPL with multi-line input, special commands, and error recovery:
+
+```
+IziLang 0.2.0 REPL
+> fn add(x, y) {
+... return x + y;
+... }
+> print(add(5, 3));
+8
+> :help    # Show available commands
+```
+
+**[→ Getting Started](docs/GETTING_STARTED.md)**
+
+### 🔧 Rich Language Features
+
+- **Variables & Functions** - First-class functions, closures
+- **Collections** - Arrays, maps, sets with rich operations
+- **Pattern Matching** - Expressive match expressions
+- **Exception Handling** - try/catch/finally blocks
+- **Module System** - Import/export for code organization
+- **String Interpolation** - Template literals with expressions
+
+### 📦 Dual Execution Modes
+
+Choose between tree-walker interpreter or bytecode VM:
+
+```bash
+izi run --interp script.iz    # Tree-walker (default)
+izi run --vm script.iz         # Bytecode VM (faster)
+```
+
+## Quick Start
+
+### Installation
+
+```bash
+# Clone repository
+git clone https://github.com/ismobaga/izilang.git
+cd izilang
+
+# Build
+./premake5 gmake2
+make config=release
+
+# Optional: Add to PATH
+export PATH="$PATH:$(pwd)/bin/Release/izi"
+```
+
+### Your First Program
+
+Create `hello.iz`:
+
+```izilang
+fn greet(name) {
+    print("Hello, " + name + "!");
+}
+
+greet("World");
+```
+
+Run it:
+
+```bash
+izi hello.iz
+# Output: Hello, World!
+```
+
+**[→ Complete Getting Started Guide](docs/GETTING_STARTED.md)**
+
+## Documentation
+
+- **[Getting Started](docs/GETTING_STARTED.md)** - Installation, basics, examples
+- **[CLI Reference](docs/CLI_REFERENCE.md)** - Complete command-line guide
+- **[Editor Setup](docs/EDITOR_SETUP.md)** - VS Code, Vim, Emacs integration
+- **[Troubleshooting](docs/ERRORS_TROUBLESHOOTING.md)** - Common errors and solutions
+- **[Roadmap](docs/ROADMAP.md)** - Development plans and milestones
+
+## Language Examples
+
+### Functions & Closures
+
+```izilang
+fn makeCounter() {
+    var count = 0;
+    return fn() {
+        count = count + 1;
+        return count;
+    };
+}
+
+var counter = makeCounter();
+print(counter());  // 1
+print(counter());  // 2
+```
+
+### Pattern Matching
+
+```izilang
+fn fizzbuzz(n) {
+    match (n % 15, n % 3, n % 5) {
+        case (0, _, _) => "FizzBuzz",
+        case (_, 0, _) => "Fizz",
+        case (_, _, 0) => "Buzz",
+        case _ => toString(n)
+    }
+}
+```
+
+### Collections
+
+```izilang
+var fruits = ["apple", "banana", "cherry"];
+push(fruits, "date");
+
+var person = {
+    name: "Alice",
+    age: 30,
+    greet: fn() { print("Hello!"); }
+};
+```
+
+**[→ More examples in examples/](examples/)**
+
+## Development
+
+### Building from Source
 
 ```bash
 # Generate build files
@@ -34,51 +176,112 @@ make config=debug
 
 # Build release version  
 make config=release
-
-# Run
-./bin/Debug/izi/izi test.iz
 ```
 
-### Testing
+Binary location: `./bin/Debug/izi/izi` or `./bin/Release/izi/izi`
 
-The project includes comprehensive unit and integration tests using the Catch2 framework.
-
-#### Running Tests
+### Running Tests
 
 ```bash
-# Build the tests
+# Build tests
 make config=debug
 
+# Run C++ unit tests
+./bin/Debug/tests/tests
+
+# Run IziLang test files
+izi test
+```
+
+#### C++ Test Suite
+
+Comprehensive unit and integration tests using Catch2:
+
+```bash
 # Run all tests
 ./bin/Debug/tests/tests
 
-# Run specific tests by tag
+# Run specific test categories
 ./bin/Debug/tests/tests [lexer]
-./bin/Debug/tests/tests [value]
 ./bin/Debug/tests/tests [integration]
 
-# List all available tests
+# List available tests
 ./bin/Debug/tests/tests --list-tests
 
-# Run tests with verbose output
+# Verbose output
 ./bin/Debug/tests/tests -s
 ```
 
-#### Test Coverage
+**Test Coverage:**
+- Lexer: Tokenization, operators, keywords, literals
+- Parser: Expressions, statements, precedence
+- Interpreter: Variables, functions, control flow
+- Collections: Arrays, maps, sets
+- Pattern matching, exceptions, modules
+- VM: Bytecode compilation and execution
 
-The test suite includes:
+## Project Structure
 
-- **Unit Tests**:
-  - Lexer tests: Tokenization of operators, keywords, literals, strings, and numbers
-  - Value tests: Type checking, truthiness, and operations on different value types
-  
-- **Integration Tests**:
-  - Arithmetic expressions (addition, subtraction, multiplication, division)
-  - Variable declaration and assignment
-  - String operations and concatenation
-  - Boolean operations and comparisons
-  - Control flow (if/else statements)
-  - Loops (while loops)
-  - Functions (declaration, calls, recursion)
-  - Arrays (creation, access, assignment)
-  - Maps (creation, access, assignment)
+```
+izilang/
+├── src/              # Source code
+│   ├── ast/          # Abstract syntax tree
+│   ├── bytecode/     # VM and bytecode compiler
+│   ├── common/       # Shared utilities (CLI, errors, values)
+│   ├── compile/      # Compilation pipeline
+│   ├── interp/       # Tree-walker interpreter
+│   └── parse/        # Lexer and parser
+├── tests/            # C++ unit tests (Catch2)
+├── examples/         # Example IziLang programs
+├── docs/             # Documentation
+├── tools/            # Additional tools
+│   ├── lsp/          # Language Server Protocol (coming soon)
+│   ├── pkg/          # Package manager (coming soon)
+│   └── vscode-extension/  # VS Code extension
+└── std/              # Standard library modules
+```
+
+## Contributing
+
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+Areas where help is needed:
+- Language features and standard library
+- Documentation and examples
+- Editor extensions and tooling
+- Bug fixes and performance improvements
+
+## Roadmap
+
+**v0.2** (Current) - Tooling & Developer Experience ✅
+- ✅ CLI expansion (run, build, check, test, repl)
+- ✅ Enhanced error messages with file context
+- ✅ Interactive REPL with special commands
+- 🚧 Code formatter (`izi fmt`)
+- 🚧 LSP server MVP
+
+**v0.3** (Planned) - Language Power & Performance
+- Static/gradual typing
+- Advanced OOP features
+- Performance optimizations
+- Concurrency primitives
+
+**[→ Full Roadmap](docs/ROADMAP.md)**
+
+## License
+
+MIT License - see [LICENSE](LICENSE) file for details.
+
+## Community & Support
+
+- **Issues**: [GitHub Issues](https://github.com/ismobaga/izilang/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/ismobaga/izilang/discussions)
+- **Documentation**: [docs/](docs/)
+
+## Acknowledgments
+
+IziLang is inspired by modern languages like Python, JavaScript, and Rust, with a focus on developer ergonomics and clear error messages.
+
+---
+
+**Made with ❤️ by the IziLang team**
