@@ -1,4 +1,0 @@
-import "math";
-var a = 2 / 2;
-print("a =", a);
-print("math.pi =", math.pi);
