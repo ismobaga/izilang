@@ -78,36 +78,50 @@ Once a decision is marked **frozen (🔒)**, it cannot be changed without a majo
 ## 2. Execution Model
 
 ### 2.1 Dual Execution Modes
-**Status**: 🔓 **OPEN** (may consolidate to single mode)
+**Status**: 🔒 **FROZEN** (for v0.1)
 
-**Decision**: Support **both tree-walking interpreter and bytecode VM**.
+**Decision for v0.1**: **Hybrid execution model** - interpreter as default, VM for future optimization.
 
-#### Tree-Walking Interpreter
+#### Tree-Walking Interpreter (Default)
 - Direct AST traversal
-- Slower but easier to debug
-- Default mode for development
+- Easier to debug with clear stack traces
+- **Default mode for v0.1** (development and production)
+- Uses C++ exceptions for control flow
+- Stable and well-tested
 
-#### Bytecode Virtual Machine
-- Stack-based architecture
-- Faster execution (in theory)
-- Production mode
+#### Bytecode Virtual Machine (Experimental)
+- Stack-based architecture with 30+ opcodes
+- Intended for future performance optimization
+- **Status for v0.1**: Implemented but not recommended for production
+- Available via `--vm` flag for testing
+- Full instruction set implemented
+
+**Official Execution Model for v0.1**:
+- **Development**: Tree-walking interpreter (default)
+- **Production**: Tree-walking interpreter (default)
+- **Experimental**: Bytecode VM (opt-in via `--vm` flag)
 
 **Rationale**:
-- Interpreter allows rapid development and clear errors
-- VM provides performance when needed
-- Similar approach to Python (CPython has both modes conceptually)
+- Interpreter provides excellent error messages and debugging experience
+- Interpreter is stable and passes all test cases
+- VM provides path for future performance improvements
+- Hybrid approach allows gradual transition to VM in future versions
+- Similar to Python (CPython has both interpreter and bytecode modes)
 
 **Alternatives Considered**:
-1. **Interpreter only** - Simple but slow for production
-2. **VM only** - Faster but harder to debug
-3. **JIT compilation** - Too complex for v0.1
+1. **Interpreter only** - Simple but limits future performance
+2. **VM only** - Faster but harder to debug, not stable for v0.1
+3. **JIT compilation** - Too complex for v0.1, deferred to v1.0+
 
 **Implications**:
-- More code to maintain (two execution paths)
-- VM currently has bugs (needs fixing)
-- May consolidate in future if VM proves unreliable
+- Two execution paths to maintain (interpreter is priority)
+- VM can be improved in future versions without breaking changes
+- Users can opt into VM for performance testing
+- May consolidate to VM-only in v1.0+ if VM becomes stable
 
-**Current Status**: Interpreter is default; VM is experimental.
+**Current Status**: 
+- Interpreter: ✅ Production-ready
+- VM: ⚠️ Functional but not recommended for critical applications
 
 ---
 
@@ -238,45 +252,40 @@ if ("hello") { ... }       // Non-empty string is truthy
 ## 4. Memory Management
 
 ### 4.1 Garbage Collection Strategy
-**Status**: 🔓 **OPEN** (critical decision needed)
+**Status**: 🔒 **FROZEN** (for v0.1)
+
+**Decision for v0.1**: **Reference Counting** using `std::shared_ptr` (Option 1).
 
 **Current State**: Using `std::shared_ptr` (reference counting).
 
-**Decision Needed**: Choose explicit GC algorithm.
-
-#### Option 1: Reference Counting (Current)
-**Pros**:
-- Simple to implement (already done)
-- Predictable deallocation
+**Rationale for v0.1**:
+- Already implemented and working
+- Simple and predictable behavior
+- Sufficient for v0.1 use cases
 - Low latency (no stop-the-world pauses)
+- Enables rapid development and testing
 
-**Cons**:
-- Cannot handle circular references
+**Known Limitations**:
+- Cannot handle circular references (user must avoid creating them)
 - Overhead on every assignment
-- Slower than tracing GC for some workloads
+- May not scale for very large programs
+
+**Future Evolution**:
+- v0.2+: Add cycle detection warnings
+- v0.3+: Consider Mark-and-Sweep GC with generational extension for better circular reference handling
+- v1.0+: Evaluate hybrid approach (Reference Counting + Cycle Detection)
+
+**Alternative Options Considered**:
 
 #### Option 2: Mark-and-Sweep GC
-**Pros**:
-- Handles circular references
-- Industry standard (used by Python, Ruby, Go)
-- Can be generational
-
-**Cons**:
-- Stop-the-world pauses
-- More complex implementation
+**Pros**: Handles circular references, industry standard (Python, Ruby, Go)  
+**Cons**: Stop-the-world pauses, more complex implementation  
+**Decision**: Deferred to v0.3+
 
 #### Option 3: Hybrid (Reference Counting + Cycle Detection)
-**Pros**:
-- Best of both worlds
-- Used by Swift
-
-**Cons**:
-- Most complex
-- Two GC algorithms to maintain
-
-**Recommendation**: **Mark-and-Sweep** with generational extension (Option 2).
-
-**Timeline**: Decision by end of Q1 2026, implementation in Q3 2026.
+**Pros**: Best of both worlds, used by Swift  
+**Cons**: Most complex, two GC algorithms to maintain  
+**Decision**: Deferred to v1.0+
 
 ---
 
@@ -590,24 +599,51 @@ import myFunction from "./module.iz";
 ---
 
 ### 8.2 Global Namespace
-**Status**: 🔓 **OPEN** (needs improvement)
+**Status**: 🔒 **FROZEN** (for v0.1 behavior, improvements planned for v0.2)
 
-**Current Behavior**: All imported functions become global.
+**Current Behavior (v0.1)**: Named imports add functions to global namespace.
 
-**Problem**:
+**Decision for v0.1**: Accept current global namespace behavior with documented workarounds.
+
+**Current Import Behavior**:
 ```izi
-import { sqrt } from "std.math";
-sqrt(16);  // Works
+import { sqrt } from "math";
+sqrt(16);  // Works - function is global
 
-// But also:
-var sqrt = 42;  // Oops, shadowed the function!
+// Namespace objects via wildcard imports
+import * as math from "math";
+math["sqrt"](16);  // Works - access via map indexing
 ```
 
-**Proposed Fix** (v0.2):
-- Namespaced imports: `std.math.sqrt(16)`
-- Explicit global: `import { sqrt as globalSqrt } from "std.math"`
+**Known Issues**:
+```izi
+import { sqrt } from "math";
+var sqrt = 42;  // Shadows the function!
+```
 
-**Decision**: Fix in v0.2 (breaking change).
+**v0.1 Workarounds**:
+- Use wildcard imports for namespacing: `import * as math from "math"`
+- Access members via bracket notation: `math["sqrt"](16)`
+- Avoid variable names that conflict with imported functions
+
+**Namespace Isolation Rules for v0.1**:
+1. **Named imports** create global bindings in current scope
+2. **Wildcard imports** create a single module object binding
+3. Module objects are Maps containing all exported functions
+4. No automatic namespace prefix for named imports
+5. Users are responsible for avoiding name conflicts
+
+**Planned Improvements (v0.2)**:
+- Add dot notation support for module objects: `math.sqrt(16)`
+- Add namespace prefix option: `import { sqrt as mathSqrt } from "math"`
+- Add warnings for name shadowing
+- Consider making wildcard imports the recommended default
+
+**Rationale for v0.1 Decision**:
+- Current implementation is functional
+- Breaking changes deferred to v0.2 for stability
+- Wildcard imports provide adequate namespacing
+- Allows users to choose their preferred style
 
 ---
 
@@ -807,18 +843,33 @@ IziLang v0.3   | 80x      | 30ms (goal)
 ## 11. Backward Compatibility
 
 ### 11.1 Pre-v1.0 Policy
-**Status**: 🔒 **FROZEN**
+**Status**: 🔒 **FROZEN** (for v0.1)
 
 **Decision**: Breaking changes are **allowed** before v1.0.
 
-**Rules**:
-- **v0.x**: Breaking changes permitted in minor versions
-- Document all breaking changes in changelog
-- Provide migration guide for major changes
+**Rules for v0.x releases**:
+- Breaking changes are **permitted** in minor versions (e.g., v0.1 → v0.2)
+- All breaking changes **must be documented** in CHANGELOG.md with clear migration paths
+- **Deprecation warnings** should be issued one minor version before removal when practical
+- Major breaking changes require a migration guide in docs/
+- Language syntax can change until v0.2 (then frozen for stability)
 
 **Rationale**:
-- Allows rapid iteration
-- Avoid locking in bad decisions early
+- Allows rapid iteration during early development
+- Prevents locking in poor design decisions
+- Gives flexibility to improve based on user feedback
+- Standard practice for pre-1.0 software (per SemVer spec)
+
+**Examples of Acceptable Breaking Changes**:
+- Changing keyword syntax (v0.1 → v0.2)
+- Modifying standard library API
+- Changing error message formats
+- Adjusting module resolution rules
+
+**Commitment to Users**:
+- Breaking changes will be clearly announced
+- We will maintain a detailed changelog
+- Migration tools or guides will be provided for major changes
 
 ---
 
@@ -868,17 +919,18 @@ PATCH: Bug fixes (backward compatible)
 
 ## Summary of Critical Decisions
 
-| Decision | Status | Target |
-|----------|--------|--------|
-| **Execution Model** | 🔓 Open | v0.1 (review) |
-| **Type System** | 🔒 Frozen | Dynamic (v0.1), Gradual (v0.2+) |
-| **Memory Management** | 🔓 Open | v0.3 (GC decision needed) |
-| **Error Handling** | 🔒 Frozen | Exceptions with try/catch |
-| **Concurrency** | 🔓 Open | v0.3 (async/await recommended) |
-| **Module System** | 🔒 Frozen | ES6-style imports |
-| **Stdlib Philosophy** | 🔒 Frozen | Batteries-included |
-| **Syntax** | 🔒 Frozen | C-like with modern features |
-| **Backward Compat** | 🔒 Frozen | Breaking until v1.0, SemVer after |
+| Decision | Status | Target | Notes |
+|----------|--------|--------|-------|
+| **Execution Model** | 🔒 Frozen | v0.1 | Hybrid: Interpreter default, VM experimental |
+| **Type System** | 🔒 Frozen | Dynamic (v0.1), Gradual (v0.2+) | Fully dynamic for v0.1 |
+| **Memory Management** | 🔒 Frozen | v0.1 (RC), v0.3 (M&S) | Reference counting for v0.1 |
+| **Error Handling** | 🔒 Frozen | Exceptions with try/catch | try/catch/finally implemented |
+| **Concurrency** | 🔓 Open | v0.3 | async/await recommended, deferred |
+| **Module System** | 🔒 Frozen | ES6-style imports | Named and wildcard imports |
+| **Stdlib Philosophy** | 🔒 Frozen | Batteries-included | 46+ native functions |
+| **Stdlib Namespacing** | 🔒 Frozen | v0.1 (global), v0.2 (improved) | Wildcard imports provide namespacing |
+| **Syntax** | 🔒 Frozen | C-like with modern features | Freeze complete at v0.2 |
+| **Backward Compat** | 🔒 Frozen | Breaking until v1.0, SemVer after | Pre-1.0 allows breaking changes |
 
 ---
 

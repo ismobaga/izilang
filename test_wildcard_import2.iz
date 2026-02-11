@@ -1,0 +1,3 @@
+import * as math from "math";
+var result = math["sqrt"](16);
+print(result);
