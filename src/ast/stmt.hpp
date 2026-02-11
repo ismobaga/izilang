@@ -181,10 +181,11 @@ struct ThrowStmt : public Stmt {
 // Class declaration (e.g., "class Point { ... }") (v0.3)
 struct ClassStmt : public Stmt {
     std::string name;
-    std::vector<VarStmt*> fields;      // Class fields
-    std::vector<FunctionStmt*> methods; // Class methods (including constructor)
+    std::vector<std::unique_ptr<VarStmt>> fields;      // Class fields (owned)
+    std::vector<std::unique_ptr<FunctionStmt>> methods; // Class methods (owned)
     
-    ClassStmt(std::string n, std::vector<VarStmt*> f, std::vector<FunctionStmt*> m)
+    ClassStmt(std::string n, std::vector<std::unique_ptr<VarStmt>> f, 
+              std::vector<std::unique_ptr<FunctionStmt>> m)
         : name(std::move(n)), fields(std::move(f)), methods(std::move(m)) {}
     
     void accept(StmtVisitor& v) override { v.visit(*this); }
