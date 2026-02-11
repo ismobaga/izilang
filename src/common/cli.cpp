@@ -5,7 +5,7 @@
 namespace izi {
 
 void CliOptions::printVersion() {
-    std::cout << "IziLang 0.1.0\n";
+    std::cout << IZILANG_VERSION << "\n";
 }
 
 void CliOptions::printHelp() {
@@ -63,7 +63,7 @@ CliOptions CliOptions::parse(int argc, char** argv) {
         }
         else if (arg == "-c") {
             if (i + 1 >= argc) {
-                std::cerr << "Error: -c requires a code argument\n";
+                std::cerr << "Error: -c requires a code string argument\n";
                 std::exit(1);
             }
             options.mode = ExecutionMode::Inline;

@@ -65,8 +65,11 @@ void runCode(const std::string& src, bool useVM, bool debug) {
 }
 
 void runRepl(bool useVM, bool debug) {
-    std::cout << "IziLang 0.1.0 REPL\n";
+    std::cout << IZILANG_VERSION << " REPL\n";
     std::cout << "Type 'exit()' or press Ctrl+D to quit\n\n";
+
+    // Set of valid exit commands
+    const std::unordered_set<std::string> exitCommands = {"exit()", "exit", "quit()", "quit"};
 
     std::string line;
     while (true) {
@@ -85,14 +88,23 @@ void runRepl(bool useVM, bool debug) {
         }
 
         // Check for exit command
-        if (line == "exit()" || line == "quit()" || line == "exit" || line == "quit") {
+        if (exitCommands.count(line) > 0) {
             break;
         }
 
         try {
             runCode(line, useVM, debug);
+        } catch (const std::exception& e) {
+            // Most errors are already printed by runCode
+            // This catch is for unexpected std::exception types
+            if (debug) {
+                std::cerr << "[DEBUG] Caught exception: " << e.what() << "\n";
+            }
         } catch (...) {
-            // Error already printed, continue REPL
+            // Catch any other exceptions and continue REPL
+            if (debug) {
+                std::cerr << "[DEBUG] Caught unknown exception\n";
+            }
         }
     }
 }

@@ -6,6 +6,9 @@
 
 namespace izi {
 
+// Version constant
+constexpr const char* IZILANG_VERSION = "IziLang 0.1.0";
+
 struct CliOptions {
     enum class ExecutionMode {
         File,         // Execute a file
