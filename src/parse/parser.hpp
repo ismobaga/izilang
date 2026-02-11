@@ -61,6 +61,10 @@ class Parser {
     StmtPtr exportStatement();
     StmtPtr tryStatement();
     StmtPtr throwStatement();
+    StmtPtr classDeclaration();
+
+    // Type annotation parsing (v0.3)
+    TypePtr parseTypeAnnotation();
 
     // Helper methods
     bool match(std::initializer_list<TokenType> types);

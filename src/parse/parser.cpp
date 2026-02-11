@@ -21,6 +21,7 @@ StmtPtr Parser::declaration() {
     try {
         if (match({TokenType::VAR})) return varDeclaration();
         if (match({TokenType::FN})) return functionDeclaration();
+        if (match({TokenType::CLASS})) return classDeclaration();
         if (match({TokenType::IMPORT})) return importStatement();
         if (match({TokenType::EXPORT})) return exportStatement();
         return statement();
@@ -33,13 +34,19 @@ StmtPtr Parser::declaration() {
 StmtPtr Parser::varDeclaration() {
     Token name = consume(TokenType::IDENTIFIER, "Expect variable name.");
 
+    // Parse optional type annotation
+    TypePtr typeAnnotation = nullptr;
+    if (match({TokenType::COLON})) {
+        typeAnnotation = parseTypeAnnotation();
+    }
+
     ExprPtr initializer = nullptr;
     if (match({TokenType::EQUAL})) {
         initializer = expression();
     }
 
     consume(TokenType::SEMICOLON, "Expect ';' after variable declaration.");
-    return std::make_unique<VarStmt>(std::string(name.lexeme), std::move(initializer));
+    return std::make_unique<VarStmt>(std::string(name.lexeme), std::move(initializer), std::move(typeAnnotation));
 }
 
 StmtPtr Parser::functionDeclaration() {
@@ -47,13 +54,27 @@ StmtPtr Parser::functionDeclaration() {
     consume(TokenType::LEFT_PAREN, "Expect '(' after function name.");
 
     std::vector<std::string> params;
+    std::vector<TypePtr> paramTypes;
     if (!check(TokenType::RIGHT_PAREN)) {
         do {
             Token param = consume(TokenType::IDENTIFIER, "Expect parameter name.");
             params.push_back(std::string(param.lexeme));
+            
+            // Parse optional parameter type annotation
+            TypePtr paramType = nullptr;
+            if (match({TokenType::COLON})) {
+                paramType = parseTypeAnnotation();
+            }
+            paramTypes.push_back(std::move(paramType));
         } while (match({TokenType::COMMA}));
     }
     consume(TokenType::RIGHT_PAREN, "Expect ')' after parameters.");
+
+    // Parse optional return type annotation
+    TypePtr returnType = nullptr;
+    if (match({TokenType::COLON})) {
+        returnType = parseTypeAnnotation();
+    }
 
     consume(TokenType::LEFT_BRACE, "Expect '{' before function body.");
     auto body = blockStatement();
@@ -68,7 +89,9 @@ StmtPtr Parser::functionDeclaration() {
     return std::make_unique<FunctionStmt>(
         std::string(name.lexeme),
         std::move(params),
-        std::move(bodyStmts));
+        std::move(bodyStmts),
+        std::move(paramTypes),
+        std::move(returnType));
 }
 
 StmtPtr Parser::importStatement() {
@@ -324,6 +347,160 @@ StmtPtr Parser::throwStatement() {
     return std::make_unique<ThrowStmt>(std::move(throwToken), std::move(value));
 }
 
+StmtPtr Parser::classDeclaration() {
+    Token name = consume(TokenType::IDENTIFIER, "Expect class name.");
+    consume(TokenType::LEFT_BRACE, "Expect '{' after class name.");
+    
+    std::vector<std::unique_ptr<VarStmt>> fields;
+    std::vector<std::unique_ptr<FunctionStmt>> methods;
+    
+    // Parse class body (fields and methods)
+    while (!check(TokenType::RIGHT_BRACE) && !isAtEnd()) {
+        if (match({TokenType::VAR})) {
+            // Parse field declaration
+            Token fieldName = consume(TokenType::IDENTIFIER, "Expect field name.");
+            
+            // Parse optional type annotation
+            TypePtr typeAnnotation = nullptr;
+            if (match({TokenType::COLON})) {
+                typeAnnotation = parseTypeAnnotation();
+            }
+            
+            // Optional initializer
+            ExprPtr initializer = nullptr;
+            if (match({TokenType::EQUAL})) {
+                initializer = expression();
+            }
+            
+            consume(TokenType::SEMICOLON, "Expect ';' after field declaration.");
+            fields.push_back(std::make_unique<VarStmt>(
+                std::string(fieldName.lexeme), 
+                std::move(initializer), 
+                std::move(typeAnnotation)
+            ));
+        } else if (match({TokenType::FN})) {
+            // Parse method declaration
+            Token methodName = consume(TokenType::IDENTIFIER, "Expect method name.");
+            consume(TokenType::LEFT_PAREN, "Expect '(' after method name.");
+            
+            std::vector<std::string> params;
+            std::vector<TypePtr> paramTypes;
+            if (!check(TokenType::RIGHT_PAREN)) {
+                do {
+                    Token param = consume(TokenType::IDENTIFIER, "Expect parameter name.");
+                    params.push_back(std::string(param.lexeme));
+                    
+                    // Parse optional parameter type annotation
+                    TypePtr paramType = nullptr;
+                    if (match({TokenType::COLON})) {
+                        paramType = parseTypeAnnotation();
+                    }
+                    paramTypes.push_back(std::move(paramType));
+                } while (match({TokenType::COMMA}));
+            }
+            consume(TokenType::RIGHT_PAREN, "Expect ')' after parameters.");
+            
+            // Parse optional return type annotation
+            TypePtr returnType = nullptr;
+            if (match({TokenType::COLON})) {
+                returnType = parseTypeAnnotation();
+            }
+            
+            consume(TokenType::LEFT_BRACE, "Expect '{' before method body.");
+            auto body = blockStatement();
+            
+            // Extract statements from BlockStmt
+            auto* blockPtr = dynamic_cast<BlockStmt*>(body.get());
+            std::vector<StmtPtr> bodyStmts;
+            if (blockPtr) {
+                bodyStmts = std::move(blockPtr->statements);
+            }
+            
+            methods.push_back(std::make_unique<FunctionStmt>(
+                std::string(methodName.lexeme),
+                std::move(params),
+                std::move(bodyStmts),
+                std::move(paramTypes),
+                std::move(returnType)
+            ));
+        } else {
+            throw error(peek(), "Expect 'var' or 'fn' in class body.");
+        }
+    }
+    
+    consume(TokenType::RIGHT_BRACE, "Expect '}' after class body.");
+    return std::make_unique<ClassStmt>(
+        std::string(name.lexeme),
+        std::move(fields),
+        std::move(methods)
+    );
+}
+
+// Type annotation parsing (v0.3)
+TypePtr Parser::parseTypeAnnotation() {
+    // Check for basic types
+    if (match({TokenType::IDENTIFIER})) {
+        std::string typeName = std::string(previous().lexeme);
+        
+        // Check for generic types (Array<T>, Map<K,V>)
+        if (match({TokenType::LESS})) {
+            if (typeName == "Array") {
+                TypePtr elementType = parseTypeAnnotation();
+                consume(TokenType::GREATER, "Expect '>' after array element type.");
+                return TypeAnnotation::array(std::move(elementType));
+            } else if (typeName == "Map") {
+                TypePtr keyType = parseTypeAnnotation();
+                consume(TokenType::COMMA, "Expect ',' between map key and value types.");
+                TypePtr valueType = parseTypeAnnotation();
+                consume(TokenType::GREATER, "Expect '>' after map value type.");
+                return TypeAnnotation::map(std::move(keyType), std::move(valueType));
+            } else {
+                throw error(previous(), "Unknown generic type '" + typeName + "'.");
+            }
+        }
+        
+        // Simple types
+        if (typeName == "Number") {
+            return TypeAnnotation::simple(TypeAnnotation::Kind::Number);
+        } else if (typeName == "String") {
+            return TypeAnnotation::simple(TypeAnnotation::Kind::String);
+        } else if (typeName == "Bool") {
+            return TypeAnnotation::simple(TypeAnnotation::Kind::Bool);
+        } else if (typeName == "Nil") {
+            return TypeAnnotation::simple(TypeAnnotation::Kind::Nil);
+        } else if (typeName == "Any") {
+            return TypeAnnotation::simple(TypeAnnotation::Kind::Any);
+        } else if (typeName == "Void") {
+            return TypeAnnotation::simple(TypeAnnotation::Kind::Void);
+        } else {
+            throw error(previous(), "Unknown type '" + typeName + "'.");
+        }
+    }
+    
+    // Check for function types: Function(T1, T2, ...) -> R
+    if (match({TokenType::FN})) {
+        consume(TokenType::LEFT_PAREN, "Expect '(' after 'Function'.");
+        
+        std::vector<TypePtr> paramTypes;
+        if (!check(TokenType::RIGHT_PAREN)) {
+            do {
+                paramTypes.push_back(parseTypeAnnotation());
+            } while (match({TokenType::COMMA}));
+        }
+        consume(TokenType::RIGHT_PAREN, "Expect ')' after function parameter types.");
+        
+        // Parse return type
+        TypePtr returnType = TypeAnnotation::simple(TypeAnnotation::Kind::Void);
+        if (match({TokenType::ARROW})) {
+            returnType = parseTypeAnnotation();
+        }
+        
+        return TypeAnnotation::function(std::move(paramTypes), std::move(returnType));
+    }
+    
+    throw error(peek(), "Expect type annotation.");
+}
+
 // Expression parsing (precedence climbing)
 ExprPtr Parser::expression() {
     return assignment();
@@ -336,12 +513,17 @@ ExprPtr Parser::assignment() {
         const Token& equals = previous();
         ExprPtr value = assignment();
 
-        // Variable for now
+        // Variable assignment
         if (auto var = dynamic_cast<VariableExpr*>(expr.get())) {
             return std::make_unique<AssignExpr>(var->name, std::move(value));
         }
+        // Index assignment: arr[i] = value
         if (auto indexExpr = dynamic_cast<IndexExpr*>(expr.get())) {
             return std::make_unique<SetIndexExpr>(std::move(indexExpr->collection), std::move(indexExpr->index), std::move(value));
+        }
+        // Property assignment: obj.prop = value (v0.3)
+        if (auto propExpr = dynamic_cast<PropertyExpr*>(expr.get())) {
+            return std::make_unique<SetPropertyExpr>(std::move(propExpr->object), propExpr->property, std::move(value));
         }
 
         throw error(equals, "Invalid assignment target");
@@ -451,11 +633,9 @@ ExprPtr Parser::call() {
             consume(TokenType::RIGHT_BRACKET, "Expect ']' after index expression.");
             expr = std::make_unique<IndexExpr>(std::move(expr), std::move(index));
         } else if (match({TokenType::DOT})) {
-            // Property access: expr.property
-            // Desugar to expr["property"]
+            // Property access: expr.property (v0.3)
             Token property = consume(TokenType::IDENTIFIER, "Expect property name after '.'.");
-            ExprPtr index = std::make_unique<LiteralExpr>(std::string(property.lexeme));
-            expr = std::make_unique<IndexExpr>(std::move(expr), std::move(index));
+            expr = std::make_unique<PropertyExpr>(std::move(expr), std::string(property.lexeme));
         } else {
             break;
         }
@@ -467,6 +647,7 @@ ExprPtr Parser::primary() {
     if (match({TokenType::FALSE})) return std::make_unique<LiteralExpr>(false);
     if (match({TokenType::TRUE})) return std::make_unique<LiteralExpr>(true);
     if (match({TokenType::NIL})) return std::make_unique<LiteralExpr>(Nil{});
+    if (match({TokenType::THIS})) return std::make_unique<ThisExpr>();  // v0.3
 
     if (match({TokenType::NUMBER})) {
         double value = std::stod(std::string(previous().lexeme));
