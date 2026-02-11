@@ -10,15 +10,17 @@ endif
 
 ifeq ($(config),debug)
   izi_config = debug
+  tests_config = debug
 
 else ifeq ($(config),release)
   izi_config = release
+  tests_config = release
 
 else
   $(error "invalid configuration $(config)")
 endif
 
-PROJECTS := izi
+PROJECTS := izi tests
 
 .PHONY: all clean help $(PROJECTS) 
 
@@ -30,8 +32,15 @@ ifneq (,$(izi_config))
 	@${MAKE} --no-print-directory -C . -f izi.make config=$(izi_config)
 endif
 
+tests:
+ifneq (,$(tests_config))
+	@echo "==== Building tests ($(tests_config)) ===="
+	@${MAKE} --no-print-directory -C tests -f Makefile config=$(tests_config)
+endif
+
 clean:
 	@${MAKE} --no-print-directory -C . -f izi.make clean
+	@${MAKE} --no-print-directory -C tests -f Makefile clean
 
 help:
 	@echo "Usage: make [config=name] [target]"
@@ -44,5 +53,6 @@ help:
 	@echo "   all (default)"
 	@echo "   clean"
 	@echo "   izi"
+	@echo "   tests"
 	@echo ""
 	@echo "For more information, see https://github.com/premake/premake-core/wiki"
