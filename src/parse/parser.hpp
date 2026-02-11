@@ -29,6 +29,8 @@ class Parser {
     // Expression parsing (precedence climbing)
     ExprPtr expression();
     ExprPtr assignment();
+    ExprPtr logicalOr();
+    ExprPtr logicalAnd();
     ExprPtr equality();
     ExprPtr comparison();
     ExprPtr term();
