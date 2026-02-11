@@ -1,0 +1,15 @@
+// std.string - String manipulation functions
+// All functions are registered as native functions in the VM and are available globally.
+// This file serves as documentation for the std.string module.
+
+// String extraction and manipulation:
+// - substring(str, start, length?): Extract substring
+// - split(str, delimiter): Split string into array
+// - join(array, separator): Join array elements into string
+// - toUpper(str): Convert to uppercase
+// - toLower(str): Convert to lowercase
+// - trim(str): Remove leading and trailing whitespace
+// - replace(str, from, to): Replace all occurrences
+// - indexOf(str, substring): Find index of substring (-1 if not found)
+// - startsWith(str, prefix): Check if string starts with prefix
+// - endsWith(str, suffix): Check if string ends with suffix
