@@ -285,7 +285,7 @@ ExprPtr Parser::expression() {
 }
 
 ExprPtr Parser::assignment() {
-    ExprPtr expr = equality();
+    ExprPtr expr = logicalOr();
 
     if (match({TokenType::EQUAL})) {
         const Token& equals = previous();
@@ -300,6 +300,30 @@ ExprPtr Parser::assignment() {
         }
 
         throw error(equals, "Invalid assignment target");
+    }
+
+    return expr;
+}
+
+ExprPtr Parser::logicalOr() {
+    ExprPtr expr = logicalAnd();
+
+    while (match({TokenType::OR})) {
+        Token op = previous();
+        ExprPtr right = logicalAnd();
+        expr = std::make_unique<BinaryExpr>(std::move(expr), op, std::move(right));
+    }
+
+    return expr;
+}
+
+ExprPtr Parser::logicalAnd() {
+    ExprPtr expr = equality();
+
+    while (match({TokenType::AND})) {
+        Token op = previous();
+        ExprPtr right = equality();
+        expr = std::make_unique<BinaryExpr>(std::move(expr), op, std::move(right));
     }
 
     return expr;

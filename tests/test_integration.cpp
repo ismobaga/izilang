@@ -337,3 +337,166 @@ TEST_CASE("Integration: Maps", "[integration]") {
         REQUIRE(capture.getOutput() == "100\n");
     }
 }
+
+TEST_CASE("Integration: Short-circuit evaluation", "[integration]") {
+    SECTION("AND operator - false left operand") {
+        std::string source = "print(false and true);";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        REQUIRE(capture.getOutput() == "false\n");
+    }
+    
+    SECTION("AND operator - true left operand") {
+        std::string source = "print(true and false);";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        REQUIRE(capture.getOutput() == "false\n");
+    }
+    
+    SECTION("AND operator - both true") {
+        std::string source = "print(true and true);";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        REQUIRE(capture.getOutput() == "true\n");
+    }
+    
+    SECTION("OR operator - true left operand") {
+        std::string source = "print(true or false);";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        REQUIRE(capture.getOutput() == "true\n");
+    }
+    
+    SECTION("OR operator - false left operand") {
+        std::string source = "print(false or true);";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        REQUIRE(capture.getOutput() == "true\n");
+    }
+    
+    SECTION("OR operator - both false") {
+        std::string source = "print(false or false);";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        REQUIRE(capture.getOutput() == "false\n");
+    }
+    
+    SECTION("AND short-circuit - right operand not evaluated") {
+        // This test verifies that the right operand is not evaluated when left is false
+        // If evaluated, it would cause a division by zero error
+        std::string source = "var x = 0; print(false and (10 / x > 5));";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        // Should not throw an error due to short-circuit
+        REQUIRE_NOTHROW(interp.interpret(program));
+        REQUIRE(capture.getOutput() == "false\n");
+    }
+    
+    SECTION("OR short-circuit - right operand not evaluated") {
+        // This test verifies that the right operand is not evaluated when left is true
+        // If evaluated, it would cause a division by zero error
+        std::string source = "var x = 0; print(true or (10 / x > 5));";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        // Should not throw an error due to short-circuit
+        REQUIRE_NOTHROW(interp.interpret(program));
+        REQUIRE(capture.getOutput() == "true\n");
+    }
+    
+    SECTION("Complex expression with AND and OR") {
+        std::string source = "print(true or false and false);";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        // AND has higher precedence: false and false = false, then true or false = true
+        REQUIRE(capture.getOutput() == "true\n");
+    }
+    
+    SECTION("AND returns last evaluated value") {
+        std::string source = "print(5 and 10);";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        // Both are truthy, should return the right value
+        REQUIRE(capture.getOutput() == "10\n");
+    }
+    
+    SECTION("OR returns first truthy value") {
+        std::string source = "print(5 or 10);";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        // First value is truthy, should return it
+        REQUIRE(capture.getOutput() == "5\n");
+    }
+}

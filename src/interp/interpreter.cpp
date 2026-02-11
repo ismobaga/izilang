@@ -62,6 +62,24 @@ void Interpreter::executeBlock(const std::vector<StmtPtr>& statements, Environme
 }
 
 Value Interpreter::visit(BinaryExpr& expr) {
+    // Handle short-circuit operators separately
+    if (expr.op.type == TokenType::OR) {
+        Value left = evaluate(*expr.left);
+        if (isTruthy(left)) {
+            return left;  // Short-circuit: return left if truthy
+        }
+        return evaluate(*expr.right);  // Only evaluate right if left is falsy
+    }
+    
+    if (expr.op.type == TokenType::AND) {
+        Value left = evaluate(*expr.left);
+        if (!isTruthy(left)) {
+            return left;  // Short-circuit: return left if falsy
+        }
+        return evaluate(*expr.right);  // Only evaluate right if left is truthy
+    }
+    
+    // For all other operators, evaluate both operands
     Value left = evaluate(*expr.left);
     Value right = evaluate(*expr.right);
 
