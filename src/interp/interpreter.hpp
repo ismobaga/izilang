@@ -61,6 +61,9 @@ class Interpreter : public ExprVisitor, public StmtVisitor {
     Value visit(SetIndexExpr& expr) override;
     Value visit(FunctionExpr& expr) override;
     Value visit(MatchExpr& expr) override;
+    Value visit(PropertyExpr& expr) override;      // v0.3
+    Value visit(SetPropertyExpr& expr) override;   // v0.3
+    Value visit(ThisExpr& expr) override;          // v0.3
 
     // StmVisitor
 
@@ -77,6 +80,7 @@ class Interpreter : public ExprVisitor, public StmtVisitor {
     void visit(ContinueStmt&) override;
     void visit(TryStmt&) override;
     void visit(ThrowStmt&) override;
+    void visit(ClassStmt&) override;              // v0.3
 
     void executeBlock(const std::vector<StmtPtr>& statements, std::shared_ptr<Environment> newEnv);
 

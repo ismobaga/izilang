@@ -7,6 +7,7 @@
 #include "common/token.hpp"
 #include "expr.hpp"
 #include "visitor.hpp"
+#include "type.hpp"
 
 namespace izi {
 
@@ -38,13 +39,14 @@ struct BlockStmt : public Stmt {
     void accept(StmtVisitor& v) override { v.visit(*this); }
 };
 
-// Variable declaration (e.g., "var x = 10;")
+// Variable declaration (e.g., "var x = 10;" or "var x: Number = 10;")
 struct VarStmt : public Stmt {
     std::string name;
     ExprPtr initializer;
+    TypePtr typeAnnotation;  // Optional type annotation (v0.3)
 
-    VarStmt(std::string n, ExprPtr init)
-        : name(std::move(n)), initializer(std::move(init)) {}
+    VarStmt(std::string n, ExprPtr init, TypePtr type = nullptr)
+        : name(std::move(n)), initializer(std::move(init)), typeAnnotation(std::move(type)) {}
 
     void accept(StmtVisitor& v) override { v.visit(*this); }
 };
@@ -70,14 +72,18 @@ struct ReturnStmt : public Stmt {
     void accept(StmtVisitor& v) override { v.visit(*this); }
 };
 
-// Function declaration (e.g., "fn add(a, b) { return a + b; }")
+// Function declaration (e.g., "fn add(a, b) { return a + b; }" or "fn add(a: Number, b: Number): Number { return a + b; }")
 struct FunctionStmt : public Stmt {
     std::string name;
     std::vector<std::string> params;
     std::vector<StmtPtr> body;
+    std::vector<TypePtr> paramTypes;   // Optional parameter type annotations (v0.3)
+    TypePtr returnType;                 // Optional return type annotation (v0.3)
 
-    FunctionStmt(std::string n, std::vector<std::string> p, std::vector<StmtPtr> b)
-        : name(std::move(n)), params(std::move(p)), body(std::move(b)) {}
+    FunctionStmt(std::string n, std::vector<std::string> p, std::vector<StmtPtr> b,
+                 std::vector<TypePtr> pTypes = {}, TypePtr rType = nullptr)
+        : name(std::move(n)), params(std::move(p)), body(std::move(b)),
+          paramTypes(std::move(pTypes)), returnType(std::move(rType)) {}
 
     void accept(StmtVisitor& v) override { v.visit(*this); }
 };
@@ -168,6 +174,18 @@ struct ThrowStmt : public Stmt {
     
     ThrowStmt(Token kw, ExprPtr val)
         : keyword(std::move(kw)), value(std::move(val)) {}
+    
+    void accept(StmtVisitor& v) override { v.visit(*this); }
+};
+
+// Class declaration (e.g., "class Point { ... }") (v0.3)
+struct ClassStmt : public Stmt {
+    std::string name;
+    std::vector<VarStmt*> fields;      // Class fields
+    std::vector<FunctionStmt*> methods; // Class methods (including constructor)
+    
+    ClassStmt(std::string n, std::vector<VarStmt*> f, std::vector<FunctionStmt*> m)
+        : name(std::move(n)), fields(std::move(f)), methods(std::move(m)) {}
     
     void accept(StmtVisitor& v) override { v.visit(*this); }
 };
