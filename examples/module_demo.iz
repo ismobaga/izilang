@@ -1,0 +1,74 @@
+
+import "math";
+import "string"; 
+import { map, filter, reduce } from "array";
+import "io";
+
+print("=== IziLang Standard Library Module Demo ===");
+print("");
+
+print("1. Math Module:");
+print("   math.pi =", math.pi);
+print("   math.sqrt(144) =", math.sqrt(144));
+print("   math.pow(2, 10) =", math.pow(2, 10));
+print("   math.sin(math.pi) =", math.sin(math.pi));
+print("");
+
+print("2. String Module:");
+var greeting = "Hello, World!";
+print("   Original:", greeting);
+print("   toUpper:", string.toUpper(greeting));
+print("   toLower:", string.toLower(greeting));
+print("   split:", string.split(greeting, ", "));
+var parts = string.split(greeting, " ");
+print("   join:", string.join(parts, "-"));
+print("");
+
+print("3. Array Module with Higher-Order Functions:");
+var numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+print("   Original array:", numbers);
+
+fn double(x) { return x * 2; }
+var doubled = map(numbers, double);
+print("   Doubled:", doubled);
+
+fn isEven(x) { return x - floor(x / 2) * 2 == 0; }
+var evens = filter(numbers, isEven);
+print("   Even numbers:", evens);
+
+fn sum(a, b) { return a + b; }
+var total = reduce(numbers, sum, 0);
+print("   Sum:", total);
+print("");
+
+print("4. IO Module:");
+var filename = "/tmp/izilang_demo.txt";
+var content = "IziLang is a dynamic programming language!";
+io.writeFile(filename, content);
+print("   Written to file:", filename);
+print("   File exists:", io.exists(filename));
+print("   File content:", io.readFile(filename));
+io.appendFile(filename, "\nModules make code organization easy.");
+print("   After append:", io.readFile(filename));
+print("");
+
+print("5. Combined Example - Text Processing Pipeline:");
+var text = "the quick brown fox jumps over the lazy dog";
+var words = string.split(text, " ");
+print("   Original:", text);
+
+fn capitalize(word) {
+    var first = string.toUpper(string.substring(word, 0, 1));
+    var rest = string.substring(word, 1, len(word) - 1);
+    return first + rest;
+}
+var capitalized = map(words, capitalize);
+var title = string.join(capitalized, " ");
+print("   Title case:", title);
+
+fn isLongWord(word) { return len(word) > 3; }
+var longWords = filter(words, isLongWord);
+print("   Long words:", longWords);
+print("");
+
+print("=== Demo Complete ===");
