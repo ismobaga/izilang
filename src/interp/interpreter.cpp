@@ -522,16 +522,40 @@ void Interpreter::visit(ClassStmt& stmt) {
 
 // v0.3: Property access (stub implementation)
 Value Interpreter::visit(PropertyExpr& expr) {
-    // TODO: Implement property access
+    // For now, desugar property access to index access
+    // obj.prop becomes obj["prop"]
+    Value object = expr.object->accept(*this);
+    
+    // Handle map property access
+    if (std::holds_alternative<std::shared_ptr<Map>>(object)) {
+        auto map = std::get<std::shared_ptr<Map>>(object);
+        auto it = map->entries.find(expr.property);
+        if (it != map->entries.end()) {
+            return it->second;
+        }
+        throw RuntimeError(Token(TokenType::DOT, expr.property, 0, 0),
+                          "Property '" + expr.property + "' not found.");
+    }
+    
     throw RuntimeError(Token(TokenType::DOT, expr.property, 0, 0),
-                      "Property access not yet implemented.");
+                      "Only maps support property access.");
 }
 
 // v0.3: Property assignment (stub implementation)
 Value Interpreter::visit(SetPropertyExpr& expr) {
-    // TODO: Implement property assignment
+    // For now, desugar property assignment to index assignment
+    // obj.prop = value becomes obj["prop"] = value
+    Value object = expr.object->accept(*this);
+    Value value = expr.value->accept(*this);
+    
+    if (std::holds_alternative<std::shared_ptr<Map>>(object)) {
+        auto map = std::get<std::shared_ptr<Map>>(object);
+        map->entries[expr.property] = value;
+        return value;
+    }
+    
     throw RuntimeError(Token(TokenType::DOT, expr.property, 0, 0),
-                      "Property assignment not yet implemented.");
+                      "Only maps support property assignment.");
 }
 
 // v0.3: This expression (stub implementation)
