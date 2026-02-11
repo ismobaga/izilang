@@ -307,8 +307,10 @@ void Lexer::skipLineComment() {
 }
 
 void Lexer::skipBlockComment() {
-    int commentStartLine = line;
-    int commentStartColumn = column;
+    // Use the start position captured before we began scanning this token
+    // This points to the '/' at the beginning of '/*'
+    int commentStartLine = startLine;
+    int commentStartColumn = startColumn;
     
     // Skip until we find */ or reach end of file
     while (!isAtEnd()) {
