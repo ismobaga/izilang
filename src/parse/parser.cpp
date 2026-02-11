@@ -477,9 +477,9 @@ TypePtr Parser::parseTypeAnnotation() {
         }
     }
     
-    // Check for function types: Function(T1, T2, ...) -> R
+    // Check for function types: fn(T1, T2, ...) -> R
     if (match({TokenType::FN})) {
-        consume(TokenType::LEFT_PAREN, "Expect '(' after 'Function'.");
+        consume(TokenType::LEFT_PAREN, "Expect '(' after 'fn' in function type.");
         
         std::vector<TypePtr> paramTypes;
         if (!check(TokenType::RIGHT_PAREN)) {

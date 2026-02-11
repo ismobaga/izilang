@@ -379,4 +379,23 @@ TEST_CASE("Parser handles function type annotations", "[parser]") {
         REQUIRE(varStmt->typeAnnotation->paramTypes[1]->kind == TypeAnnotation::Kind::Number);
         REQUIRE(varStmt->typeAnnotation->valueType->kind == TypeAnnotation::Kind::Number);
     }
+    
+    SECTION("Parse function type with initializer") {
+        Lexer lexer("var callback: fn(Number) -> Number = fn(x) { return x * 2; };");
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto stmts = parser.parse();
+        
+        REQUIRE(stmts.size() == 1);
+        auto* varStmt = dynamic_cast<VarStmt*>(stmts[0].get());
+        REQUIRE(varStmt != nullptr);
+        REQUIRE(varStmt->typeAnnotation != nullptr);
+        REQUIRE(varStmt->typeAnnotation->kind == TypeAnnotation::Kind::Function);
+        REQUIRE(varStmt->typeAnnotation->paramTypes.size() == 1);
+        REQUIRE(varStmt->typeAnnotation->paramTypes[0]->kind == TypeAnnotation::Kind::Number);
+        REQUIRE(varStmt->typeAnnotation->valueType->kind == TypeAnnotation::Kind::Number);
+        REQUIRE(varStmt->initializer != nullptr);
+        auto* funcExpr = dynamic_cast<FunctionExpr*>(varStmt->initializer.get());
+        REQUIRE(funcExpr != nullptr);
+    }
 }
