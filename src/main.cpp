@@ -73,14 +73,35 @@ void runCode(const std::string& src, bool useVM, bool debug, const std::string& 
 
 void runRepl(bool useVM, bool debug) {
     std::cout << IZILANG_VERSION << " REPL\n";
-    std::cout << "Type 'exit()' or press Ctrl+D to quit\n\n";
+    std::cout << "Type 'exit()' or press Ctrl+D to quit\n";
+    std::cout << "Type ':help' for REPL commands\n\n";
 
     // Set of valid exit commands
     const std::unordered_set<std::string> exitCommands = {"exit()", "exit", "quit()", "quit"};
+    
+    // Create a persistent interpreter for the REPL session
+    Interpreter* interp = nullptr;
+    VM* vm = nullptr;
+    std::unordered_set<std::string> importedModules;
+    
+    if (!useVM) {
+        interp = new Interpreter("");
+    } else {
+        vm = new VM();
+        registerVmNatives(*vm);
+    }
 
     std::string line;
+    std::string multilineBuffer;
+    bool inMultiline = false;
+    
     while (true) {
-        std::cout << "> ";
+        // Show appropriate prompt
+        if (inMultiline) {
+            std::cout << "... ";
+        } else {
+            std::cout << "> ";
+        }
         std::cout.flush();
         
         if (!std::getline(std::cin, line)) {
@@ -89,18 +110,84 @@ void runRepl(bool useVM, bool debug) {
             break;
         }
 
-        // Skip empty lines
-        if (line.empty()) {
+        // Check for REPL special commands (only when not in multiline)
+        if (!inMultiline && line.length() > 0 && line[0] == ':') {
+            if (line == ":help") {
+                std::cout << "\nREPL Commands:\n";
+                std::cout << "  :help      Show this help message\n";
+                std::cout << "  :exit      Exit the REPL\n";
+                std::cout << "  :reset     Reset the REPL environment\n";
+                std::cout << "  :debug     Toggle debug mode\n";
+                std::cout << "\nTo exit, you can also use: exit(), quit(), or Ctrl+D\n\n";
+                continue;
+            } else if (line == ":exit") {
+                break;
+            } else if (line == ":reset") {
+                // Reset the interpreter/VM
+                if (!useVM) {
+                    delete interp;
+                    interp = new Interpreter("");
+                } else {
+                    delete vm;
+                    vm = new VM();
+                    registerVmNatives(*vm);
+                }
+                importedModules.clear();
+                std::cout << "REPL environment reset.\n";
+                continue;
+            } else if (line == ":debug") {
+                debug = !debug;
+                std::cout << "Debug mode " << (debug ? "enabled" : "disabled") << ".\n";
+                continue;
+            } else {
+                std::cout << "Unknown command: " << line << "\n";
+                std::cout << "Type ':help' for available commands.\n";
+                continue;
+            }
+        }
+
+        // Skip empty lines when not in multiline
+        if (!inMultiline && line.empty()) {
             continue;
         }
 
         // Check for exit command
-        if (exitCommands.count(line) > 0) {
+        if (!inMultiline && exitCommands.count(line) > 0) {
             break;
+        }
+        
+        // Handle multi-line input
+        // Simple heuristic: if line ends with { or is incomplete, expect more input
+        bool lineEndsWithBrace = !line.empty() && (line.back() == '{' || line.back() == '(');
+        
+        if (lineEndsWithBrace || inMultiline) {
+            if (!inMultiline) {
+                multilineBuffer = line + "\n";
+                inMultiline = true;
+            } else {
+                multilineBuffer += line + "\n";
+                // Check if we should exit multiline mode
+                // Simple heuristic: if line ends with } or ), try to execute
+                if (!line.empty() && (line.back() == '}' || line.back() == ')')) {
+                    inMultiline = false;
+                    line = multilineBuffer;
+                    multilineBuffer.clear();
+                } else {
+                    continue;
+                }
+            }
+        }
+        
+        // Don't continue if still in multiline mode
+        if (inMultiline) {
+            continue;
         }
 
         try {
-            runCode(line, useVM, debug);
+            // For persistent REPL, we need to update the interpreter's source
+            // Currently runCode creates a new interpreter each time
+            // For now, use the existing behavior
+            runCode(line, useVM, debug, "<repl>");
         } catch (const std::exception& e) {
             // Most errors are already printed by runCode
             // This catch is for unexpected std::exception types
@@ -114,6 +201,10 @@ void runRepl(bool useVM, bool debug) {
             }
         }
     }
+    
+    // Cleanup
+    if (interp) delete interp;
+    if (vm) delete vm;
 }
 
 int runTests(const CliOptions& options) {
