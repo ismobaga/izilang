@@ -13,6 +13,7 @@
 #include "common/token.hpp"
 #include "common/value.hpp"
 #include "interp/native.hpp"
+#include "interp/native_modules.hpp"
 #include "parse/parser.hpp"
 #include "parse/lexer.hpp"
 namespace izi {
@@ -308,9 +309,39 @@ void Interpreter::visit(ReturnStmt& stmt) {
 
 
 void Interpreter::visit(ImportStmt& stmt) {
-
-    std::string modulePath = normalizeModulePath(stmt.module);
-    if (importedModules.contains(modulePath) ) {
+    std::string modulePath = stmt.module;
+    
+    // Check if this is a native module
+    if (isNativeModule(modulePath)) {
+        // Handle native module import
+        Value moduleValue = getNativeModule(modulePath, *this);
+        auto moduleMap = std::get<std::shared_ptr<Map>>(moduleValue);
+        
+        if (stmt.isWildcard) {
+            // import * as name from "math"
+            globals->define(stmt.wildcardAlias, moduleValue);
+        } else if (!stmt.namedImports.empty()) {
+            // import { sqrt, pi } from "math"
+            for (const auto& name : stmt.namedImports) {
+                auto it = moduleMap->entries.find(name);
+                if (it == moduleMap->entries.end()) {
+                    throw std::runtime_error("Module '" + modulePath + "' does not export '" + name + "'");
+                }
+                globals->define(name, it->second);
+            }
+        } else {
+            // import "math" - bind as module object
+            globals->define(modulePath, moduleValue);
+        }
+        
+        // Mark as imported to avoid re-importing
+        importedModules.insert(modulePath);
+        return;
+    }
+    
+    // Handle file-based modules (existing logic)
+    modulePath = normalizeModulePath(stmt.module);
+    if (importedModules.contains(modulePath)) {
         // Module already imported
         return;
     }
