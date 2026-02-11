@@ -499,4 +499,36 @@ TEST_CASE("Integration: Short-circuit evaluation", "[integration]") {
         // First value is truthy, should return it
         REQUIRE(capture.getOutput() == "5\n");
     }
+    
+    SECTION("AND short-circuit - side effect not executed") {
+        // Verify right operand is not evaluated by checking variable is unchanged
+        std::string source = "var counter = 0; var result = false and (counter = 1); print(counter);";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        // counter should still be 0 because right side was not evaluated
+        REQUIRE(capture.getOutput() == "0\n");
+    }
+    
+    SECTION("OR short-circuit - side effect not executed") {
+        // Verify right operand is not evaluated by checking variable is unchanged
+        std::string source = "var counter = 0; var result = true or (counter = 1); print(counter);";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        // counter should still be 0 because right side was not evaluated
+        REQUIRE(capture.getOutput() == "0\n");
+    }
 }
