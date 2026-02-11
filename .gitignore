@@ -8,3 +8,11 @@
 **/*.d
 bin/
 obj/
+test_basic_print.iz
+test_comment.iz
+test_debug.iz
+test_no_comment.iz
+test_simple_try.iz
+test_try_catch.iz
+test_try_no_exception.iz
+test_try_with_exception.iz
