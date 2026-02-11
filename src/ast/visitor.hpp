@@ -15,6 +15,7 @@ struct MapExpr;
 struct IndexExpr;
 struct SetIndexExpr;
 struct FunctionExpr;
+struct MatchExpr;
 
 struct ExprStmt;
 struct BlockStmt;
@@ -47,6 +48,7 @@ class ExprVisitor {
     virtual Value visit(IndexExpr&) = 0;
     virtual Value visit(SetIndexExpr&) = 0;
     virtual Value visit(FunctionExpr&) = 0;
+    virtual Value visit(MatchExpr&) = 0;
 };
 
 class StmtVisitor {

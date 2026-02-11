@@ -7,6 +7,7 @@
 #include "common/token.hpp"
 #include "common/value.hpp"
 #include "visitor.hpp"
+#include "pattern.hpp"
 
 namespace izi {
 
@@ -155,6 +156,30 @@ struct FunctionExpr : Expr {
     FunctionExpr(std::vector<std::string> p, std::vector<StmtPtr> b)
         : params(std::move(p)), body(std::move(b)) {}
 
+    Value accept(ExprVisitor& v) override {
+        return v.visit(*this);
+    }
+};
+
+// Match case: pattern => expression, optionally with guard (if condition)
+struct MatchCase {
+    PatternPtr pattern;
+    ExprPtr guard;  // Optional: if condition
+    ExprPtr result;
+    
+    MatchCase(PatternPtr p, ExprPtr g, ExprPtr r)
+        : pattern(std::move(p)), guard(std::move(g)), result(std::move(r)) {}
+};
+
+// Match expression
+// e.g., match value { 0 => "zero", x if x > 0 => "positive", _ => "unknown" }
+struct MatchExpr : Expr {
+    ExprPtr value;  // The value to match against
+    std::vector<MatchCase> cases;
+    
+    MatchExpr(ExprPtr v, std::vector<MatchCase> c)
+        : value(std::move(v)), cases(std::move(c)) {}
+    
     Value accept(ExprVisitor& v) override {
         return v.visit(*this);
     }

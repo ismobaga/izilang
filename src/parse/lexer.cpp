@@ -162,6 +162,13 @@ void Lexer::identifier() {
     while (isalnum(peek()) || peek() == '_') advance();
 
     std::string_view lexeme = source.substr(start, current - start);
+    
+    // Check for standalone underscore (wildcard pattern)
+    if (lexeme == "_") {
+        tokens.emplace_back(TokenType::UNDERSCORE, lexeme, startLine, startColumn);
+        return;
+    }
+    
     TokenType type = keywordType(lexeme);
     tokens.emplace_back(type, lexeme, startLine, startColumn);
 }
@@ -190,6 +197,7 @@ TokenType Lexer::keywordType(std::string_view text) {
     if (text == "catch") return TokenType::CATCH;
     if (text == "finally") return TokenType::FINALLY;
     if (text == "throw") return TokenType::THROW;
+    if (text == "match") return TokenType::MATCH;
     return TokenType::IDENTIFIER;
 }
 }  // namespace izi

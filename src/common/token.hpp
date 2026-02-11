@@ -65,6 +65,8 @@ enum class TokenType {
     CATCH,
     FINALLY,
     THROW,
+    MATCH,
+    UNDERSCORE,
 
     // Special
     END_OF_FILE,
@@ -189,6 +191,10 @@ inline const char* tokenTypeToString(TokenType type) {
             return "FINALLY";
         case TokenType::THROW:
             return "THROW";
+        case TokenType::MATCH:
+            return "MATCH";
+        case TokenType::UNDERSCORE:
+            return "UNDERSCORE";
         case TokenType::END_OF_FILE:
             return "END_OF_FILE";
         case TokenType::ERROR:

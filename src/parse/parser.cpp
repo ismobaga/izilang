@@ -508,6 +508,42 @@ ExprPtr Parser::primary() {
         return std::make_unique<FunctionExpr>(std::move(params), std::move(bodyStmts));
     }
 
+    // Match expression: match value { pattern => result, ... }
+    if (match({TokenType::MATCH})) {
+        ExprPtr value = expression();
+        consume(TokenType::LEFT_BRACE, "Expect '{' after match value.");
+        
+        std::vector<MatchCase> cases;
+        
+        // Parse match cases
+        while (!check(TokenType::RIGHT_BRACE) && !isAtEnd()) {
+            // Parse pattern
+            PatternPtr pattern = parsePattern();
+            
+            // Parse optional guard: if condition
+            ExprPtr guard = nullptr;
+            if (match({TokenType::IF})) {
+                guard = expression();
+            }
+            
+            // Expect => arrow
+            consume(TokenType::ARROW, "Expect '=>' after match pattern.");
+            
+            // Parse result expression
+            ExprPtr result = expression();
+            
+            cases.emplace_back(std::move(pattern), std::move(guard), std::move(result));
+            
+            // Consume comma if present (allows trailing comma)
+            if (!check(TokenType::RIGHT_BRACE)) {
+                consume(TokenType::COMMA, "Expect ',' or '}' after match case.");
+            }
+        }
+        
+        consume(TokenType::RIGHT_BRACE, "Expect '}' after match cases.");
+        return std::make_unique<MatchExpr>(std::move(value), std::move(cases));
+    }
+
     if (match({TokenType::IDENTIFIER})) {
         Token name = previous();
         return std::make_unique<VariableExpr>(std::string(name.lexeme), nullptr);
@@ -552,6 +588,49 @@ ExprPtr Parser::primary() {
     }
 
     throw error(peek(), "Expect expression.");
+}
+
+// Pattern parsing for match expressions
+PatternPtr Parser::parsePattern() {
+    // Wildcard pattern: _
+    if (match({TokenType::UNDERSCORE})) {
+        return std::make_unique<WildcardPattern>();
+    }
+    
+    // Literal patterns: numbers, strings, booleans, nil
+    if (match({TokenType::NUMBER})) {
+        double value = std::stod(std::string(previous().lexeme));
+        return std::make_unique<LiteralPattern>(value);
+    }
+    
+    if (match({TokenType::STRING})) {
+        std::string value(previous().lexeme);
+        // Remove surrounding quotes
+        if (value.length() >= 2) {
+            value = value.substr(1, value.length() - 2);
+        }
+        return std::make_unique<LiteralPattern>(value);
+    }
+    
+    if (match({TokenType::TRUE})) {
+        return std::make_unique<LiteralPattern>(true);
+    }
+    
+    if (match({TokenType::FALSE})) {
+        return std::make_unique<LiteralPattern>(false);
+    }
+    
+    if (match({TokenType::NIL})) {
+        return std::make_unique<LiteralPattern>(Nil{});
+    }
+    
+    // Variable pattern: identifier
+    if (match({TokenType::IDENTIFIER})) {
+        Token name = previous();
+        return std::make_unique<VariablePattern>(std::string(name.lexeme));
+    }
+    
+    throw error(peek(), "Expect pattern in match expression.");
 }
 
 // Helper methods

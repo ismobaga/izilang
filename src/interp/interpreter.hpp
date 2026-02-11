@@ -60,6 +60,7 @@ class Interpreter : public ExprVisitor, public StmtVisitor {
     Value visit(IndexExpr& expr) override;
     Value visit(SetIndexExpr& expr) override;
     Value visit(FunctionExpr& expr) override;
+    Value visit(MatchExpr& expr) override;
 
     // StmVisitor
 

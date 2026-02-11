@@ -198,6 +198,13 @@ Value BytecodeCompiler::visit(FunctionExpr& expr) {
     // a VmCallable at runtime
     throw std::runtime_error("Function expressions are not yet supported in bytecode mode.");
 }
+
+Value BytecodeCompiler::visit(MatchExpr& expr) {
+    // For now, we don't support match expressions in bytecode mode
+    // This would require compiling pattern matching logic to bytecode
+    throw std::runtime_error("Match expressions are not yet supported in bytecode mode.");
+}
+
 Value BytecodeCompiler::visit(ArrayExpr& expr) {
     for (const auto& element : expr.elements) {
         emitExpression(*element);
