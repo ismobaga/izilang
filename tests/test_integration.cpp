@@ -809,3 +809,110 @@ TEST_CASE("Exception handling: Different value types", "[integration][exceptions
         REQUIRE(capture.getOutput() == "true\n");
     }
 }
+
+TEST_CASE("Integration: String interpolation", "[integration]") {
+    SECTION("Simple variable interpolation") {
+        std::string source = R"(
+            var name = "Alice";
+            var message = "Hello, ${name}!";
+            print(message);
+        )";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        REQUIRE(capture.getOutput() == "Hello, Alice!\n");
+    }
+    
+    SECTION("Number interpolation") {
+        std::string source = R"(
+            var age = 30;
+            print("Age: ${age}");
+        )";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        REQUIRE(capture.getOutput() == "Age: 30\n");
+    }
+    
+    SECTION("Multiple interpolations") {
+        std::string source = R"(
+            var name = "Bob";
+            var age = 25;
+            print("Name: ${name}, Age: ${age}");
+        )";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        REQUIRE(capture.getOutput() == "Name: Bob, Age: 25\n");
+    }
+    
+    SECTION("Expression in interpolation") {
+        std::string source = R"(
+            var x = 5;
+            var y = 10;
+            print("Sum: ${x + y}");
+        )";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        REQUIRE(capture.getOutput() == "Sum: 15\n");
+    }
+    
+    SECTION("Boolean interpolation") {
+        std::string source = R"(
+            var flag = true;
+            print("Flag: ${flag}");
+        )";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        REQUIRE(capture.getOutput() == "Flag: true\n");
+    }
+    
+    SECTION("Empty interpolation at start") {
+        std::string source = R"(
+            var x = 42;
+            print("${x}");
+        )";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        REQUIRE(capture.getOutput() == "42\n");
+    }
+}

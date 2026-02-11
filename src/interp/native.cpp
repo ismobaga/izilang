@@ -50,6 +50,13 @@ auto nativeLen(Interpreter& interp, const std::vector<Value>& arguments) -> Valu
     return Nil{};   
 }
 
+auto nativeStr(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 1) {
+        throw std::runtime_error("str() takes exactly one argument.");
+    }
+    return valueToString(arguments[0]);
+}
+
 auto nativePush(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
     if (arguments.size() != 2) {
         throw std::runtime_error("push() takes exactly two arguments.");
@@ -903,6 +910,8 @@ void registerNativeFunctions(Interpreter& interp) {
         "clock", 0, nativeClock)});
     interp.defineGlobal("len", Value{std::make_shared<NativeFunction>(
         "len", 1, nativeLen)});
+    interp.defineGlobal("str", Value{std::make_shared<NativeFunction>(
+        "str", 1, nativeStr)});
     
     // Array functions
     interp.defineGlobal("push", Value{std::make_shared<NativeFunction>(
