@@ -15,6 +15,7 @@
 #include "common/value.hpp"
 #include "interp/native.hpp"
 #include "interp/native_modules.hpp"
+#include "interp/izi_class.hpp"
 #include "parse/parser.hpp"
 #include "parse/lexer.hpp"
 namespace izi {
@@ -513,20 +514,63 @@ void Interpreter::visit(ThrowStmt& stmt) {
     throw ThrowSignal(exceptionValue, stmt.keyword);
 }
 
-// v0.3: Class support (stub implementation)
+// v0.3: Class support
 void Interpreter::visit(ClassStmt& stmt) {
-    // TODO: Implement class support
-    throw RuntimeError(Token(TokenType::CLASS, stmt.name, 0, 0),
-                      "Class support not yet implemented in interpreter.");
+    // Evaluate field defaults
+    std::unordered_map<std::string, Value> fieldDefaults;
+    std::vector<std::string> fieldNames;
+    
+    for (const auto& field : stmt.fields) {
+        fieldNames.push_back(field->name);
+        if (field->initializer) {
+            fieldDefaults[field->name] = evaluate(*field->initializer);
+        }
+    }
+    
+    // Create method callables
+    std::unordered_map<std::string, Value> methods;
+    for (const auto& method : stmt.methods) {
+        auto userFunc = std::make_shared<UserFunction>(method.get(), env);
+        methods[method->name] = userFunc;
+    }
+    
+    // Create the class
+    auto klass = std::make_shared<IziClass>(
+        stmt.name,
+        std::move(fieldNames),
+        std::move(fieldDefaults),
+        std::move(methods)
+    );
+    
+    // Define the class in the current environment
+    env->define(stmt.name, klass);
 }
 
-// v0.3: Property access (stub implementation)
+// v0.3: Property access
 Value Interpreter::visit(PropertyExpr& expr) {
-    // For now, desugar property access to index access
-    // obj.prop becomes obj["prop"]
     Value object = expr.object->accept(*this);
     
-    // Handle map property access
+    // Handle instance property access
+    if (std::holds_alternative<std::shared_ptr<Instance>>(object)) {
+        auto instance = std::get<std::shared_ptr<Instance>>(object);
+        
+        // Check if it's a field
+        auto fieldIt = instance->fields.find(expr.property);
+        if (fieldIt != instance->fields.end()) {
+            return fieldIt->second;
+        }
+        
+        // Check if it's a method
+        Value method = instance->klass->getMethod(expr.property, instance);
+        if (!std::holds_alternative<Nil>(method)) {
+            return method;
+        }
+        
+        throw RuntimeError(Token(TokenType::DOT, expr.property, 0, 0),
+                          "Undefined property '" + expr.property + "'.");
+    }
+    
+    // Handle map property access (backward compatibility)
     if (std::holds_alternative<std::shared_ptr<Map>>(object)) {
         auto map = std::get<std::shared_ptr<Map>>(object);
         auto it = map->entries.find(expr.property);
@@ -538,16 +582,22 @@ Value Interpreter::visit(PropertyExpr& expr) {
     }
     
     throw RuntimeError(Token(TokenType::DOT, expr.property, 0, 0),
-                      "Only maps support property access.");
+                      "Only instances and maps support property access.");
 }
 
-// v0.3: Property assignment (stub implementation)
+// v0.3: Property assignment
 Value Interpreter::visit(SetPropertyExpr& expr) {
-    // For now, desugar property assignment to index assignment
-    // obj.prop = value becomes obj["prop"] = value
     Value object = expr.object->accept(*this);
     Value value = expr.value->accept(*this);
     
+    // Handle instance property assignment
+    if (std::holds_alternative<std::shared_ptr<Instance>>(object)) {
+        auto instance = std::get<std::shared_ptr<Instance>>(object);
+        instance->fields[expr.property] = value;
+        return value;
+    }
+    
+    // Handle map property assignment (backward compatibility)
     if (std::holds_alternative<std::shared_ptr<Map>>(object)) {
         auto map = std::get<std::shared_ptr<Map>>(object);
         map->entries[expr.property] = value;
@@ -555,14 +605,17 @@ Value Interpreter::visit(SetPropertyExpr& expr) {
     }
     
     throw RuntimeError(Token(TokenType::DOT, expr.property, 0, 0),
-                      "Only maps support property assignment.");
+                      "Only instances and maps support property assignment.");
 }
 
-// v0.3: This expression (stub implementation)
+// v0.3: This expression
 Value Interpreter::visit(ThisExpr& expr) {
-    // TODO: Implement 'this' binding
-    throw RuntimeError(Token(TokenType::THIS, "this", 0, 0),
-                      "'this' keyword not yet implemented.");
+    try {
+        return env->get("this");
+    } catch (const std::runtime_error& e) {
+        throw RuntimeError(Token(TokenType::THIS, "this", 0, 0),
+                          "Cannot use 'this' outside of a class method.");
+    }
 }
 
 }  // namespace izi
