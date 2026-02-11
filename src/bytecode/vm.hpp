@@ -45,12 +45,21 @@ private:
     Value pop();
 
     static double asNumber(const Value& v);
+    static size_t validateArrayIndex(double index);
 
     template<typename Fn>
     void binaryNumeric(Fn fn) {
         Value b = pop();
         Value a = pop();
         double result = fn(asNumber(a), asNumber(b));
+        push(result);
+    }
+
+    template<typename Fn>
+    void binaryComparison(Fn fn) {
+        Value b = pop();
+        Value a = pop();
+        bool result = fn(asNumber(a), asNumber(b));
         push(result);
     }
     
