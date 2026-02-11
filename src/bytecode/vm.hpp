@@ -53,6 +53,14 @@ private:
         double result = fn(asNumber(a), asNumber(b));
         push(result);
     }
+
+    template<typename Fn>
+    void binaryComparison(Fn fn) {
+        Value b = pop();
+        Value a = pop();
+        bool result = fn(asNumber(a), asNumber(b));
+        push(result);
+    }
     
 };
 

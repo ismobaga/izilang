@@ -172,6 +172,105 @@ Value VM::run(const Chunk& entry) {
                     push(result);
                     break;
                 }
+                case OpCode::EQUAL: {
+                    Value b = pop();
+                    Value a = pop();
+                    push(a == b);
+                    break;
+                }
+                case OpCode::NOT_EQUAL: {
+                    Value b = pop();
+                    Value a = pop();
+                    push(a != b);
+                    break;
+                }
+                case OpCode::GREATER:
+                    binaryComparison([](double a, double b) { return a > b; });
+                    break;
+                case OpCode::GREATER_EQUAL:
+                    binaryComparison([](double a, double b) { return a >= b; });
+                    break;
+                case OpCode::LESS:
+                    binaryComparison([](double a, double b) { return a < b; });
+                    break;
+                case OpCode::LESS_EQUAL:
+                    binaryComparison([](double a, double b) { return a <= b; });
+                    break;
+                case OpCode::NOT: {
+                    Value value = pop();
+                    push(!isTruthy(value));
+                    break;
+                }
+                case OpCode::GET_LOCAL: {
+                    uint8_t slot = readByte();
+                    push(stack[currentFrame()->stackBase + slot]);
+                    break;
+                }
+                case OpCode::SET_LOCAL: {
+                    uint8_t slot = readByte();
+                    stack[currentFrame()->stackBase + slot] = stack.back();
+                    break;
+                }
+                case OpCode::INDEX: {
+                    Value index = pop();
+                    Value collection = pop();
+                    
+                    if (std::holds_alternative<std::shared_ptr<Array>>(collection)) {
+                        auto arr = std::get<std::shared_ptr<Array>>(collection);
+                        if (!std::holds_alternative<double>(index)) {
+                            throw std::runtime_error("Array index must be a number.");
+                        }
+                        size_t idx = static_cast<size_t>(std::get<double>(index));
+                        if (idx >= arr->elements.size()) {
+                            throw std::runtime_error("Array index out of bounds.");
+                        }
+                        push(arr->elements[idx]);
+                    } else if (std::holds_alternative<std::shared_ptr<Map>>(collection)) {
+                        auto map = std::get<std::shared_ptr<Map>>(collection);
+                        if (!std::holds_alternative<std::string>(index)) {
+                            throw std::runtime_error("Map key must be a string.");
+                        }
+                        const std::string& key = std::get<std::string>(index);
+                        auto it = map->entries.find(key);
+                        if (it == map->entries.end()) {
+                            push(Nil{});
+                        } else {
+                            push(it->second);
+                        }
+                    } else {
+                        throw std::runtime_error("Can only index arrays and maps.");
+                    }
+                    break;
+                }
+                case OpCode::SET_INDEX: {
+                    Value value = pop();
+                    Value index = pop();
+                    Value collection = pop();
+                    
+                    if (std::holds_alternative<std::shared_ptr<Array>>(collection)) {
+                        auto arr = std::get<std::shared_ptr<Array>>(collection);
+                        if (!std::holds_alternative<double>(index)) {
+                            throw std::runtime_error("Array index must be a number.");
+                        }
+                        size_t idx = static_cast<size_t>(std::get<double>(index));
+                        if (idx >= arr->elements.size()) {
+                            throw std::runtime_error("Array index out of bounds.");
+                        }
+                        arr->elements[idx] = value;
+                        push(value);
+                    } else if (std::holds_alternative<std::shared_ptr<Map>>(collection)) {
+                        auto map = std::get<std::shared_ptr<Map>>(collection);
+                        if (!std::holds_alternative<std::string>(index)) {
+                            throw std::runtime_error("Map key must be a string.");
+                        }
+                        const std::string& key = std::get<std::string>(index);
+                        map->entries[key] = value;
+                        push(value);
+                    } else {
+                        throw std::runtime_error("Can only index arrays and maps.");
+                    }
+                    break;
+                }
                 // ... handle other opcodes ...
                 default:
                     throw std::runtime_error("Unknown opcode encountered.");
