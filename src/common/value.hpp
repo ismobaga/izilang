@@ -16,6 +16,7 @@ class VmCallable;
 struct Array;
 struct Map;
 struct Set;
+struct Instance;
 
 using Value = std::variant<
     Nil,
@@ -26,8 +27,8 @@ using Value = std::variant<
     std::shared_ptr<Map>,
     std::shared_ptr<Set>,
     std::shared_ptr<Callable>,
-    std::shared_ptr<VmCallable>
-
+    std::shared_ptr<VmCallable>,
+    std::shared_ptr<Instance>
     >;
 
 
@@ -112,6 +113,8 @@ inline bool isTruthy(const Value& v) {
         return !std::get<std::shared_ptr<Map>>(v)->entries.empty();
     } else if (std::holds_alternative<std::shared_ptr<Set>>(v)) {
         return !std::get<std::shared_ptr<Set>>(v)->values.empty();
+    } else if (std::holds_alternative<std::shared_ptr<Instance>>(v)) {
+        return true;  // Instances are always truthy
     }
     return false;
 }
@@ -143,6 +146,8 @@ inline std::string getTypeName(const Value& v) {
         return "function";
     } else if (std::holds_alternative<std::shared_ptr<VmCallable>>(v)) {
         return "function";
+    } else if (std::holds_alternative<std::shared_ptr<Instance>>(v)) {
+        return "instance";
     }
     return "unknown";
 }

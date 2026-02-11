@@ -1,5 +1,6 @@
 #include "value.hpp"
 #include "bytecode/mv_callable.hpp"
+#include "interp/izi_class.hpp"
 #include <sstream>
 #include <cmath>
 
@@ -31,6 +32,9 @@ std::string valueToString(const Value& v) {
         oss << "Set(...)";  // Simplified for string interpolation
     } else if (std::holds_alternative<std::shared_ptr<VmCallable>>(v)) {
         oss << "<vm fn " << std::get<std::shared_ptr<VmCallable>>(v)->name() << ">";
+    } else if (std::holds_alternative<std::shared_ptr<Instance>>(v)) {
+        auto instance = std::get<std::shared_ptr<Instance>>(v);
+        oss << "<" << instance->klass->name() << " instance>";
     } else {
         oss << "<unknown>";
     }
@@ -56,6 +60,9 @@ void printValue(const Value& v) {
         printSet(*std::get<std::shared_ptr<Set>>(v));
     } else if (std::holds_alternative<std::shared_ptr<VmCallable>>(v)) {
         std::cout << "<vm fn " << std::get<std::shared_ptr<VmCallable>>(v)->name() << ">";
+    } else if (std::holds_alternative<std::shared_ptr<Instance>>(v)) {
+        auto instance = std::get<std::shared_ptr<Instance>>(v);
+        std::cout << "<" << instance->klass->name() << " instance>";
     } else {
         std::cout << "<unknown>";
     }

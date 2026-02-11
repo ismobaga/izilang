@@ -33,6 +33,13 @@ namespace izi {
         }
 
         Value call(Interpreter& interp, const std::vector<Value>& arguments) override;
+        
+        // Get the closure (needed for binding methods)
+        std::shared_ptr<Environment> getClosure() const { return closure; }
+        
+        // Get the function declaration (needed for creating bound methods)
+        FunctionStmt* getDecl() const { return decl; }
+        FunctionExpr* getFuncExpr() const { return funcExpr; }
 
        private:
         FunctionStmt* decl;  // For named functions (from statements)

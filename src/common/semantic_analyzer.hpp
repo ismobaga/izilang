@@ -115,7 +115,7 @@ private:
     void exitScope();
     void defineVariable(const std::string& name, TypePtr type, int line, int column);
     void markVariableUsed(const std::string& name);
-    TypePtr lookupVariable(const std::string& name);
+    TypeAnnotation* lookupVariable(const std::string& name);
 
     // Type inference and checking
     TypePtr inferType(Expr& expr);

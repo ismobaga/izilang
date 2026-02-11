@@ -75,11 +75,14 @@ GENERATED += $(OBJDIR)/cli.o
 GENERATED += $(OBJDIR)/compiler.o
 GENERATED += $(OBJDIR)/error_reporter.o
 GENERATED += $(OBJDIR)/interpreter.o
+GENERATED += $(OBJDIR)/izi_class.o
 GENERATED += $(OBJDIR)/lexer.o
 GENERATED += $(OBJDIR)/main.o
 GENERATED += $(OBJDIR)/native.o
 GENERATED += $(OBJDIR)/native_modules.o
 GENERATED += $(OBJDIR)/parser.o
+GENERATED += $(OBJDIR)/semantic_analyzer.o
+GENERATED += $(OBJDIR)/type.o
 GENERATED += $(OBJDIR)/user_function.o
 GENERATED += $(OBJDIR)/value.o
 GENERATED += $(OBJDIR)/vm.o
@@ -89,11 +92,14 @@ OBJECTS += $(OBJDIR)/cli.o
 OBJECTS += $(OBJDIR)/compiler.o
 OBJECTS += $(OBJDIR)/error_reporter.o
 OBJECTS += $(OBJDIR)/interpreter.o
+OBJECTS += $(OBJDIR)/izi_class.o
 OBJECTS += $(OBJDIR)/lexer.o
 OBJECTS += $(OBJDIR)/main.o
 OBJECTS += $(OBJDIR)/native.o
 OBJECTS += $(OBJDIR)/native_modules.o
 OBJECTS += $(OBJDIR)/parser.o
+OBJECTS += $(OBJDIR)/semantic_analyzer.o
+OBJECTS += $(OBJDIR)/type.o
 OBJECTS += $(OBJDIR)/user_function.o
 OBJECTS += $(OBJDIR)/value.o
 OBJECTS += $(OBJDIR)/vm.o
@@ -162,6 +168,9 @@ endif
 # File Rules
 # #############################################
 
+$(OBJDIR)/type.o: src/ast/type.cpp
+	@echo "$(notdir $<)"
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/vm.o: src/bytecode/vm.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
@@ -177,6 +186,9 @@ $(OBJDIR)/cli.o: src/common/cli.cpp
 $(OBJDIR)/error_reporter.o: src/common/error_reporter.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/semantic_analyzer.o: src/common/semantic_analyzer.cpp
+	@echo "$(notdir $<)"
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/value.o: src/common/value.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
@@ -184,6 +196,9 @@ $(OBJDIR)/compiler.o: src/compile/compiler.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/interpreter.o: src/interp/interpreter.cpp
+	@echo "$(notdir $<)"
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/izi_class.o: src/interp/izi_class.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/native.o: src/interp/native.cpp

@@ -71,12 +71,12 @@ void SemanticAnalyzer::markVariableUsed(const std::string& name) {
     }
 }
 
-TypePtr SemanticAnalyzer::lookupVariable(const std::string& name) {
+TypeAnnotation* SemanticAnalyzer::lookupVariable(const std::string& name) {
     auto scope = currentScope_;
     while (scope) {
         auto it = scope->variables.find(name);
         if (it != scope->variables.end()) {
-            return it->second;
+            return it->second.get();
         }
         scope = scope->parent;
     }
@@ -101,9 +101,9 @@ TypePtr SemanticAnalyzer::valueToType(const Value& value) {
         return TypeAnnotation::simple(TypeAnnotation::Kind::Number);
     } else if (std::holds_alternative<std::string>(value)) {
         return TypeAnnotation::simple(TypeAnnotation::Kind::String);
-    } else if (std::holds_alternative<Array>(value)) {
+    } else if (std::holds_alternative<std::shared_ptr<Array>>(value)) {
         return TypeAnnotation::simple(TypeAnnotation::Kind::Array);
-    } else if (std::holds_alternative<Map>(value)) {
+    } else if (std::holds_alternative<std::shared_ptr<Map>>(value)) {
         return TypeAnnotation::simple(TypeAnnotation::Kind::Map);
     }
     return TypeAnnotation::simple(TypeAnnotation::Kind::Any);
