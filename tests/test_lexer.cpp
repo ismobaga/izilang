@@ -202,3 +202,138 @@ TEST_CASE("Lexer handles string interpolation", "[lexer]") {
         REQUIRE(tokens[7].type == TokenType::RIGHT_PAREN);
     }
 }
+
+TEST_CASE("Lexer handles single-line comments", "[lexer]") {
+    SECTION("Comment at beginning of line") {
+        Lexer lexer("// This is a comment\nvar x = 42;");
+        auto tokens = lexer.scanTokens();
+        
+        REQUIRE(tokens.size() == 6); // var x = 42 ; EOF
+        REQUIRE(tokens[0].type == TokenType::VAR);
+        REQUIRE(tokens[1].type == TokenType::IDENTIFIER);
+        REQUIRE(tokens[2].type == TokenType::EQUAL);
+        REQUIRE(tokens[3].type == TokenType::NUMBER);
+        REQUIRE(tokens[4].type == TokenType::SEMICOLON);
+        REQUIRE(tokens[5].type == TokenType::END_OF_FILE);
+    }
+    
+    SECTION("Inline comment after statement") {
+        Lexer lexer("var x = 42; // inline comment");
+        auto tokens = lexer.scanTokens();
+        
+        REQUIRE(tokens.size() == 6); // var x = 42 ; EOF
+        REQUIRE(tokens[0].type == TokenType::VAR);
+        REQUIRE(tokens[1].type == TokenType::IDENTIFIER);
+        REQUIRE(tokens[2].type == TokenType::EQUAL);
+        REQUIRE(tokens[3].type == TokenType::NUMBER);
+        REQUIRE(tokens[4].type == TokenType::SEMICOLON);
+    }
+    
+    SECTION("Comment in middle of code") {
+        Lexer lexer("var x = 10;\n// comment\nvar y = 20;");
+        auto tokens = lexer.scanTokens();
+        
+        REQUIRE(tokens.size() == 11); // var x = 10 ; var y = 20 ; EOF
+        REQUIRE(tokens[0].type == TokenType::VAR);
+        REQUIRE(tokens[4].type == TokenType::SEMICOLON);
+        REQUIRE(tokens[5].type == TokenType::VAR);
+    }
+    
+    SECTION("Multiple comments") {
+        Lexer lexer("// First comment\n// Second comment\nvar x = 1;");
+        auto tokens = lexer.scanTokens();
+        
+        REQUIRE(tokens.size() == 6); // var x = 1 ; EOF
+        REQUIRE(tokens[0].type == TokenType::VAR);
+    }
+}
+
+TEST_CASE("Lexer handles multi-line comments", "[lexer]") {
+    SECTION("Single line block comment") {
+        Lexer lexer("var x = 10; /* comment */ var y = 20;");
+        auto tokens = lexer.scanTokens();
+        
+        REQUIRE(tokens.size() == 11); // var x = 10 ; var y = 20 ; EOF
+        REQUIRE(tokens[0].type == TokenType::VAR);
+        REQUIRE(tokens[1].type == TokenType::IDENTIFIER);
+        REQUIRE(tokens[1].lexeme == "x");
+        REQUIRE(tokens[5].type == TokenType::VAR);
+        REQUIRE(tokens[6].type == TokenType::IDENTIFIER);
+        REQUIRE(tokens[6].lexeme == "y");
+    }
+    
+    SECTION("Multi-line block comment") {
+        Lexer lexer("var x = 10;\n/* This is\n   a multi-line\n   comment */\nvar y = 20;");
+        auto tokens = lexer.scanTokens();
+        
+        REQUIRE(tokens.size() == 11); // var x = 10 ; var y = 20 ; EOF
+        REQUIRE(tokens[0].type == TokenType::VAR);
+        REQUIRE(tokens[5].type == TokenType::VAR);
+    }
+    
+    SECTION("Multiple block comments") {
+        Lexer lexer("/* first */ var x = 1; /* second */");
+        auto tokens = lexer.scanTokens();
+        
+        REQUIRE(tokens.size() == 6); // var x = 1 ; EOF
+        REQUIRE(tokens[0].type == TokenType::VAR);
+    }
+    
+    SECTION("Block comment with special characters") {
+        Lexer lexer("/* Comment with / and * and // */ var x = 1;");
+        auto tokens = lexer.scanTokens();
+        
+        REQUIRE(tokens.size() == 6); // var x = 1 ; EOF
+        REQUIRE(tokens[0].type == TokenType::VAR);
+    }
+    
+    SECTION("Unterminated block comment throws error") {
+        Lexer lexer("/* unterminated comment");
+        REQUIRE_THROWS_AS(lexer.scanTokens(), LexerError);
+    }
+}
+
+TEST_CASE("Lexer handles division operator correctly", "[lexer]") {
+    SECTION("Division in expression") {
+        Lexer lexer("var x = 10 / 5;");
+        auto tokens = lexer.scanTokens();
+        
+        REQUIRE(tokens.size() == 8); // var x = 10 / 5 ; EOF
+        REQUIRE(tokens[0].type == TokenType::VAR);
+        REQUIRE(tokens[3].type == TokenType::NUMBER);
+        REQUIRE(tokens[3].lexeme == "10");
+        REQUIRE(tokens[4].type == TokenType::SLASH);
+        REQUIRE(tokens[5].type == TokenType::NUMBER);
+        REQUIRE(tokens[5].lexeme == "5");
+    }
+    
+    SECTION("Multiple divisions") {
+        Lexer lexer("100 / 10 / 2");
+        auto tokens = lexer.scanTokens();
+        
+        REQUIRE(tokens.size() == 6); // 100 / 10 / 2 EOF
+        REQUIRE(tokens[0].type == TokenType::NUMBER);
+        REQUIRE(tokens[1].type == TokenType::SLASH);
+        REQUIRE(tokens[2].type == TokenType::NUMBER);
+        REQUIRE(tokens[3].type == TokenType::SLASH);
+        REQUIRE(tokens[4].type == TokenType::NUMBER);
+    }
+}
+
+TEST_CASE("Lexer handles comments with division operator", "[lexer]") {
+    SECTION("Division followed by comment") {
+        Lexer lexer("var x = 10 / 5; // divide by 5");
+        auto tokens = lexer.scanTokens();
+        
+        REQUIRE(tokens.size() == 8); // var x = 10 / 5 ; EOF
+        REQUIRE(tokens[4].type == TokenType::SLASH);
+    }
+    
+    SECTION("Comment followed by division") {
+        Lexer lexer("// comment\nvar x = 10 / 5;");
+        auto tokens = lexer.scanTokens();
+        
+        REQUIRE(tokens.size() == 8); // var x = 10 / 5 ; EOF
+        REQUIRE(tokens[4].type == TokenType::SLASH);
+    }
+}

@@ -38,6 +38,8 @@ class Lexer {
     void string();
     void number();
     void identifier();
+    void skipLineComment();
+    void skipBlockComment();
 
     bool isDigit(char c) const;
     bool isAlpha(char c) const;

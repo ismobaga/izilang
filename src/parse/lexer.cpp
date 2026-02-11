@@ -58,7 +58,13 @@ void Lexer::scanToken() {
             addToken(TokenType::STAR);
             break;
         case '/':
-            addToken(TokenType::SLASH);
+            if (match('/')) {
+                skipLineComment();
+            } else if (match('*')) {
+                skipBlockComment();
+            } else {
+                addToken(TokenType::SLASH);
+            }
             break;
         case '-':
             addToken(match('>') ? TokenType::ARROW : TokenType::MINUS);
@@ -291,5 +297,32 @@ TokenType Lexer::keywordType(std::string_view text) {
     if (text == "throw") return TokenType::THROW;
     if (text == "match") return TokenType::MATCH;
     return TokenType::IDENTIFIER;
+}
+
+void Lexer::skipLineComment() {
+    // Skip until end of line or end of file
+    while (peek() != '\n' && !isAtEnd()) {
+        advance();
+    }
+}
+
+void Lexer::skipBlockComment() {
+    // Use the start position captured before we began scanning this token
+    // This points to the '/' at the beginning of '/*'
+    int commentStartLine = startLine;
+    int commentStartColumn = startColumn;
+    
+    // Skip until we find */ or reach end of file
+    while (!isAtEnd()) {
+        if (peek() == '*' && peekNext() == '/') {
+            advance();  // Consume *
+            advance();  // Consume /
+            return;
+        }
+        advance();
+    }
+    
+    // If we reach here, we have an unterminated comment
+    throw LexerError(commentStartLine, commentStartColumn, "Unterminated block comment");
 }
 }  // namespace izi
