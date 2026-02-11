@@ -1,0 +1,8 @@
+print("Test 1: Basic try-catch");
+try {
+    throw "error";
+} catch(e) {
+    print("Caught:");
+    print(e);
+}
+print("Done");

@@ -1,0 +1,9 @@
+print("Before try");
+print("Starting test");
+try {
+    print("In try");
+    throw "error";
+} catch(e) {
+    print("Caught");
+}
+print("After catch");

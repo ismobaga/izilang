@@ -47,8 +47,8 @@ Value VM::run(const Chunk& entry) {
 
     frames.push_back(mainFrame);
 
-    try {
-        while (true) {
+    while (true) {
+        try {
             OpCode op = static_cast<OpCode>( readByte());
             switch (static_cast<OpCode>(op)) {
                 case OpCode::CONSTANT: {
@@ -272,15 +272,73 @@ Value VM::run(const Chunk& entry) {
                     }
                     break;
                 }
+                case OpCode::TRY: {
+                    // TRY opcode followed by:
+                    // - 2 bytes: offset to catch block (0 if no catch)
+                    // - 2 bytes: offset to finally block (0 if no finally)
+                    // - 1 byte: name index for catch variable (0 if no catch)
+                    uint16_t catchOffset = readShort();
+                    uint16_t finallyOffset = readShort();
+                    uint8_t catchVarIndex = readByte();
+                    
+                    ExceptionHandler handler;
+                    handler.frameIndex = frames.size() - 1;
+                    handler.stackSize = stack.size();
+                    
+                    // Calculate absolute instruction pointers
+                    if (catchOffset > 0) {
+                        handler.catchIp = currentFrame()->ip + catchOffset;
+                        handler.catchVariable = currentFrame()->chunk->names[catchVarIndex];
+                    } else {
+                        handler.catchIp = nullptr;
+                        handler.catchVariable = "";
+                    }
+                    
+                    if (finallyOffset > 0) {
+                        handler.finallyIp = currentFrame()->ip + finallyOffset;
+                    } else {
+                        handler.finallyIp = nullptr;
+                    }
+                    
+                    exceptionHandlers.push_back(handler);
+                    break;
+                }
+                case OpCode::THROW: {
+                    // Pop the exception value from stack and throw it
+                    Value exception = pop();
+                    throwException(exception);
+                    // If throwException returns, it means exception was handled
+                    // Continue execution will be at the catch/finally block
+                    break;
+                }
+                case OpCode::END_TRY: {
+                    // End of try-catch-finally block
+                    // Pop the exception handler from the stack
+                    if (!exceptionHandlers.empty()) {
+                        exceptionHandlers.pop_back();
+                    }
+                    break;
+                }
                 // ... handle other opcodes ...
                 default:
                     throw std::runtime_error("Unknown opcode encountered.");
             }
+        } catch (const std::runtime_error& e) {
+            // Convert C++ exception to IziLang exception and try to handle it
+            Value exception = std::string(e.what());
+            
+            // Try to handle the exception through the exception handler stack
+            if (handleException(exception)) {
+                // Exception was handled, continue execution from catch/finally block
+                // The handleException already updated the IP
+                continue;  // Continue the while loop
+            } else {
+                // No handler found, report error and exit
+                std::cerr << "Uncaught Runtime Error: " << e.what() << '\n';
+                isRunning = wasRunning;
+                return Nil{};
+            }
         }
-    } catch (const std::runtime_error& e) {
-        std::cerr << "Runtime Error: " << e.what() << '\n';
-        isRunning = wasRunning;
-        return Nil{};
     }
 
 }
@@ -314,5 +372,71 @@ size_t VM::validateArrayIndex(double index) {
     }
     return static_cast<size_t>(index);
 }
+
+void VM::throwException(const Value& exception) {
+    // Try to handle the exception
+    if (!handleException(exception)) {
+        // No handler found, convert to C++ exception to be caught by outer catch block
+        std::string msg = "Uncaught exception: ";
+        if (std::holds_alternative<std::string>(exception)) {
+            msg += std::get<std::string>(exception);
+        } else if (std::holds_alternative<double>(exception)) {
+            msg += std::to_string(std::get<double>(exception));
+        } else if (std::holds_alternative<bool>(exception)) {
+            msg += std::get<bool>(exception) ? "true" : "false";
+        } else {
+            msg += "<value>";
+        }
+        throw std::runtime_error(msg);
+    }
+}
+
+bool VM::handleException(const Value& exception) {
+    // Search for an exception handler in the current call frame
+    while (!exceptionHandlers.empty()) {
+        ExceptionHandler& handler = exceptionHandlers.back();
+        
+        // Check if handler is in current frame
+        if (handler.frameIndex != frames.size() - 1) {
+            // Handler is in a different frame, pop it
+            exceptionHandlers.pop_back();
+            continue;
+        }
+        
+        // Restore stack to the state when try block was entered
+        stack.resize(handler.stackSize);
+        
+        // If there's a catch block, jump to it
+        if (handler.catchIp != nullptr) {
+            // Push exception value to stack
+            push(exception);
+            
+            // Set the catch variable as a global (simplified approach)
+            globals[handler.catchVariable] = exception;
+            
+            // Jump to catch block
+            currentFrame()->ip = handler.catchIp;
+            
+            // The END_TRY opcode will clean up the handler
+            return true;
+        }
+        
+        // If there's only a finally block (no catch), jump to it
+        // But in this case, we should re-throw after finally
+        // For now, we'll just execute finally and return true
+        if (handler.finallyIp != nullptr) {
+            // Jump to finally block
+            currentFrame()->ip = handler.finallyIp;
+            return true;
+        }
+        
+        // No catch or finally, pop handler and continue searching
+        exceptionHandlers.pop_back();
+    }
+    
+    // No handler found
+    return false;
+}
+
 
 } // namespace izi

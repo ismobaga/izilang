@@ -1,0 +1,7 @@
+print("A");
+try {
+    print("B");
+} catch(e) {
+    print("C");
+}
+print("D");

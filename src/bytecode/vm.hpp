@@ -15,7 +15,15 @@ struct CallFrame {
     const Chunk* chunk;
     const uint8_t* ip; // Instruction pointer
     size_t stackBase;  // Start index in the VM stack for this call frame
+};
 
+// Exception handler for try-catch-finally blocks
+struct ExceptionHandler {
+    size_t frameIndex;      // Index of the call frame where this handler was set up
+    const uint8_t* catchIp; // Instruction pointer to catch block (nullptr if no catch)
+    const uint8_t* finallyIp; // Instruction pointer to finally block (nullptr if no finally)
+    size_t stackSize;       // Stack size when handler was set up
+    std::string catchVariable; // Variable name to bind exception to in catch block
 };
 
 class VM {
@@ -34,6 +42,7 @@ private:
     std::vector<Value> stack;
     std::vector<CallFrame> frames;
     std::unordered_map<std::string, Value> globals;
+    std::vector<ExceptionHandler> exceptionHandlers; // Stack of exception handlers
     bool isRunning = false;
 
     CallFrame* currentFrame();
@@ -43,6 +52,10 @@ private:
 
     void push(Value v);
     Value pop();
+    
+    // Exception handling helpers
+    void throwException(const Value& exception);
+    bool handleException(const Value& exception);
 
     static double asNumber(const Value& v);
     static size_t validateArrayIndex(double index);
