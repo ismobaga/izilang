@@ -33,6 +33,7 @@ namespace izi
         Value visit(MapExpr& expr) override;
         Value visit(IndexExpr& expr) override;
         Value visit(SetIndexExpr& expr) override;
+        Value visit(FunctionExpr& expr) override;
 
         // Statement visitors
         void visit(ExprStmt& stmt) override;

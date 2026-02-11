@@ -8,12 +8,12 @@
 
 namespace izi {
 
-class Environment {
+class Environment : public std::enable_shared_from_this<Environment> {
    public:
     Environment() : parent(nullptr) {}
 
-    explicit Environment(Environment* enclosing = nullptr)
-        : parent(enclosing) {}
+    explicit Environment(std::shared_ptr<Environment> enclosing)
+        : parent(std::move(enclosing)) {}
 
     void define(const std::string& name, const Value& value) {
         values[name] = value;
@@ -49,7 +49,7 @@ class Environment {
 
    private:
     std::unordered_map<std::string, Value> values;
-    Environment* parent;
+    std::shared_ptr<Environment> parent;
 };
 
 }  // namespace izi

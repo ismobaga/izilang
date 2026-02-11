@@ -44,7 +44,7 @@ class Interpreter : public ExprVisitor, public StmtVisitor {
 
     void interpret(const std::vector<StmtPtr>& program);
     void defineGlobal(const std::string& name, const Value& value) {
-        globals.define(name, value);
+        globals->define(name, value);
     }
 
     // ExprVisitor
@@ -59,6 +59,7 @@ class Interpreter : public ExprVisitor, public StmtVisitor {
     Value visit(MapExpr& expr) override;
     Value visit(IndexExpr& expr) override;
     Value visit(SetIndexExpr& expr) override;
+    Value visit(FunctionExpr& expr) override;
 
     // StmVisitor
 
@@ -76,12 +77,12 @@ class Interpreter : public ExprVisitor, public StmtVisitor {
     void visit(TryStmt&) override;
     void visit(ThrowStmt&) override;
 
-    void executeBlock(const std::vector<StmtPtr>& statements, Environment* newEnv);
+    void executeBlock(const std::vector<StmtPtr>& statements, std::shared_ptr<Environment> newEnv);
 
    private:
     std::string_view source_;
-    Environment globals;
-    Environment* env;
+    std::shared_ptr<Environment> globals;
+    std::shared_ptr<Environment> env;
 
     Value evaluate(Expr& expr);
     void execute(Stmt& expr);
@@ -89,7 +90,6 @@ class Interpreter : public ExprVisitor, public StmtVisitor {
     // Helper to convert value to number with proper error
     double toNumber(const Value& v, const Token& token);
       
-    
     // for imports
     std::unordered_set<std::string> importedModules;
 
