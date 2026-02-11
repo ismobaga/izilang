@@ -513,4 +513,32 @@ void Interpreter::visit(ThrowStmt& stmt) {
     throw ThrowSignal(exceptionValue, stmt.keyword);
 }
 
+// v0.3: Class support (stub implementation)
+void Interpreter::visit(ClassStmt& stmt) {
+    // TODO: Implement class support
+    throw RuntimeError(Token(TokenType::CLASS, stmt.name, 0, 0),
+                      "Class support not yet implemented in interpreter.");
+}
+
+// v0.3: Property access (stub implementation)
+Value Interpreter::visit(PropertyExpr& expr) {
+    // TODO: Implement property access
+    throw RuntimeError(Token(TokenType::DOT, expr.property, 0, 0),
+                      "Property access not yet implemented.");
+}
+
+// v0.3: Property assignment (stub implementation)
+Value Interpreter::visit(SetPropertyExpr& expr) {
+    // TODO: Implement property assignment
+    throw RuntimeError(Token(TokenType::DOT, expr.property, 0, 0),
+                      "Property assignment not yet implemented.");
+}
+
+// v0.3: This expression (stub implementation)
+Value Interpreter::visit(ThisExpr& expr) {
+    // TODO: Implement 'this' binding
+    throw RuntimeError(Token(TokenType::THIS, "this", 0, 0),
+                      "'this' keyword not yet implemented.");
+}
+
 }  // namespace izi

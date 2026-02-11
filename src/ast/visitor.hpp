@@ -16,6 +16,9 @@ struct IndexExpr;
 struct SetIndexExpr;
 struct FunctionExpr;
 struct MatchExpr;
+struct PropertyExpr;     // v0.3
+struct SetPropertyExpr;  // v0.3
+struct ThisExpr;         // v0.3
 
 struct ExprStmt;
 struct BlockStmt;
@@ -30,6 +33,7 @@ struct BreakStmt;
 struct ContinueStmt;
 struct TryStmt;
 struct ThrowStmt;
+struct ClassStmt;        // v0.3
 
 
 class ExprVisitor {
@@ -49,6 +53,9 @@ class ExprVisitor {
     virtual Value visit(SetIndexExpr&) = 0;
     virtual Value visit(FunctionExpr&) = 0;
     virtual Value visit(MatchExpr&) = 0;
+    virtual Value visit(PropertyExpr&) = 0;      // v0.3
+    virtual Value visit(SetPropertyExpr&) = 0;   // v0.3
+    virtual Value visit(ThisExpr&) = 0;          // v0.3
 };
 
 class StmtVisitor {
@@ -68,6 +75,7 @@ class StmtVisitor {
     virtual void visit(ContinueStmt&) = 0;
     virtual void visit(TryStmt&) = 0;
     virtual void visit(ThrowStmt&) = 0;
+    virtual void visit(ClassStmt&) = 0;          // v0.3
 };
 
 }  // namespace izi

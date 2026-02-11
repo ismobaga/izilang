@@ -142,6 +142,42 @@ struct SetIndexExpr : Expr {
     }
 };
 
+// Property access expression (e.g., obj.field) (v0.3)
+struct PropertyExpr : Expr {
+    ExprPtr object;
+    std::string property;
+
+    PropertyExpr(ExprPtr obj, std::string prop)
+        : object(std::move(obj)), property(std::move(prop)) {}
+
+    Value accept(ExprVisitor& v) override {
+        return v.visit(*this);
+    }
+};
+
+// Property set expression (e.g., obj.field = value) (v0.3)
+struct SetPropertyExpr : Expr {
+    ExprPtr object;
+    std::string property;
+    ExprPtr value;
+
+    SetPropertyExpr(ExprPtr obj, std::string prop, ExprPtr val)
+        : object(std::move(obj)), property(std::move(prop)), value(std::move(val)) {}
+
+    Value accept(ExprVisitor& v) override {
+        return v.visit(*this);
+    }
+};
+
+// This expression for referencing the current instance (v0.3)
+struct ThisExpr : Expr {
+    ThisExpr() = default;
+
+    Value accept(ExprVisitor& v) override {
+        return v.visit(*this);
+    }
+};
+
 // Forward declaration for statement types (from stmt.hpp)
 // We only need FunctionExpr to reference these types, full definition is in stmt.hpp
 struct Stmt;

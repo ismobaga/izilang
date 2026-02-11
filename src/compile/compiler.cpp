@@ -502,5 +502,28 @@ std::string BytecodeCompiler::loadFile(const std::string& path) {
     return buffer.str();
 }
 
+// v0.3: Class support (stub implementation)
+void BytecodeCompiler::visit(ClassStmt& stmt) {
+    // TODO: Implement class compilation
+    throw std::runtime_error("Class support not yet implemented in compiler.");
+}
+
+// v0.3: Property access (stub implementation)
+Value BytecodeCompiler::visit(PropertyExpr& expr) {
+    // TODO: Implement property access compilation
+    throw std::runtime_error("Property access not yet implemented in compiler.");
+}
+
+// v0.3: Property assignment (stub implementation)
+Value BytecodeCompiler::visit(SetPropertyExpr& expr) {
+    // TODO: Implement property assignment compilation
+    throw std::runtime_error("Property assignment not yet implemented in compiler.");
+}
+
+// v0.3: This expression (stub implementation)
+Value BytecodeCompiler::visit(ThisExpr& expr) {
+    // TODO: Implement 'this' binding in compiler
+    throw std::runtime_error("'this' keyword not yet implemented in compiler.");
+}
 
 }

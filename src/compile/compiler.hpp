@@ -35,6 +35,9 @@ namespace izi
         Value visit(SetIndexExpr& expr) override;
         Value visit(FunctionExpr& expr) override;
         Value visit(MatchExpr& expr) override;
+        Value visit(PropertyExpr& expr) override;      // v0.3
+        Value visit(SetPropertyExpr& expr) override;   // v0.3
+        Value visit(ThisExpr& expr) override;          // v0.3
 
         // Statement visitors
         void visit(ExprStmt& stmt) override;
@@ -50,6 +53,7 @@ namespace izi
         void visit(ContinueStmt& stmt) override;
         void visit(TryStmt& stmt) override;
         void visit(ThrowStmt& stmt) override;
+        void visit(ClassStmt& stmt) override;          // v0.3
 
     private:
         Chunk chunk;
