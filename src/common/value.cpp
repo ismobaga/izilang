@@ -29,7 +29,7 @@ std::string valueToString(const Value& v) {
         oss << "{...}";  // Simplified for string interpolation
     } else if (std::holds_alternative<std::shared_ptr<Set>>(v)) {
         oss << "Set(...)";  // Simplified for string interpolation
-    } else if(std::holds_alternative<std::shared_ptr<VmCallable>>(v)) {
+    } else if (std::holds_alternative<std::shared_ptr<VmCallable>>(v)) {
         oss << "<vm fn " << std::get<std::shared_ptr<VmCallable>>(v)->name() << ">";
     } else {
         oss << "<unknown>";
@@ -54,7 +54,7 @@ void printValue(const Value& v) {
         printMap(*std::get<std::shared_ptr<Map>>(v));
     } else if (std::holds_alternative<std::shared_ptr<Set>>(v)) {
         printSet(*std::get<std::shared_ptr<Set>>(v));
-    } else if(std::holds_alternative<std::shared_ptr<VmCallable>>(v)) {
+    } else if (std::holds_alternative<std::shared_ptr<VmCallable>>(v)) {
         std::cout << "<vm fn " << std::get<std::shared_ptr<VmCallable>>(v)->name() << ">";
     } else {
         std::cout << "<unknown>";
