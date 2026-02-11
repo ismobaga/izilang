@@ -1,6 +1,7 @@
 #include "vm.hpp"
 #include "bytecode/opcode.hpp"
 #include "bytecode/mv_callable.hpp"
+#include <cmath>
 
 
 
@@ -220,7 +221,14 @@ Value VM::run(const Chunk& entry) {
                         if (!std::holds_alternative<double>(index)) {
                             throw std::runtime_error("Array index must be a number.");
                         }
-                        size_t idx = static_cast<size_t>(std::get<double>(index));
+                        double idxDouble = std::get<double>(index);
+                        if (idxDouble < 0) {
+                            throw std::runtime_error("Array index must be non-negative.");
+                        }
+                        if (idxDouble != std::floor(idxDouble)) {
+                            throw std::runtime_error("Array index must be a whole number.");
+                        }
+                        size_t idx = static_cast<size_t>(idxDouble);
                         if (idx >= arr->elements.size()) {
                             throw std::runtime_error("Array index out of bounds.");
                         }
@@ -252,7 +260,14 @@ Value VM::run(const Chunk& entry) {
                         if (!std::holds_alternative<double>(index)) {
                             throw std::runtime_error("Array index must be a number.");
                         }
-                        size_t idx = static_cast<size_t>(std::get<double>(index));
+                        double idxDouble = std::get<double>(index);
+                        if (idxDouble < 0) {
+                            throw std::runtime_error("Array index must be non-negative.");
+                        }
+                        if (idxDouble != std::floor(idxDouble)) {
+                            throw std::runtime_error("Array index must be a whole number.");
+                        }
+                        size_t idx = static_cast<size_t>(idxDouble);
                         if (idx >= arr->elements.size()) {
                             throw std::runtime_error("Array index out of bounds.");
                         }
