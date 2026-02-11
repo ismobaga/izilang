@@ -246,14 +246,22 @@ CliOptions CliOptions::parse(int argc, char** argv) {
             return options;
         } else if (arg[0] == '-') {
             std::cerr << "Error: Unknown option: " << arg << "\n";
-            std::cerr << "Use 'izi help " << 
-                (options.command == Command::Run ? "run" :
-                 options.command == Command::Build ? "build" :
-                 options.command == Command::Check ? "check" :
-                 options.command == Command::Test ? "test" :
-                 options.command == Command::Repl ? "repl" :
-                 options.command == Command::Fmt ? "fmt" : "")
-                << "' for usage information\n";
+            
+            // Map command to string for error message
+            std::string cmdName;
+            switch (options.command) {
+                case Command::Run: cmdName = "run"; break;
+                case Command::Build: cmdName = "build"; break;
+                case Command::Check: cmdName = "check"; break;
+                case Command::Test: cmdName = "test"; break;
+                case Command::Repl: cmdName = "repl"; break;
+                case Command::Fmt: cmdName = "fmt"; break;
+                default: cmdName = ""; break;
+            }
+            
+            if (!cmdName.empty()) {
+                std::cerr << "Use 'izi help " << cmdName << "' for usage information\n";
+            }
             std::exit(1);
         } else {
             // This is a positional argument
@@ -281,11 +289,19 @@ CliOptions CliOptions::parse(int argc, char** argv) {
         options.command == Command::Build || 
         options.command == Command::Check) {
         if (options.input.empty()) {
+            // Map command to string for error message
+            std::string cmdName;
+            switch (options.command) {
+                case Command::Run: cmdName = "run"; break;
+                case Command::Build: cmdName = "build"; break;
+                case Command::Check: cmdName = "check"; break;
+                default: cmdName = ""; break;
+            }
+            
             std::cerr << "Error: No input file specified\n";
-            std::cerr << "Use 'izi help " << 
-                (options.command == Command::Run ? "run" :
-                 options.command == Command::Build ? "build" : "check")
-                << "' for usage information\n";
+            if (!cmdName.empty()) {
+                std::cerr << "Use 'izi help " << cmdName << "' for usage information\n";
+            }
             std::exit(1);
         }
     }

@@ -87,8 +87,14 @@ For the best IziLang development experience:
 
 - **Error Lens** - Inline error messages
 - **Better Comments** - Enhanced comment styling
-- **Bracket Pair Colorizer 2** - Matching bracket colors
 - **indent-rainbow** - Colored indentation levels
+
+Note: VS Code now has built-in bracket pair colorization (since v1.60). Enable it in settings:
+```json
+{
+  "editor.bracketPairColorization.enabled": true
+}
+```
 
 ---
 

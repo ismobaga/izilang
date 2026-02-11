@@ -157,7 +157,10 @@ void runRepl(bool useVM, bool debug) {
         }
         
         // Handle multi-line input
-        // Simple heuristic: if line ends with { or is incomplete, expect more input
+        // Simple heuristic: if line ends with { or (, expect more input
+        // Note: This is a simple approach and may incorrectly trigger for
+        // strings/comments containing these characters. A more robust solution
+        // would parse the line to check if the brace/paren is in code context.
         bool lineEndsWithBrace = !line.empty() && (line.back() == '{' || line.back() == '(');
         
         if (lineEndsWithBrace || inMultiline) {
@@ -184,9 +187,11 @@ void runRepl(bool useVM, bool debug) {
         }
 
         try {
-            // For persistent REPL, we need to update the interpreter's source
-            // Currently runCode creates a new interpreter each time
-            // For now, use the existing behavior
+            // Note: Currently runCode() creates a new interpreter/VM each time,
+            // which limits state persistence in the REPL. The persistent
+            // interpreter/VM created above could be used for true state
+            // preservation, but would require refactoring runCode() to accept
+            // an existing interpreter/VM instance.
             runCode(line, useVM, debug, "<repl>");
         } catch (const std::exception& e) {
             // Most errors are already printed by runCode
