@@ -89,6 +89,7 @@ GENERATED += $(OBJDIR)/test_pattern_matching.o
 GENERATED += $(OBJDIR)/test_try_catch.o
 GENERATED += $(OBJDIR)/test_value.o
 GENERATED += $(OBJDIR)/test_vm_simple.o
+GENERATED += $(OBJDIR)/test_vm_stack.o
 GENERATED += $(OBJDIR)/user_function.o
 GENERATED += $(OBJDIR)/value.o
 GENERATED += $(OBJDIR)/vm.o
@@ -112,6 +113,7 @@ OBJECTS += $(OBJDIR)/test_pattern_matching.o
 OBJECTS += $(OBJDIR)/test_try_catch.o
 OBJECTS += $(OBJDIR)/test_value.o
 OBJECTS += $(OBJDIR)/test_vm_simple.o
+OBJECTS += $(OBJDIR)/test_vm_stack.o
 OBJECTS += $(OBJDIR)/user_function.o
 OBJECTS += $(OBJDIR)/value.o
 OBJECTS += $(OBJDIR)/vm.o
@@ -247,6 +249,9 @@ $(OBJDIR)/test_value.o: test_value.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/test_vm_simple.o: test_vm_simple.cpp
+	@echo "$(notdir $<)"
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/test_vm_stack.o: test_vm_stack.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 

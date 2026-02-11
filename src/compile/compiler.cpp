@@ -298,6 +298,7 @@ void BytecodeCompiler::visit(VarStmt& stmt) {
     uint8_t nameIndex = makeName(stmt.name);
     emitOp(OpCode::SET_GLOBAL);
     emitByte(nameIndex);
+    emitOp(OpCode::POP); // Pop the value left by SET_GLOBAL
 }
 
 void BytecodeCompiler::visit(FunctionStmt& stmt) {
@@ -330,6 +331,7 @@ void BytecodeCompiler::visit(FunctionStmt& stmt) {
     uint8_t nameIndex = makeName(stmt.name);
     emitOp(OpCode::SET_GLOBAL);
     emitByte(nameIndex);
+    emitOp(OpCode::POP); // Pop the value left by SET_GLOBAL
 }
 
 void BytecodeCompiler::visit(ImportStmt& stmt) {
