@@ -221,14 +221,7 @@ Value VM::run(const Chunk& entry) {
                         if (!std::holds_alternative<double>(index)) {
                             throw std::runtime_error("Array index must be a number.");
                         }
-                        double idxDouble = std::get<double>(index);
-                        if (idxDouble < 0) {
-                            throw std::runtime_error("Array index must be non-negative.");
-                        }
-                        if (idxDouble != std::floor(idxDouble)) {
-                            throw std::runtime_error("Array index must be a whole number.");
-                        }
-                        size_t idx = static_cast<size_t>(idxDouble);
+                        size_t idx = validateArrayIndex(std::get<double>(index));
                         if (idx >= arr->elements.size()) {
                             throw std::runtime_error("Array index out of bounds.");
                         }
@@ -260,14 +253,7 @@ Value VM::run(const Chunk& entry) {
                         if (!std::holds_alternative<double>(index)) {
                             throw std::runtime_error("Array index must be a number.");
                         }
-                        double idxDouble = std::get<double>(index);
-                        if (idxDouble < 0) {
-                            throw std::runtime_error("Array index must be non-negative.");
-                        }
-                        if (idxDouble != std::floor(idxDouble)) {
-                            throw std::runtime_error("Array index must be a whole number.");
-                        }
-                        size_t idx = static_cast<size_t>(idxDouble);
+                        size_t idx = validateArrayIndex(std::get<double>(index));
                         if (idx >= arr->elements.size()) {
                             throw std::runtime_error("Array index out of bounds.");
                         }
@@ -317,6 +303,16 @@ double VM::asNumber(const Value& v) {
         throw std::runtime_error("Expected number.");
     }
     return std::get<double>(v);
+}
+
+size_t VM::validateArrayIndex(double index) {
+    if (index < 0) {
+        throw std::runtime_error("Array index must be non-negative.");
+    }
+    if (index != std::trunc(index)) {
+        throw std::runtime_error("Array index must be a whole number.");
+    }
+    return static_cast<size_t>(index);
 }
 
 } // namespace izi

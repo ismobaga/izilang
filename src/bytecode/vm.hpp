@@ -45,6 +45,7 @@ private:
     Value pop();
 
     static double asNumber(const Value& v);
+    static size_t validateArrayIndex(double index);
 
     template<typename Fn>
     void binaryNumeric(Fn fn) {
