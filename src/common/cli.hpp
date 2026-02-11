@@ -7,13 +7,16 @@
 namespace izi {
 
 // Version constant
-constexpr const char* IZILANG_VERSION = "IziLang 0.1.0";
+constexpr const char* IZILANG_VERSION = "IziLang 0.2.0";
 
 struct CliOptions {
-    enum class ExecutionMode {
-        File,         // Execute a file
-        Inline,       // Execute inline code with -c
+    enum class Command {
+        Run,          // Execute a file
+        Build,        // Compile/check only, no execution
+        Check,        // Parse + analyze, no execution
+        Test,         // Execute test files
         Repl,         // Interactive REPL mode
+        Fmt,          // Format code
         Version,      // Show version
         Help          // Show help
     };
@@ -23,14 +26,16 @@ struct CliOptions {
         VM            // Bytecode VM
     };
 
-    ExecutionMode mode = ExecutionMode::File;
+    Command command = Command::Run;
     Engine engine = Engine::Interpreter;
     bool debug = false;
     std::string input;  // Filename or inline code
+    std::vector<std::string> args;  // Additional arguments (e.g., test patterns)
 
     static CliOptions parse(int argc, char** argv);
     static void printVersion();
     static void printHelp();
+    static void printCommandHelp(Command cmd);
 };
 
 } // namespace izi
