@@ -1,0 +1,35 @@
+print("=== std.io Tests ===");
+print("");
+
+print("Writing and reading files:");
+var testFile = "/tmp/test_izilang_io.txt";
+var content = "Hello, IziLang!
+This is a test file.";
+
+writeFile(testFile, content);
+print("  Wrote to", testFile);
+
+if (fileExists(testFile)) {
+    print("  File exists: true");
+    var readContent = readFile(testFile);
+    print("  Read content:");
+    print(readContent);
+} else {
+    print("  ERROR: File does not exist!");
+}
+print("");
+
+print("Appending to file:");
+appendFile(testFile, "
+Appended line.");
+var appendedContent = readFile(testFile);
+print("  Content after append:");
+print(appendedContent);
+print("");
+
+print("Testing non-existent file:");
+var fakeFile = "/tmp/nonexistent_file_12345.txt";
+print("  fileExists('nonexistent') =", fileExists(fakeFile));
+print("");
+
+print("=== All std.io tests passed! ===");

@@ -38,6 +38,45 @@ auto nativeKeys(Interpreter& interp, const std::vector<Value>& arguments) -> Val
 auto nativeValues(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 auto nativeHasKey(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 
+// std.math functions
+auto nativeSqrt(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativePow(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeAbs(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeFloor(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeCeil(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeRound(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeSin(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeCos(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeTan(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeMin(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeMax(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+
+// std.string functions
+auto nativeSubstring(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeSplit(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeJoin(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeToUpper(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeToLower(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeTrim(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeReplace(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeStartsWith(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeEndsWith(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeIndexOf(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+
+// std.array functions
+auto nativeMap(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeFilter(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeReduce(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeSort(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeReverse(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeConcat(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeSlice(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+
+// std.io functions
+auto nativeReadFile(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeWriteFile(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeAppendFile(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeFileExists(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 
 void registerNativeFunctions(Interpreter& interpreter);
 

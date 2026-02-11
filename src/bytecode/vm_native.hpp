@@ -36,6 +36,46 @@ Value vmNativeKeys(VM& vm, const std::vector<Value>& arguments);
 Value vmNativeValues(VM& vm, const std::vector<Value>& arguments);
 Value vmNativeHasKey(VM& vm, const std::vector<Value>& arguments);
 
+// std.math native functions
+Value vmNativeSqrt(VM& vm, const std::vector<Value>& arguments);
+Value vmNativePow(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeAbs(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeFloor(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeCeil(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeRound(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeSin(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeCos(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeTan(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeMin(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeMax(VM& vm, const std::vector<Value>& arguments);
+
+// std.string native functions
+Value vmNativeSubstring(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeSplit(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeJoin(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeToUpper(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeToLower(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeTrim(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeReplace(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeStartsWith(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeEndsWith(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeIndexOf(VM& vm, const std::vector<Value>& arguments);
+
+// std.array native functions
+Value vmNativeMap(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeFilter(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeReduce(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeSort(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeReverse(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeConcat(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeSlice(VM& vm, const std::vector<Value>& arguments);
+
+// std.io native functions
+Value vmNativeReadFile(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeWriteFile(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeAppendFile(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeFileExists(VM& vm, const std::vector<Value>& arguments);
+
 void registerVmNatives(VM& vm);
 
 } // namespace izi
