@@ -57,8 +57,9 @@ enum class OpCode : uint8_t {
     END_TRY,       // End try-catch-finally block
     
     // Class support (v0.3)
-    GET_PROPERTY,  // Get a property from an instance (followed by name index)
-    SET_PROPERTY,  // Set a property on an instance (followed by name index)
+    GET_PROPERTY,      // Get a property from an instance (followed by name index)
+    SET_PROPERTY,      // Set a property on an instance (followed by name index)
+    GET_SUPER_METHOD,  // Get a method from superclass and bind to this
 };
 
 } // namespace izi

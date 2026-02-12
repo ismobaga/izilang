@@ -1,0 +1,72 @@
+// Complete OOP demonstration for IziLang
+
+// Base class with fields and methods
+class Animal {
+    var species = "Unknown";
+    
+    fn init(name) {
+        this.name = name;
+    }
+    
+    fn speak() {
+        print(this.name, "makes a sound");
+    }
+    
+    fn describe() {
+        print(this.name, "is a", this.species);
+    }
+}
+
+// Inheritance with method override
+class Dog extends Animal {
+    fn init(name) {
+        super.init(name);  // Call parent constructor
+        this.species = "Canine";
+    }
+    
+    fn speak() {
+        print(this.name, "barks loudly");
+    }
+    
+    fn wagTail() {
+        print(this.name, "wags tail happily");
+    }
+}
+
+// Multi-level inheritance
+class ServiceDog extends Dog {
+    fn init(name, task) {
+        super.init(name);
+        this.task = task;
+    }
+    
+    fn work() {
+        print(this.name, "is working as a", this.task, "dog");
+    }
+}
+
+print("=== OOP Features Demo ===");
+print("");
+
+print("1. Basic class instantiation:");
+var animal = Animal("Generic");
+animal.speak();
+animal.describe();
+
+print("");
+print("2. Inheritance and method overriding:");
+var dog = Dog("Buddy");
+dog.speak();        // Overridden method
+dog.describe();     // Inherited method
+dog.wagTail();      // New method
+
+print("");
+print("3. Multi-level inheritance:");
+var service = ServiceDog("Max", "therapy");
+service.speak();    // From Dog (overridden from Animal)
+service.describe(); // From Animal (inherited through Dog)
+service.wagTail();  // From Dog
+service.work();     // From ServiceDog
+
+print("");
+print("=== All OOP features working! ===");

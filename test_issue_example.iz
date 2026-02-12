@@ -1,0 +1,18 @@
+class Animal {
+    fn init(name) {
+        this.name = name;
+    }
+    
+    fn speak() {
+        print(this.name, "makes a sound");
+    }
+}
+
+class Dog extends Animal {
+    fn speak() {
+        print(this.name, "barks");
+    }
+}
+
+var dog = Dog("Buddy");
+dog.speak();  // "Buddy barks"

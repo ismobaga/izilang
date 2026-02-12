@@ -608,4 +608,30 @@ Value BytecodeCompiler::visit(ThisExpr& expr) {
     return Nil{}; // Return value not used in visitor pattern
 }
 
+// v0.3: Super expression
+Value BytecodeCompiler::visit(SuperExpr& expr) {
+    // For bytecode VM, we implement super as:
+    // 1. Load 'super' (the superclass) - set in method closure during class creation
+    // 2. Load 'this' (the current instance) - bound when method is called
+    // 3. Get the method from the superclass and bind it to this
+    // Note: Both 'super' and 'this' are treated as globals in the simplified VM implementation
+    
+    // Load super
+    uint8_t superIndex = makeName("super");
+    emitOp(OpCode::GET_GLOBAL);
+    emitByte(superIndex);
+    
+    // Load this
+    uint8_t thisIndex = makeName("this");
+    emitOp(OpCode::GET_GLOBAL);
+    emitByte(thisIndex);
+    
+    // Get and bind the method
+    uint8_t methodIndex = makeName(expr.method);
+    emitOp(OpCode::GET_SUPER_METHOD);
+    emitByte(methodIndex);
+    
+    return Nil{}; // Return value not used in visitor pattern
+}
+
 }

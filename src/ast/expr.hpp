@@ -178,6 +178,18 @@ struct ThisExpr : Expr {
     }
 };
 
+// Super expression for referencing the parent class (v0.3)
+struct SuperExpr : Expr {
+    std::string method;  // Name of the method to call on super
+
+    explicit SuperExpr(std::string m)
+        : method(std::move(m)) {}
+
+    Value accept(ExprVisitor& v) override {
+        return v.visit(*this);
+    }
+};
+
 // Forward declaration for statement types (from stmt.hpp)
 // We only need FunctionExpr to reference these types, full definition is in stmt.hpp
 struct Stmt;

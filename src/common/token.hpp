@@ -42,6 +42,7 @@ enum class TokenType {
     AND,
     CLASS,
     ELSE,
+    EXTENDS,
     FALSE,
     FN,
     FOR,
@@ -145,6 +146,8 @@ inline const char* tokenTypeToString(TokenType type) {
             return "CLASS";
         case TokenType::ELSE:
             return "ELSE";
+        case TokenType::EXTENDS:
+            return "EXTENDS";
         case TokenType::FALSE:
             return "FALSE";
         case TokenType::FN:

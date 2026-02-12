@@ -33,39 +33,75 @@ Value BoundMethod::call(Interpreter& interp, const std::vector<Value>& arguments
 }
 
 int IziClass::arity() const {
-    // Check if there's a constructor method
-    auto it = methods.find("constructor");
-    if (it != methods.end()) {
+    // Check if there's an init method (preferred) or constructor method
+    auto initIt = methods.find("init");
+    if (initIt != methods.end()) {
+        if (std::holds_alternative<std::shared_ptr<Callable>>(initIt->second)) {
+            auto init = std::get<std::shared_ptr<Callable>>(initIt->second);
+            return init->arity();
+        }
+    }
+    
+    auto constructorIt = methods.find("constructor");
+    if (constructorIt != methods.end()) {
         // Get the arity from the constructor
-        if (std::holds_alternative<std::shared_ptr<Callable>>(it->second)) {
-            auto constructor = std::get<std::shared_ptr<Callable>>(it->second);
+        if (std::holds_alternative<std::shared_ptr<Callable>>(constructorIt->second)) {
+            auto constructor = std::get<std::shared_ptr<Callable>>(constructorIt->second);
             return constructor->arity();
         }
     }
+    
+    // If not found, check superclass
+    if (superclass) {
+        return superclass->arity();
+    }
+    
     return 0;  // No constructor means no arguments
+}
+
+// Helper method to recursively initialize fields from the entire inheritance chain
+void initializeFieldsRecursive(const IziClass* klass, std::shared_ptr<Instance> instance) {
+    // First initialize superclass fields (depth-first)
+    if (klass->superclass) {
+        initializeFieldsRecursive(klass->superclass.get(), instance);
+    }
+    
+    // Then initialize this class's fields
+    for (const auto& fieldName : klass->fieldNames) {
+        auto it = klass->fieldDefaults.find(fieldName);
+        if (it != klass->fieldDefaults.end()) {
+            instance->fields[fieldName] = it->second;
+        } else {
+            // Only initialize to Nil if not already initialized by a parent class
+            if (instance->fields.find(fieldName) == instance->fields.end()) {
+                instance->fields[fieldName] = Nil{};
+            }
+        }
+    }
 }
 
 Value IziClass::call(Interpreter& interp, const std::vector<Value>& arguments) {
     // Create a new instance
     auto instance = std::make_shared<Instance>(shared_from_this());
     
-    // Initialize fields with their default values
-    for (const auto& fieldName : fieldNames) {
-        auto it = fieldDefaults.find(fieldName);
-        if (it != fieldDefaults.end()) {
-            instance->fields[fieldName] = it->second;
-        } else {
-            instance->fields[fieldName] = Nil{};
-        }
-    }
+    // Initialize fields from the entire inheritance chain (recursive)
+    initializeFieldsRecursive(this, instance);
     
-    // If there's a constructor, call it with 'this' bound
-    auto constructorIt = methods.find("constructor");
-    if (constructorIt != methods.end()) {
+    // Look for constructor or init method (init takes precedence for OOP convention)
+    // Use getMethod to check the entire inheritance chain
+    Value init = getMethod("init", instance);
+    if (!std::holds_alternative<Nil>(init)) {
+        if (std::holds_alternative<std::shared_ptr<Callable>>(init)) {
+            auto initCallable = std::get<std::shared_ptr<Callable>>(init);
+            initCallable->call(interp, arguments);
+        }
+    } else {
         Value constructor = getMethod("constructor", instance);
-        if (std::holds_alternative<std::shared_ptr<Callable>>(constructor)) {
-            auto constructorCallable = std::get<std::shared_ptr<Callable>>(constructor);
-            constructorCallable->call(interp, arguments);
+        if (!std::holds_alternative<Nil>(constructor)) {
+            if (std::holds_alternative<std::shared_ptr<Callable>>(constructor)) {
+                auto constructorCallable = std::get<std::shared_ptr<Callable>>(constructor);
+                constructorCallable->call(interp, arguments);
+            }
         }
     }
     
@@ -73,18 +109,23 @@ Value IziClass::call(Interpreter& interp, const std::vector<Value>& arguments) {
 }
 
 Value IziClass::getMethod(const std::string& name, std::shared_ptr<Instance> instance) {
+    // First check this class's methods
     auto it = methods.find(name);
-    if (it == methods.end()) {
-        return Nil{};
+    if (it != methods.end()) {
+        // Bind the method to the instance
+        if (std::holds_alternative<std::shared_ptr<Callable>>(it->second)) {
+            auto callable = std::get<std::shared_ptr<Callable>>(it->second);
+            return std::make_shared<BoundMethod>(instance, callable);
+        }
+        return it->second;
     }
     
-    // Bind the method to the instance
-    if (std::holds_alternative<std::shared_ptr<Callable>>(it->second)) {
-        auto callable = std::get<std::shared_ptr<Callable>>(it->second);
-        return std::make_shared<BoundMethod>(instance, callable);
+    // If not found, check superclass
+    if (superclass) {
+        return superclass->getMethod(name, instance);
     }
     
-    return it->second;
+    return Nil{};
 }
 
 }  // namespace izi

@@ -1,0 +1,68 @@
+// Test basic inheritance
+class Animal {
+    fn init(name) {
+        this.name = name;
+    }
+    
+    fn speak() {
+        print(this.name, "makes a sound");
+    }
+}
+
+class Dog extends Animal {
+    fn speak() {
+        print(this.name, "barks");
+    }
+}
+
+print("=== Test 1: Basic inheritance and method overriding ===");
+var dog = Dog("Buddy");
+dog.speak();  // Should print: Buddy barks
+
+print("");
+print("=== Test 2: Parent class still works ===");
+var animal = Animal("Generic");
+animal.speak();  // Should print: Generic makes a sound
+
+print("");
+print("=== Test 3: Inherited method (no override) ===");
+class Cat extends Animal {
+    fn meow() {
+        print(this.name, "meows");
+    }
+}
+var cat = Cat("Whiskers");
+cat.speak();  // Should print: Whiskers makes a sound (inherited from Animal)
+cat.meow();   // Should print: Whiskers meows
+
+print("");
+print("=== Test 4: Super calls ===");
+class Bird extends Animal {
+    fn speak() {
+        super.speak();  // Call parent method
+        print(this.name, "also chirps");
+    }
+}
+var bird = Bird("Tweety");
+bird.speak();  // Should print: Tweety makes a sound\nTweety also chirps
+
+print("");
+print("=== Test 5: Multi-level inheritance ===");
+class Mammal extends Animal {
+    fn walk() {
+        print(this.name, "walks");
+    }
+}
+
+class Horse extends Mammal {
+    fn speak() {
+        print(this.name, "neighs");
+    }
+}
+
+var horse = Horse("Spirit");
+horse.speak();  // Should print: Spirit neighs
+horse.walk();   // Should print: Spirit walks (inherited from Mammal)
+
+print("");
+print("All inheritance tests completed!");

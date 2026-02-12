@@ -269,6 +269,14 @@ Value SemanticAnalyzer::visit(ThisExpr& expr) {
     return Nil{};
 }
 
+Value SemanticAnalyzer::visit(SuperExpr& expr) {
+    if (!inMethod_) {
+        addError("'super' can only be used inside class methods. Use 'super' within a method of a subclass.", 0, 0);
+    }
+    // Could add additional check to ensure the class has a superclass, but that requires more context
+    return Nil{};
+}
+
 // Statement visitors
 void SemanticAnalyzer::visit(ExprStmt& stmt) {
     stmt.expr->accept(*this);

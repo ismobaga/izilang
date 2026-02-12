@@ -178,15 +178,16 @@ struct ThrowStmt : public Stmt {
     void accept(StmtVisitor& v) override { v.visit(*this); }
 };
 
-// Class declaration (e.g., "class Point { ... }") (v0.3)
+// Class declaration (e.g., "class Point { ... }" or "class Dog extends Animal { ... }") (v0.3)
 struct ClassStmt : public Stmt {
     std::string name;
+    std::string superclass;  // Name of the superclass (empty string if no inheritance)
     std::vector<std::unique_ptr<VarStmt>> fields;      // Class fields (owned)
     std::vector<std::unique_ptr<FunctionStmt>> methods; // Class methods (owned)
     
-    ClassStmt(std::string n, std::vector<std::unique_ptr<VarStmt>> f, 
+    ClassStmt(std::string n, std::string super, std::vector<std::unique_ptr<VarStmt>> f, 
               std::vector<std::unique_ptr<FunctionStmt>> m)
-        : name(std::move(n)), fields(std::move(f)), methods(std::move(m)) {}
+        : name(std::move(n)), superclass(std::move(super)), fields(std::move(f)), methods(std::move(m)) {}
     
     void accept(StmtVisitor& v) override { v.visit(*this); }
 };

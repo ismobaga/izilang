@@ -282,6 +282,7 @@ TokenType Lexer::keywordType(std::string_view text) {
     if (text == "break") return TokenType::BREAK;
     if (text == "continue") return TokenType::CONTINUE;
     if (text == "class") return TokenType::CLASS;
+    if (text == "extends") return TokenType::EXTENDS;
     if (text == "this") return TokenType::THIS;
     if (text == "super") return TokenType::SUPER;
     if (text == "true") return TokenType::TRUE;

@@ -73,6 +73,7 @@ public:
     Value visit(PropertyExpr& expr) override;
     Value visit(SetPropertyExpr& expr) override;
     Value visit(ThisExpr& expr) override;
+    Value visit(SuperExpr& expr) override;
 
     // StmtVisitor interface
     void visit(ExprStmt& stmt) override;
