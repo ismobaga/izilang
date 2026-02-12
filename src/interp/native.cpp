@@ -1383,7 +1383,7 @@ auto nativeFsRead(Interpreter& interp, const std::vector<Value>& arguments) -> V
     std::string path = std::get<std::string>(arguments[0]);
     std::ifstream file(path);
     if (!file.is_open()) {
-        throw std::runtime_error("Failed to open file: " + path);
+        throw std::runtime_error("Failed to open file for reading: " + path);
     }
     
     std::stringstream buffer;
@@ -1409,6 +1409,10 @@ auto nativeFsWrite(Interpreter& interp, const std::vector<Value>& arguments) -> 
     }
     
     file << content;
+    if (file.fail()) {
+        throw std::runtime_error("Failed to write to file: " + path);
+    }
+    
     return Nil{};
 }
 
@@ -1430,6 +1434,10 @@ auto nativeFsAppend(Interpreter& interp, const std::vector<Value>& arguments) ->
     }
     
     file << content;
+    if (file.fail()) {
+        throw std::runtime_error("Failed to append to file: " + path);
+    }
+    
     return Nil{};
 }
 
