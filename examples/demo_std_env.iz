@@ -1,0 +1,99 @@
+print("===========================================");
+print("    std.env Module Demonstration");
+print("===========================================");
+print("");
+
+import * as env from "std.env";
+
+print("1. Reading System Environment Variables");
+print("----------------------------------------");
+
+var path = env.get("PATH");
+if (path != nil) {
+    print("✓ PATH environment variable found");
+    print("  (truncated): " + substring(path, 0, 50) + "...");
+} else {
+    print("✗ PATH not found");
+}
+
+print("");
+
+print("2. Setting Custom Environment Variables");
+print("----------------------------------------");
+
+env.set("APP_NAME", "IziLang Demo");
+env.set("APP_VERSION", "1.0.0");
+env.set("APP_MODE", "development");
+
+print("✓ Set APP_NAME = IziLang Demo");
+print("✓ Set APP_VERSION = 1.0.0");
+print("✓ Set APP_MODE = development");
+
+print("");
+
+print("3. Reading Custom Variables");
+print("----------------------------------------");
+
+var appName = env.get("APP_NAME");
+var appVersion = env.get("APP_VERSION");
+var appMode = env.get("APP_MODE");
+
+print("APP_NAME: " + appName);
+print("APP_VERSION: " + appVersion);
+print("APP_MODE: " + appMode);
+
+print("");
+
+print("4. Checking Variable Existence");
+print("----------------------------------------");
+
+if (env.exists("APP_NAME")) {
+    print("✓ APP_NAME exists");
+} else {
+    print("✗ APP_NAME does not exist");
+}
+
+if (env.exists("NON_EXISTENT_VAR")) {
+    print("✗ NON_EXISTENT_VAR should not exist");
+} else {
+    print("✓ NON_EXISTENT_VAR correctly returns false");
+}
+
+print("");
+
+print("5. Named Imports");
+print("----------------------------------------");
+import { get, set, exists } from "std.env";
+
+set("FEATURE_FLAG", "enabled");
+var flag = get("FEATURE_FLAG");
+print("FEATURE_FLAG: " + flag);
+print("Exists: " + str(exists("FEATURE_FLAG")));
+
+print("");
+
+print("6. Practical Example: Configuration Management");
+print("----------------------------------------");
+
+var dbHost = env.get("DB_HOST");
+if (dbHost == nil) {
+    print("DB_HOST not set, using default");
+    env.set("DB_HOST", "localhost");
+    dbHost = env.get("DB_HOST");
+}
+
+var dbPort = env.get("DB_PORT");
+if (dbPort == nil) {
+    print("DB_PORT not set, using default");
+    env.set("DB_PORT", "5432");
+    dbPort = env.get("DB_PORT");
+}
+
+print("Database Configuration:");
+print("  Host: " + dbHost);
+print("  Port: " + dbPort);
+
+print("");
+print("===========================================");
+print("    Demonstration Complete!");
+print("===========================================");
