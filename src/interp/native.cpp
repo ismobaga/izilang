@@ -1130,7 +1130,7 @@ auto nativeProcessExit(Interpreter& interp, const std::vector<Value>& arguments)
 }
 
 auto nativeProcessStatus(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
-    if (arguments.size() != 0) {
+    if (!arguments.empty()) {
         throw std::runtime_error("process.status() takes no arguments.");
     }
     
@@ -1140,7 +1140,7 @@ auto nativeProcessStatus(Interpreter& interp, const std::vector<Value>& argument
 }
 
 auto nativeProcessArgs(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
-    if (arguments.size() != 0) {
+    if (!arguments.empty()) {
         throw std::runtime_error("process.args() takes no arguments.");
     }
     
