@@ -26,6 +26,10 @@ Value createMathModule(Interpreter& interp) {
     module->entries["tan"] = Value{std::make_shared<NativeFunction>("tan", 1, nativeTan)};
     module->entries["min"] = Value{std::make_shared<NativeFunction>("min", -1, nativeMin)};
     module->entries["max"] = Value{std::make_shared<NativeFunction>("max", -1, nativeMax)};
+    module->entries["clamp"] = Value{std::make_shared<NativeFunction>("clamp", 3, nativeClamp)};
+    module->entries["sign"] = Value{std::make_shared<NativeFunction>("sign", 1, nativeSign)};
+    module->entries["isFinite"] = Value{std::make_shared<NativeFunction>("isFinite", 1, nativeIsFinite)};
+    module->entries["isNaN"] = Value{std::make_shared<NativeFunction>("isNaN", 1, nativeIsNaN)};
     
     return Value{module};
 }

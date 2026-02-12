@@ -68,6 +68,70 @@ TEST_CASE("Native module system - math module", "[modules][math]") {
         Interpreter interp(source);
         REQUIRE_NOTHROW(interp.interpret(program));
     }
+    
+    SECTION("clamp() function works correctly") {
+        std::string source = R"(
+            import * as math from "math";
+            var result1 = math.clamp(10, 0, 5);
+            var result2 = math.clamp(-5, 0, 10);
+            var result3 = math.clamp(5, 0, 10);
+        )";
+        
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+        
+        Interpreter interp(source);
+        REQUIRE_NOTHROW(interp.interpret(program));
+    }
+    
+    SECTION("sign() function returns correct values") {
+        std::string source = R"(
+            import { sign } from "math";
+            var pos = sign(42);
+            var neg = sign(-42);
+            var zero = sign(0);
+        )";
+        
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+        
+        Interpreter interp(source);
+        REQUIRE_NOTHROW(interp.interpret(program));
+    }
+    
+    SECTION("isFinite() function works correctly") {
+        std::string source = R"(
+            import "math";
+            var finite = math.isFinite(42.5);
+        )";
+        
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+        
+        Interpreter interp(source);
+        REQUIRE_NOTHROW(interp.interpret(program));
+    }
+    
+    SECTION("isNaN() function works correctly") {
+        std::string source = R"(
+            import "math";
+            var notNaN = math.isNaN(42);
+        )";
+        
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+        
+        Interpreter interp(source);
+        REQUIRE_NOTHROW(interp.interpret(program));
+    }
 }
 
 TEST_CASE("Native module system - string module", "[modules][string]") {
