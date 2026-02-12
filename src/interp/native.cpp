@@ -948,6 +948,62 @@ auto nativeLogDebug(Interpreter& interp, const std::vector<Value>& arguments) ->
     return Nil{};
 }
 
+// std.assert functions
+auto nativeAssertOk(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() < 1 || arguments.size() > 2) {
+        throw std::runtime_error("assert.ok() takes 1 or 2 arguments.");
+    }
+    
+    bool condition = isTruthy(arguments[0]);
+    
+    if (!condition) {
+        std::string message = "Assertion failed";
+        if (arguments.size() == 2) {
+            if (!std::holds_alternative<std::string>(arguments[1])) {
+                throw std::runtime_error("Second argument to assert.ok() must be a string.");
+            }
+            message = std::get<std::string>(arguments[1]);
+        }
+        throw std::runtime_error(message);
+    }
+    
+    return Nil{};
+}
+
+auto nativeAssertEq(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 2) {
+        throw std::runtime_error("assert.eq() takes exactly 2 arguments.");
+    }
+    
+    if (arguments[0] != arguments[1]) {
+        std::ostringstream oss;
+        oss << "Assertion failed: expected ";
+        oss << valueToString(arguments[0]);
+        oss << " to equal ";
+        oss << valueToString(arguments[1]);
+        throw std::runtime_error(oss.str());
+    }
+    
+    return Nil{};
+}
+
+auto nativeAssertNe(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 2) {
+        throw std::runtime_error("assert.ne() takes exactly 2 arguments.");
+    }
+    
+    if (arguments[0] == arguments[1]) {
+        std::ostringstream oss;
+        oss << "Assertion failed: expected ";
+        oss << valueToString(arguments[0]);
+        oss << " not to equal ";
+        oss << valueToString(arguments[1]);
+        throw std::runtime_error(oss.str());
+    }
+    
+    return Nil{};
+}
+
 void registerNativeFunctions(Interpreter& interp) {
     // Core functions
     interp.defineGlobal("print", Value{std::make_shared<NativeFunction>(

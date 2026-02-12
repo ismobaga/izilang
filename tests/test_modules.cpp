@@ -125,6 +125,151 @@ TEST_CASE("Native module system - io module", "[modules][io]") {
     }
 }
 
+TEST_CASE("Native module system - assert module", "[modules][assert]") {
+    SECTION("Simple import works") {
+        std::string source = R"(
+            import "assert";
+            assert.ok(true);
+        )";
+        
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+        
+        Interpreter interp(source);
+        REQUIRE_NOTHROW(interp.interpret(program));
+    }
+    
+    SECTION("Wildcard import as std.assert works") {
+        std::string source = R"(
+            import * as assert from "std.assert";
+            assert.ok(1 + 1 == 2);
+        )";
+        
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+        
+        Interpreter interp(source);
+        REQUIRE_NOTHROW(interp.interpret(program));
+    }
+    
+    SECTION("assert.ok passes with truthy values") {
+        std::string source = R"(
+            import * as assert from "std.assert";
+            assert.ok(true);
+            assert.ok(1);
+            assert.ok("hello");
+            assert.ok([1, 2, 3]);
+        )";
+        
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+        
+        Interpreter interp(source);
+        REQUIRE_NOTHROW(interp.interpret(program));
+    }
+    
+    SECTION("assert.ok fails with falsy values") {
+        std::string source = R"(
+            import * as assert from "std.assert";
+            assert.ok(false);
+        )";
+        
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+        
+        Interpreter interp(source);
+        REQUIRE_THROWS(interp.interpret(program));
+    }
+    
+    SECTION("assert.ok with custom message") {
+        std::string source = R"(
+            import * as assert from "std.assert";
+            assert.ok(5 > 3, "5 should be greater than 3");
+        )";
+        
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+        
+        Interpreter interp(source);
+        REQUIRE_NOTHROW(interp.interpret(program));
+    }
+    
+    SECTION("assert.eq passes with equal values") {
+        std::string source = R"(
+            import * as assert from "std.assert";
+            assert.eq(1, 1);
+            assert.eq("hello", "hello");
+            assert.eq(true, true);
+        )";
+        
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+        
+        Interpreter interp(source);
+        REQUIRE_NOTHROW(interp.interpret(program));
+    }
+    
+    SECTION("assert.eq fails with different values") {
+        std::string source = R"(
+            import * as assert from "std.assert";
+            assert.eq(1, 2);
+        )";
+        
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+        
+        Interpreter interp(source);
+        REQUIRE_THROWS(interp.interpret(program));
+    }
+    
+    SECTION("assert.ne passes with different values") {
+        std::string source = R"(
+            import * as assert from "std.assert";
+            assert.ne(1, 2);
+            assert.ne("hello", "world");
+            assert.ne(true, false);
+        )";
+        
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+        
+        Interpreter interp(source);
+        REQUIRE_NOTHROW(interp.interpret(program));
+    }
+    
+    SECTION("assert.ne fails with equal values") {
+        std::string source = R"(
+            import * as assert from "std.assert";
+            assert.ne(5, 5);
+        )";
+        
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+        
+        Interpreter interp(source);
+        REQUIRE_THROWS(interp.interpret(program));
+    }
+}
+
+
 TEST_CASE("Native module system - module deduplication", "[modules]") {
     SECTION("Importing same module twice works") {
         std::string source = R"(
