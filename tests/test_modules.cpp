@@ -139,6 +139,19 @@ TEST_CASE("Native module system - math module", "[modules][math]") {
             
             var finite3 = math.isFinite(-100);
             assert.eq(finite3, true);
+            
+            var posInf = 1.0 / 0.0;
+            var negInf = -1.0 / 0.0;
+            var nan = 0.0 / 0.0;
+            
+            var notFinite1 = math.isFinite(posInf);
+            assert.eq(notFinite1, false);
+            
+            var notFinite2 = math.isFinite(negInf);
+            assert.eq(notFinite2, false);
+            
+            var notFinite3 = math.isFinite(nan);
+            assert.eq(notFinite3, false);
         )";
         
         Lexer lexer(source);
@@ -163,6 +176,19 @@ TEST_CASE("Native module system - math module", "[modules][math]") {
             
             var notNaN3 = math.isNaN(0);
             assert.eq(notNaN3, false);
+            
+            var posInf = 1.0 / 0.0;
+            var negInf = -1.0 / 0.0;
+            var nan = 0.0 / 0.0;
+            
+            var notNaN4 = math.isNaN(posInf);
+            assert.eq(notNaN4, false);
+            
+            var notNaN5 = math.isNaN(negInf);
+            assert.eq(notNaN5, false);
+            
+            var isNaN1 = math.isNaN(nan);
+            assert.eq(isNaN1, true);
         )";
         
         Lexer lexer(source);
