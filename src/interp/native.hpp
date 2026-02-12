@@ -121,6 +121,13 @@ auto nativePathDirname(Interpreter& interp, const std::vector<Value>& arguments)
 auto nativePathExtname(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 auto nativePathNormalize(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 
+// std.fs functions
+auto nativeFsExists(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeFsRead(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeFsWrite(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeFsAppend(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeFsRemove(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+
 void registerNativeFunctions(Interpreter& interpreter);
 
 }  // namespace izi

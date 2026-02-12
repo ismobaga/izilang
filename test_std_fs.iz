@@ -1,0 +1,72 @@
+print("=== Testing std.fs module ===");
+
+import * as fs from "std.fs";
+
+// Test 1: exists on non-existent file
+print("\n[Test 1] fs.exists() - non-existent file");
+if (fs.exists("nonexistent.txt") == false) {
+    print("PASS");
+} else {
+    print("FAIL");
+}
+
+// Test 2: write and read
+print("\n[Test 2] fs.write() and fs.read()");
+fs.write("test1.txt", "Hello");
+var content1 = fs.read("test1.txt");
+if (content1 == "Hello") {
+    print("PASS");
+} else {
+    print("FAIL");
+}
+
+// Test 3: exists on existing file  
+print("\n[Test 3] fs.exists() - existing file");
+if (fs.exists("test1.txt") == true) {
+    print("PASS");
+} else {
+    print("FAIL");
+}
+
+// Test 4: append
+print("\n[Test 4] fs.append()");
+fs.append("test1.txt", " World");
+var content2 = fs.read("test1.txt");
+if (content2 == "Hello World") {
+    print("PASS");
+} else {
+    print("FAIL - got: " + content2);
+}
+
+// Test 5: overwrite with write
+print("\n[Test 5] fs.write() - overwrite");
+fs.write("test1.txt", "New content");
+var content3 = fs.read("test1.txt");
+if (content3 == "New content") {
+    print("PASS");
+} else {
+    print("FAIL - got: " + content3);
+}
+
+// Test 6: remove
+print("\n[Test 6] fs.remove()");
+fs.remove("test1.txt");
+if (fs.exists("test1.txt") == false) {
+    print("PASS");
+} else {
+    print("FAIL");
+}
+
+// Test 7: Named import
+print("\n[Test 7] Named imports");
+import { exists, write, read, remove } from "std.fs";
+write("test2.txt", "Named import test");
+var content4 = read("test2.txt");
+if (content4 == "Named import test") {
+    print("PASS");
+} else {
+    print("FAIL");
+}
+remove("test2.txt");
+
+print("\n=== All tests completed ===");

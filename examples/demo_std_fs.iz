@@ -1,0 +1,59 @@
+// Example usage of std.fs module
+// Demonstrates the filesystem operations API
+
+import * as fs from "std.fs";
+
+print("=== std.fs Module Example ===\n");
+
+// Check if a file exists
+print("1. Checking if data.txt exists...");
+if (fs.exists("data.txt")) {
+    print("   File exists!");
+} else {
+    print("   File does not exist. Creating it...");
+    fs.write("data.txt", "Initial content\n");
+}
+
+// Read file content
+print("\n2. Reading data.txt...");
+var content = fs.read("data.txt");
+print("   Content: " + content);
+
+// Write to a file (overwrites existing content)
+print("\n3. Writing to out.txt...");
+fs.write("out.txt", "hello");
+print("   Written 'hello' to out.txt");
+
+// Append to a file
+print("\n4. Appending to out.txt...");
+fs.append("out.txt", "!");
+print("   Appended '!' to out.txt");
+
+// Read the result
+print("\n5. Reading out.txt...");
+var result = fs.read("out.txt");
+print("   Content: " + result);
+
+// Remove a file
+print("\n6. Creating and removing tmp.log...");
+fs.write("tmp.log", "temporary data");
+print("   Created tmp.log");
+fs.remove("tmp.log");
+print("   Removed tmp.log");
+
+// Verify removal
+if (!fs.exists("tmp.log")) {
+    print("   Confirmed: tmp.log no longer exists");
+}
+
+print("\n=== Example completed! ===");
+
+// Cleanup
+print("\nCleaning up example files...");
+if (fs.exists("data.txt")) {
+    fs.remove("data.txt");
+}
+if (fs.exists("out.txt")) {
+    fs.remove("out.txt");
+}
+print("Done!");

@@ -19,6 +19,7 @@ Value createAssertModule(Interpreter& interp);
 Value createEnvModule(Interpreter& interp);
 Value createProcessModule(Interpreter& interp);
 Value createPathModule(Interpreter& interp);
+Value createFsModule(Interpreter& interp);
 
 // Check if a module path refers to a native module
 bool isNativeModule(const std::string& path);
