@@ -242,7 +242,7 @@ TEST_CASE("VM Classes: Instance storage", "[vm-classes][vm-storage]") {
 }
 
 TEST_CASE("VM Classes: Error handling", "[vm-classes][vm-errors]") {
-    SECTION("Access undefined property") {
+    SECTION("Access undefined property - should not crash") {
         std::string source = R"(
             class Empty { }
             var e = Empty();
@@ -260,13 +260,24 @@ TEST_CASE("VM Classes: Error handling", "[vm-classes][vm-errors]") {
         VM vm;
         registerVmNatives(vm);
         
-        // VM prints error messages but may not throw
-        // Just verify it doesn't crash
+        // VM may print error message but should handle it gracefully
+        // The test verifies that accessing undefined properties doesn't crash
+        bool test_passed = false;
         try {
             vm.run(chunk);
-        } catch (...) {
-            // Error is expected - test passes
+            test_passed = true; // VM handled error gracefully
+        } catch (const std::exception& e) {
+            // Exception is expected for runtime errors
+            std::string error_msg = e.what();
+            // Verify error message mentions the undefined property
+            if (error_msg.find("property") != std::string::npos || 
+                error_msg.find("nonexistent") != std::string::npos ||
+                error_msg.find("Undefined") != std::string::npos) {
+                test_passed = true;
+            }
         }
-        REQUIRE(true); // Test passes if we get here without crash
+        
+        // Test passes if either VM handled it gracefully or threw appropriate error
+        REQUIRE(test_passed);
     }
 }
