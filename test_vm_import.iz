@@ -1,4 +1,0 @@
-// Test basic VM import
-import "math";
-print("math.pi =", math.pi);
-print("math.sqrt(16) =", math.sqrt(16));
