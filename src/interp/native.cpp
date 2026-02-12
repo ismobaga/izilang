@@ -1357,6 +1357,99 @@ auto nativePathNormalize(Interpreter& interp, const std::vector<Value>& argument
     return result;
 }
 
+// ============ std.fs functions ============
+
+auto nativeFsExists(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 1) {
+        throw std::runtime_error("fs.exists() takes exactly one argument.");
+    }
+    if (!std::holds_alternative<std::string>(arguments[0])) {
+        throw std::runtime_error("Argument to fs.exists() must be a string.");
+    }
+    
+    std::string path = std::get<std::string>(arguments[0]);
+    struct stat buffer;
+    return (stat(path.c_str(), &buffer) == 0);
+}
+
+auto nativeFsRead(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 1) {
+        throw std::runtime_error("fs.read() takes exactly one argument.");
+    }
+    if (!std::holds_alternative<std::string>(arguments[0])) {
+        throw std::runtime_error("Argument to fs.read() must be a string.");
+    }
+    
+    std::string path = std::get<std::string>(arguments[0]);
+    std::ifstream file(path);
+    if (!file.is_open()) {
+        throw std::runtime_error("Failed to open file: " + path);
+    }
+    
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    return buffer.str();
+}
+
+auto nativeFsWrite(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 2) {
+        throw std::runtime_error("fs.write() takes exactly two arguments.");
+    }
+    if (!std::holds_alternative<std::string>(arguments[0]) ||
+        !std::holds_alternative<std::string>(arguments[1])) {
+        throw std::runtime_error("Both arguments to fs.write() must be strings.");
+    }
+    
+    std::string path = std::get<std::string>(arguments[0]);
+    std::string content = std::get<std::string>(arguments[1]);
+    
+    std::ofstream file(path);
+    if (!file.is_open()) {
+        throw std::runtime_error("Failed to open file for writing: " + path);
+    }
+    
+    file << content;
+    return Nil{};
+}
+
+auto nativeFsAppend(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 2) {
+        throw std::runtime_error("fs.append() takes exactly two arguments.");
+    }
+    if (!std::holds_alternative<std::string>(arguments[0]) ||
+        !std::holds_alternative<std::string>(arguments[1])) {
+        throw std::runtime_error("Both arguments to fs.append() must be strings.");
+    }
+    
+    std::string path = std::get<std::string>(arguments[0]);
+    std::string content = std::get<std::string>(arguments[1]);
+    
+    std::ofstream file(path, std::ios::app);
+    if (!file.is_open()) {
+        throw std::runtime_error("Failed to open file for appending: " + path);
+    }
+    
+    file << content;
+    return Nil{};
+}
+
+auto nativeFsRemove(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 1) {
+        throw std::runtime_error("fs.remove() takes exactly one argument.");
+    }
+    if (!std::holds_alternative<std::string>(arguments[0])) {
+        throw std::runtime_error("Argument to fs.remove() must be a string.");
+    }
+    
+    std::string path = std::get<std::string>(arguments[0]);
+    
+    if (std::remove(path.c_str()) != 0) {
+        throw std::runtime_error("Failed to remove file: " + path);
+    }
+    
+    return Nil{};
+}
+
 void registerNativeFunctions(Interpreter& interp) {
     // Core functions
     interp.defineGlobal("print", Value{std::make_shared<NativeFunction>(

@@ -143,6 +143,19 @@ Value createPathModule(Interpreter& interp) {
     return Value{module};
 }
 
+Value createFsModule(Interpreter& interp) {
+    auto module = std::make_shared<Map>();
+    
+    // Filesystem functions
+    module->entries["exists"] = Value{std::make_shared<NativeFunction>("exists", 1, nativeFsExists)};
+    module->entries["read"] = Value{std::make_shared<NativeFunction>("read", 1, nativeFsRead)};
+    module->entries["write"] = Value{std::make_shared<NativeFunction>("write", 2, nativeFsWrite)};
+    module->entries["append"] = Value{std::make_shared<NativeFunction>("append", 2, nativeFsAppend)};
+    module->entries["remove"] = Value{std::make_shared<NativeFunction>("remove", 1, nativeFsRemove)};
+    
+    return Value{module};
+}
+
 bool isNativeModule(const std::string& path) {
     return path == "math" || path == "string" || path == "array" || 
            path == "io" || path == "json" || path == "http" || 
@@ -150,7 +163,8 @@ bool isNativeModule(const std::string& path) {
            path == "assert" || path == "std.assert" ||
            path == "env" || path == "std.env" ||
            path == "process" || path == "std.process" ||
-           path == "path" || path == "std.path";
+           path == "path" || path == "std.path" ||
+           path == "fs" || path == "std.fs";
 }
 
 Value getNativeModule(const std::string& name, Interpreter& interp) {
@@ -172,6 +186,8 @@ Value getNativeModule(const std::string& name, Interpreter& interp) {
         return createProcessModule(interp);
     } else if (name == "path" || name == "std.path") {
         return createPathModule(interp);
+    } else if (name == "fs" || name == "std.fs") {
+        return createFsModule(interp);
     } else if (name == "json") {
         // Placeholder for future implementation
         auto module = std::make_shared<Map>();
