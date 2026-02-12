@@ -9,6 +9,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <algorithm>
+#include <unistd.h> // for getpid()
 
 namespace fs = std::filesystem;
 
@@ -105,6 +106,7 @@ bool NativeCompiler::generateEmbeddedSource(const std::string& sourceCode, const
 
 std::string NativeCompiler::getCompilerCommand() {
     // Try to detect available compiler
+    // Note: Could cache this result for performance, but detection is fast enough
     if (std::system("which g++ > /dev/null 2>&1") == 0) {
         return "g++";
     } else if (std::system("which clang++ > /dev/null 2>&1") == 0) {
@@ -113,7 +115,7 @@ std::string NativeCompiler::getCompilerCommand() {
         return "c++";
     }
     
-    // Default to g++
+    // Default to g++ and let compilation fail with a clear error
     return "g++";
 }
 
@@ -160,7 +162,10 @@ bool NativeCompiler::compileToExecutable(const std::string& cppFile, const Compi
         cmd << "-O2 ";
     }
     
-    // Static linking flags - try to link everything statically
+    // Static linking flags
+    // Note: Full static linking may not work on all platforms (e.g., macOS)
+    // The -static flag will cause compilation to fail on unsupported platforms
+    // with a clear error message from the compiler
     cmd << "-static ";
     
     // Include directories
@@ -198,6 +203,7 @@ bool NativeCompiler::compileToExecutable(const std::string& cppFile, const Compi
         return true;
     } else {
         std::cerr << "Error: Compilation failed with exit code " << result << "\n";
+        std::cerr << "Note: Static linking may not be supported on your platform.\n";
         return false;
     }
 }
@@ -251,7 +257,10 @@ bool NativeCompiler::compile(const CompileOptions& options) {
     }
 
     // Create temporary directory for generated files
-    fs::path tempDir = fs::temp_directory_path() / ("izilang_compile_" + std::to_string(std::time(nullptr)));
+    // Use a combination of timestamp and process ID for uniqueness
+    std::stringstream tempDirName;
+    tempDirName << "izilang_compile_" << std::time(nullptr) << "_" << getpid();
+    fs::path tempDir = fs::temp_directory_path() / tempDirName.str();
     fs::create_directories(tempDir);
     
     if (options.verbose) {
