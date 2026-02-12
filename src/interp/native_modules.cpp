@@ -156,15 +156,50 @@ Value createFsModule(Interpreter& interp) {
     return Value{module};
 }
 
+Value createTimeModule(Interpreter& interp) {
+    auto module = std::make_shared<Map>();
+    
+    // Time functions
+    module->entries["now"] = Value{std::make_shared<NativeFunction>("now", 0, nativeTimeNow)};
+    module->entries["sleep"] = Value{std::make_shared<NativeFunction>("sleep", 1, nativeTimeSleep)};
+    module->entries["format"] = Value{std::make_shared<NativeFunction>("format", -1, nativeTimeFormat)};
+    
+    return Value{module};
+}
+
+Value createJsonModule(Interpreter& interp) {
+    auto module = std::make_shared<Map>();
+    
+    // JSON functions
+    module->entries["parse"] = Value{std::make_shared<NativeFunction>("parse", 1, nativeJsonParse)};
+    module->entries["stringify"] = Value{std::make_shared<NativeFunction>("stringify", 1, nativeJsonStringify)};
+    
+    return Value{module};
+}
+
+Value createRegexModule(Interpreter& interp) {
+    auto module = std::make_shared<Map>();
+    
+    // Regex functions
+    module->entries["match"] = Value{std::make_shared<NativeFunction>("match", 2, nativeRegexMatch)};
+    module->entries["replace"] = Value{std::make_shared<NativeFunction>("replace", 3, nativeRegexReplace)};
+    module->entries["test"] = Value{std::make_shared<NativeFunction>("test", 2, nativeRegexTest)};
+    
+    return Value{module};
+}
+
 bool isNativeModule(const std::string& path) {
     return path == "math" || path == "string" || path == "array" || 
-           path == "io" || path == "json" || path == "http" || 
+           path == "io" || path == "json" || path == "std.json" ||
+           path == "http" || 
            path == "log" || path == "std.log" || 
            path == "assert" || path == "std.assert" ||
            path == "env" || path == "std.env" ||
            path == "process" || path == "std.process" ||
            path == "path" || path == "std.path" ||
-           path == "fs" || path == "std.fs";
+           path == "fs" || path == "std.fs" ||
+           path == "time" || path == "std.time" ||
+           path == "regex" || path == "std.regex";
 }
 
 Value getNativeModule(const std::string& name, Interpreter& interp) {
@@ -188,10 +223,12 @@ Value getNativeModule(const std::string& name, Interpreter& interp) {
         return createPathModule(interp);
     } else if (name == "fs" || name == "std.fs") {
         return createFsModule(interp);
-    } else if (name == "json") {
-        // Placeholder for future implementation
-        auto module = std::make_shared<Map>();
-        return Value{module};
+    } else if (name == "time" || name == "std.time") {
+        return createTimeModule(interp);
+    } else if (name == "json" || name == "std.json") {
+        return createJsonModule(interp);
+    } else if (name == "regex" || name == "std.regex") {
+        return createRegexModule(interp);
     } else if (name == "http") {
         // Placeholder for future implementation
         auto module = std::make_shared<Map>();

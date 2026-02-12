@@ -93,6 +93,20 @@ Value vmNativeLogWarn(VM& vm, const std::vector<Value>& arguments);
 Value vmNativeLogError(VM& vm, const std::vector<Value>& arguments);
 Value vmNativeLogDebug(VM& vm, const std::vector<Value>& arguments);
 
+// std.time native functions
+Value vmNativeTimeNow(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeTimeSleep(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeTimeFormat(VM& vm, const std::vector<Value>& arguments);
+
+// std.json native functions
+Value vmNativeJsonParse(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeJsonStringify(VM& vm, const std::vector<Value>& arguments);
+
+// std.regex native functions
+Value vmNativeRegexMatch(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeRegexReplace(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeRegexTest(VM& vm, const std::vector<Value>& arguments);
+
 void registerVmNatives(VM& vm);
 
 } // namespace izi
