@@ -1,0 +1,87 @@
+print("Testing std.env module...");
+
+import * as env from "std.env";
+
+print("\n=== Test 1: env.get() - Getting existing environment variable ===");
+var path = env.get("PATH");
+if (path != nil) {
+    print("✓ PATH is set");
+} else {
+    print("✗ PATH is not set (unexpected)");
+}
+
+print("\n=== Test 2: env.get() - Getting non-existent environment variable ===");
+var nonExistent = env.get("IZILANG_NON_EXISTENT_VAR_123");
+if (nonExistent == nil) {
+    print("✓ Non-existent variable returns nil");
+} else {
+    print("✗ Non-existent variable should return nil, got: " + nonExistent);
+}
+
+print("\n=== Test 3: env.set() - Setting a new environment variable ===");
+env.set("IZILANG_TEST_VAR", "test_value");
+var testVar = env.get("IZILANG_TEST_VAR");
+if (testVar == "test_value") {
+    print("✓ Successfully set and retrieved IZILANG_TEST_VAR");
+} else {
+    print("✗ Failed to set/get environment variable");
+}
+
+print("\n=== Test 4: env.exists() - Checking existing variable ===");
+var pathExists = env.exists("PATH");
+if (pathExists == true) {
+    print("✓ PATH exists (as expected)");
+} else {
+    print("✗ PATH should exist");
+}
+
+print("\n=== Test 5: env.exists() - Checking non-existent variable ===");
+var doesNotExist = env.exists("IZILANG_NON_EXISTENT_VAR_456");
+if (doesNotExist == false) {
+    print("✓ Non-existent variable returns false");
+} else {
+    print("✗ Non-existent variable should return false");
+}
+
+print("\n=== Test 6: env.set() - Updating existing variable ===");
+env.set("IZILANG_TEST_VAR", "updated_value");
+var updatedVar = env.get("IZILANG_TEST_VAR");
+if (updatedVar == "updated_value") {
+    print("✓ Successfully updated IZILANG_TEST_VAR");
+} else {
+    print("✗ Failed to update environment variable");
+}
+
+print("\n=== Test 7: env.exists() - Checking variable after set ===");
+var testVarCheck = env.exists("IZILANG_TEST_VAR");
+if (testVarCheck == true) {
+    print("✓ IZILANG_TEST_VAR exists after being set");
+} else {
+    print("✗ IZILANG_TEST_VAR should exist after being set");
+}
+
+print("\n=== Test 8: Named import syntax ===");
+import { get, set, exists } from "std.env";
+
+set("IZILANG_NAMED_IMPORT_TEST", "works");
+var namedVal = get("IZILANG_NAMED_IMPORT_TEST");
+var namedCheck = exists("IZILANG_NAMED_IMPORT_TEST");
+
+if (namedVal == "works" and namedCheck == true) {
+    print("✓ Named imports work correctly");
+} else {
+    print("✗ Named imports failed");
+}
+
+print("\n=== Test 9: Simple import syntax ===");
+import "env";
+env.set("IZILANG_SIMPLE_IMPORT_TEST", "also_works");
+var simpleVal = env.get("IZILANG_SIMPLE_IMPORT_TEST");
+
+if (simpleVal == "also_works") {
+    print("✓ Simple import works correctly");
+} else {
+    print("✗ Simple import failed");
+}
+
+print("\n=== All tests completed! ===");

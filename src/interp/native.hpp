@@ -104,6 +104,11 @@ auto nativeAssertOk(Interpreter& interp, const std::vector<Value>& arguments) ->
 auto nativeAssertEq(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 auto nativeAssertNe(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 
+// std.env functions
+auto nativeEnvGet(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeEnvSet(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeEnvExists(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+
 void registerNativeFunctions(Interpreter& interpreter);
 
 }  // namespace izi
