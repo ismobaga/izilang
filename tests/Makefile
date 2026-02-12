@@ -84,6 +84,7 @@ GENERATED += $(OBJDIR)/parser.o
 GENERATED += $(OBJDIR)/semantic_analyzer.o
 GENERATED += $(OBJDIR)/test_classes.o
 GENERATED += $(OBJDIR)/test_collections.o
+GENERATED += $(OBJDIR)/test_error_system.o
 GENERATED += $(OBJDIR)/test_first_class_functions.o
 GENERATED += $(OBJDIR)/test_integration.o
 GENERATED += $(OBJDIR)/test_lexer.o
@@ -117,6 +118,7 @@ OBJECTS += $(OBJDIR)/parser.o
 OBJECTS += $(OBJDIR)/semantic_analyzer.o
 OBJECTS += $(OBJDIR)/test_classes.o
 OBJECTS += $(OBJDIR)/test_collections.o
+OBJECTS += $(OBJDIR)/test_error_system.o
 OBJECTS += $(OBJDIR)/test_first_class_functions.o
 OBJECTS += $(OBJDIR)/test_integration.o
 OBJECTS += $(OBJDIR)/test_lexer.o
@@ -258,6 +260,9 @@ $(OBJDIR)/test_classes.o: test_classes.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/test_collections.o: test_collections.cpp
+	@echo "$(notdir $<)"
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/test_error_system.o: test_error_system.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/test_first_class_functions.o: test_first_class_functions.cpp
