@@ -132,10 +132,16 @@ Value VM::run(const Chunk& entry) {
                 case OpCode::CALL: {
                     uint8_t argCount = readByte();
                     Value callee = stack[stack.size() - 1 - argCount];
-                    if (!std::holds_alternative<std::shared_ptr<VmCallable>>(callee)) {
-                        throw std::runtime_error("Can only call VM functions.");
+                    
+                    std::shared_ptr<VmCallable> function;
+                    if (std::holds_alternative<std::shared_ptr<VmCallable>>(callee)) {
+                        function = std::get<std::shared_ptr<VmCallable>>(callee);
+                    } else if (std::holds_alternative<std::shared_ptr<VmClass>>(callee)) {
+                        function = std::get<std::shared_ptr<VmClass>>(callee);
+                    } else {
+                        throw std::runtime_error("Can only call VM functions and classes.");
                     }
-                    auto function = std::get<std::shared_ptr<VmCallable>>(callee);
+                    
                     int ar = function->arity();
                     if (ar >= 0 && argCount != ar) {
                         throw std::runtime_error("Expected " + std::to_string(function->arity()) +

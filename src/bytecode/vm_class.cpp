@@ -6,19 +6,17 @@
 namespace izi {
 
 Value VmBoundMethod::call(VM& vm, const std::vector<Value>& arguments) {
-    // For VM execution, we need to set up 'this' in the local scope
-    // Since the method is a VmUserFunction, we'll handle 'this' specially in the VM
+    // Set 'this' as a global variable before calling the method
+    // This is a simplified approach - ideally we'd use local scopes
+    vm.setGlobal("this", instance);
     
-    // For now, we need to push 'this' onto the stack before calling the method
-    // The method compilation should expect 'this' as a hidden first parameter
+    // Call the method
+    Value result = method->call(vm, arguments);
     
-    // We'll store the instance in a temporary location and call the method
-    // This is a simplified approach - ideally we'd handle this in the call frame
-    std::vector<Value> argsWithThis;
-    argsWithThis.push_back(instance);
-    argsWithThis.insert(argsWithThis.end(), arguments.begin(), arguments.end());
+    // Clean up 'this' after the call (optional - could be left for next call)
+    // vm.setGlobal("this", Nil{});
     
-    return method->call(vm, arguments);
+    return result;
 }
 
 int VmClass::arity() const {
