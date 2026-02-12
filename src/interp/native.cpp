@@ -902,6 +902,52 @@ auto nativeFileExists(Interpreter& interp, const std::vector<Value>& arguments) 
     return (stat(filename.c_str(), &buffer) == 0);
 }
 
+// ============ std.log functions ============
+
+auto nativeLogInfo(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 1) {
+        throw std::runtime_error("log.info() takes exactly one argument.");
+    }
+    if (!std::holds_alternative<std::string>(arguments[0])) {
+        throw std::runtime_error("Argument to log.info() must be a string.");
+    }
+    std::cout << "[INFO] " << std::get<std::string>(arguments[0]) << "\n";
+    return Nil{};
+}
+
+auto nativeLogWarn(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 1) {
+        throw std::runtime_error("log.warn() takes exactly one argument.");
+    }
+    if (!std::holds_alternative<std::string>(arguments[0])) {
+        throw std::runtime_error("Argument to log.warn() must be a string.");
+    }
+    std::cout << "[WARN] " << std::get<std::string>(arguments[0]) << "\n";
+    return Nil{};
+}
+
+auto nativeLogError(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 1) {
+        throw std::runtime_error("log.error() takes exactly one argument.");
+    }
+    if (!std::holds_alternative<std::string>(arguments[0])) {
+        throw std::runtime_error("Argument to log.error() must be a string.");
+    }
+    std::cerr << "[ERROR] " << std::get<std::string>(arguments[0]) << "\n";
+    return Nil{};
+}
+
+auto nativeLogDebug(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 1) {
+        throw std::runtime_error("log.debug() takes exactly one argument.");
+    }
+    if (!std::holds_alternative<std::string>(arguments[0])) {
+        throw std::runtime_error("Argument to log.debug() must be a string.");
+    }
+    std::cout << "[DEBUG] " << std::get<std::string>(arguments[0]) << "\n";
+    return Nil{};
+}
+
 void registerNativeFunctions(Interpreter& interp) {
     // Core functions
     interp.defineGlobal("print", Value{std::make_shared<NativeFunction>(

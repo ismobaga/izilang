@@ -81,9 +81,21 @@ Value createIOModule(Interpreter& interp) {
     return Value{module};
 }
 
+Value createLogModule(Interpreter& interp) {
+    auto module = std::make_shared<Map>();
+    
+    // Logging functions
+    module->entries["info"] = Value{std::make_shared<NativeFunction>("info", 1, nativeLogInfo)};
+    module->entries["warn"] = Value{std::make_shared<NativeFunction>("warn", 1, nativeLogWarn)};
+    module->entries["error"] = Value{std::make_shared<NativeFunction>("error", 1, nativeLogError)};
+    module->entries["debug"] = Value{std::make_shared<NativeFunction>("debug", 1, nativeLogDebug)};
+    
+    return Value{module};
+}
+
 bool isNativeModule(const std::string& path) {
     return path == "math" || path == "string" || path == "array" || 
-           path == "io" || path == "json" || path == "http";
+           path == "io" || path == "json" || path == "http" || path == "log";
 }
 
 Value getNativeModule(const std::string& name, Interpreter& interp) {
@@ -95,6 +107,8 @@ Value getNativeModule(const std::string& name, Interpreter& interp) {
         return createArrayModule(interp);
     } else if (name == "io") {
         return createIOModule(interp);
+    } else if (name == "log") {
+        return createLogModule(interp);
     } else if (name == "json") {
         // Placeholder for future implementation
         auto module = std::make_shared<Map>();

@@ -159,3 +159,56 @@ TEST_CASE("Native module system - backward compatibility", "[modules]") {
         REQUIRE_NOTHROW(interp.interpret(program));
     }
 }
+
+TEST_CASE("Native module system - log module", "[modules][log]") {
+    SECTION("Simple import creates module object") {
+        std::string source = R"(
+            import "log";
+            log.info("Test message");
+        )";
+        
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+        
+        Interpreter interp(source);
+        REQUIRE_NOTHROW(interp.interpret(program));
+    }
+    
+    SECTION("Named imports work") {
+        std::string source = R"(
+            import { info, warn, error, debug } from "log";
+            info("Information message");
+            warn("Warning message");
+            error("Error message");
+            debug("Debug message");
+        )";
+        
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+        
+        Interpreter interp(source);
+        REQUIRE_NOTHROW(interp.interpret(program));
+    }
+    
+    SECTION("Wildcard import works") {
+        std::string source = R"(
+            import * as log from "log";
+            log.info("Server started");
+            log.warn("Low disk space");
+            log.error("Failed to connect");
+            log.debug("x = 42");
+        )";
+        
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+        
+        Interpreter interp(source);
+        REQUIRE_NOTHROW(interp.interpret(program));
+    }
+}

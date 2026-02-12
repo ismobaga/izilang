@@ -89,6 +89,12 @@ auto nativeWriteFile(Interpreter& interp, const std::vector<Value>& arguments) -
 auto nativeAppendFile(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 auto nativeFileExists(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 
+// std.log functions
+auto nativeLogInfo(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeLogWarn(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeLogError(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeLogDebug(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+
 void registerNativeFunctions(Interpreter& interpreter);
 
 }  // namespace izi
