@@ -977,9 +977,9 @@ auto nativeAssertEq(Interpreter& interp, const std::vector<Value>& arguments) ->
     
     if (arguments[0] != arguments[1]) {
         std::ostringstream oss;
-        oss << "Assertion failed: expected ";
+        oss << "Assertion failed: expected values to be equal, but got ";
         oss << valueToString(arguments[0]);
-        oss << " to equal ";
+        oss << " and ";
         oss << valueToString(arguments[1]);
         throw std::runtime_error(oss.str());
     }
@@ -994,10 +994,8 @@ auto nativeAssertNe(Interpreter& interp, const std::vector<Value>& arguments) ->
     
     if (arguments[0] == arguments[1]) {
         std::ostringstream oss;
-        oss << "Assertion failed: expected ";
+        oss << "Assertion failed: expected values to be different, but both were ";
         oss << valueToString(arguments[0]);
-        oss << " not to equal ";
-        oss << valueToString(arguments[1]);
         throw std::runtime_error(oss.str());
     }
     
