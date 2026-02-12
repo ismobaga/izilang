@@ -61,6 +61,10 @@ auto nativeCos(Interpreter& interp, const std::vector<Value>& arguments) -> Valu
 auto nativeTan(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 auto nativeMin(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 auto nativeMax(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeClamp(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeSign(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeIsFinite(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeIsNaN(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 
 // std.string functions
 auto nativeSubstring(Interpreter& interp, const std::vector<Value>& arguments) -> Value;

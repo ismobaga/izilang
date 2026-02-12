@@ -465,6 +465,48 @@ auto nativeMax(Interpreter& interp, const std::vector<Value>& arguments) -> Valu
     return maxVal;
 }
 
+auto nativeClamp(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 3) {
+        throw std::runtime_error("clamp() takes exactly three arguments.");
+    }
+    double x = asNumber(arguments[0]);
+    double minVal = asNumber(arguments[1]);
+    double maxVal = asNumber(arguments[2]);
+    if (minVal > maxVal) {
+        throw std::runtime_error("clamp() min must be less than or equal to max.");
+    }
+    return std::max(minVal, std::min(maxVal, x));
+}
+
+auto nativeSign(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 1) {
+        throw std::runtime_error("sign() takes exactly one argument.");
+    }
+    double val = asNumber(arguments[0]);
+    if (std::isnan(val)) {
+        return val;  // NaN
+    }
+    if (val > 0) return 1.0;
+    if (val < 0) return -1.0;
+    return 0.0;
+}
+
+auto nativeIsFinite(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 1) {
+        throw std::runtime_error("isFinite() takes exactly one argument.");
+    }
+    double val = asNumber(arguments[0]);
+    return std::isfinite(val);
+}
+
+auto nativeIsNaN(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 1) {
+        throw std::runtime_error("isNaN() takes exactly one argument.");
+    }
+    double val = asNumber(arguments[0]);
+    return std::isnan(val);
+}
+
 // ============ std.string functions ============
 
 auto nativeSubstring(Interpreter& interp, const std::vector<Value>& arguments) -> Value {

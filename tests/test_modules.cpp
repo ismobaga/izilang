@@ -68,6 +68,137 @@ TEST_CASE("Native module system - math module", "[modules][math]") {
         Interpreter interp(source);
         REQUIRE_NOTHROW(interp.interpret(program));
     }
+    
+    SECTION("clamp() function works correctly") {
+        std::string source = R"(
+            import * as math from "math";
+            import * as assert from "std.assert";
+            
+            var result1 = math.clamp(10, 0, 5);
+            assert.eq(result1, 5);
+            
+            var result2 = math.clamp(-5, 0, 10);
+            assert.eq(result2, 0);
+            
+            var result3 = math.clamp(5, 0, 10);
+            assert.eq(result3, 5);
+            
+            var result4 = math.clamp(7.5, 3.2, 8.9);
+            assert.eq(result4, 7.5);
+        )";
+        
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+        
+        Interpreter interp(source);
+        REQUIRE_NOTHROW(interp.interpret(program));
+    }
+    
+    SECTION("sign() function returns correct values") {
+        std::string source = R"(
+            import { sign } from "math";
+            import * as assert from "std.assert";
+            
+            var pos = sign(42);
+            assert.eq(pos, 1);
+            
+            var neg = sign(-42);
+            assert.eq(neg, -1);
+            
+            var zero = sign(0);
+            assert.eq(zero, 0);
+            
+            var posSmall = sign(0.001);
+            assert.eq(posSmall, 1);
+            
+            var negSmall = sign(-0.001);
+            assert.eq(negSmall, -1);
+        )";
+        
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+        
+        Interpreter interp(source);
+        REQUIRE_NOTHROW(interp.interpret(program));
+    }
+    
+    SECTION("isFinite() function works correctly") {
+        std::string source = R"(
+            import "math";
+            import * as assert from "std.assert";
+            
+            var finite1 = math.isFinite(42.5);
+            assert.eq(finite1, true);
+            
+            var finite2 = math.isFinite(0);
+            assert.eq(finite2, true);
+            
+            var finite3 = math.isFinite(-100);
+            assert.eq(finite3, true);
+            
+            var posInf = 1.0 / 0.0;
+            var negInf = -1.0 / 0.0;
+            var nan = 0.0 / 0.0;
+            
+            var notFinite1 = math.isFinite(posInf);
+            assert.eq(notFinite1, false);
+            
+            var notFinite2 = math.isFinite(negInf);
+            assert.eq(notFinite2, false);
+            
+            var notFinite3 = math.isFinite(nan);
+            assert.eq(notFinite3, false);
+        )";
+        
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+        
+        Interpreter interp(source);
+        REQUIRE_NOTHROW(interp.interpret(program));
+    }
+    
+    SECTION("isNaN() function works correctly") {
+        std::string source = R"(
+            import "math";
+            import * as assert from "std.assert";
+            
+            var notNaN1 = math.isNaN(42);
+            assert.eq(notNaN1, false);
+            
+            var notNaN2 = math.isNaN(3.14);
+            assert.eq(notNaN2, false);
+            
+            var notNaN3 = math.isNaN(0);
+            assert.eq(notNaN3, false);
+            
+            var posInf = 1.0 / 0.0;
+            var negInf = -1.0 / 0.0;
+            var nan = 0.0 / 0.0;
+            
+            var notNaN4 = math.isNaN(posInf);
+            assert.eq(notNaN4, false);
+            
+            var notNaN5 = math.isNaN(negInf);
+            assert.eq(notNaN5, false);
+            
+            var isNaN1 = math.isNaN(nan);
+            assert.eq(isNaN1, true);
+        )";
+        
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+        
+        Interpreter interp(source);
+        REQUIRE_NOTHROW(interp.interpret(program));
+    }
 }
 
 TEST_CASE("Native module system - string module", "[modules][string]") {
