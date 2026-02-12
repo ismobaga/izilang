@@ -470,11 +470,12 @@ int main(int argc, char** argv) {
                     std::cerr << "In file '" << options.input << "':\n";
                     std::cerr << reporter.formatError(diag.line, diag.column, diag.message, "Semantic Error") << '\n';
                 } else if (diag.severity == SemanticDiagnostic::Severity::Warning) {
-                    if (options.debug) {
-                        std::cout << "Warning: " << diag.message << " (line " << diag.line << ")\n";
-                    }
-                } else if (options.debug) {
-                    std::cout << "Info: " << diag.message << " (line " << diag.line << ")\n";
+                    std::cerr << "In file '" << options.input << "':\n";
+                    std::cerr << reporter.formatError(diag.line, diag.column, diag.message, "Warning") << '\n';
+                } else {
+                    // Info messages
+                    std::cout << "In file '" << options.input << "':\n";
+                    std::cout << reporter.formatError(diag.line, diag.column, diag.message, "Info") << '\n';
                 }
             }
             
