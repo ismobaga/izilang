@@ -37,7 +37,7 @@ public:
             document_->addSymbol(stmt.name, std::move(info));
             
             // Mark this token as used for definition
-            usedTokenIndices_[stmt.name].insert(0);
+            assignedTokenIndices_[stmt.name].insert(0);
         }
         
         if (stmt.initializer) {
@@ -57,7 +57,7 @@ public:
             SymbolInfo info(stmt.name, "function", loc);
             document_->addSymbol(stmt.name, std::move(info));
             
-            usedTokenIndices_[stmt.name].insert(0);
+            assignedTokenIndices_[stmt.name].insert(0);
         }
 
         // Process parameters
@@ -66,7 +66,7 @@ public:
             if (it != tokenMap_.end()) {
                 // Find unused token for this parameter
                 for (size_t i = 0; i < it->second.size(); ++i) {
-                    if (usedTokenIndices_[param].find(i) == usedTokenIndices_[param].end()) {
+                    if (assignedTokenIndices_[param].find(i) == assignedTokenIndices_[param].end()) {
                         const Token& token = it->second[i];
                         Position pos(token.line - 1, token.column - 1);
                         Range range(pos, Position(pos.line, pos.character + token.lexeme.length()));
@@ -75,7 +75,7 @@ public:
                         SymbolInfo paramInfo(param, "parameter", loc);
                         document_->addSymbol(param, std::move(paramInfo));
                         
-                        usedTokenIndices_[param].insert(i);
+                        assignedTokenIndices_[param].insert(i);
                         break;
                     }
                 }
@@ -101,7 +101,7 @@ public:
             SymbolInfo info(stmt.name, "class", loc);
             document_->addSymbol(stmt.name, std::move(info));
             
-            usedTokenIndices_[stmt.name].insert(0);
+            assignedTokenIndices_[stmt.name].insert(0);
         }
 
         // Process methods
@@ -161,13 +161,13 @@ public:
             auto it = tokenMap_.find(expr.name);
             if (it != tokenMap_.end()) {
                 for (size_t i = 0; i < it->second.size(); ++i) {
-                    if (usedTokenIndices_[expr.name].find(i) == usedTokenIndices_[expr.name].end()) {
+                    if (assignedTokenIndices_[expr.name].find(i) == assignedTokenIndices_[expr.name].end()) {
                         const Token& token = it->second[i];
                         Position pos(token.line - 1, token.column - 1);
                         Range range(pos, Position(pos.line, pos.character + token.lexeme.length()));
                         Location loc(document_->getUri(), range);
                         symbol->references.push_back(loc);
-                        usedTokenIndices_[expr.name].insert(i);
+                        assignedTokenIndices_[expr.name].insert(i);
                         break;
                     }
                 }
@@ -208,13 +208,13 @@ public:
             auto it = tokenMap_.find(expr.name);
             if (it != tokenMap_.end()) {
                 for (size_t i = 0; i < it->second.size(); ++i) {
-                    if (usedTokenIndices_[expr.name].find(i) == usedTokenIndices_[expr.name].end()) {
+                    if (assignedTokenIndices_[expr.name].find(i) == assignedTokenIndices_[expr.name].end()) {
                         const Token& token = it->second[i];
                         Position pos(token.line - 1, token.column - 1);
                         Range range(pos, Position(pos.line, pos.character + token.lexeme.length()));
                         Location loc(document_->getUri(), range);
                         symbol->references.push_back(loc);
-                        usedTokenIndices_[expr.name].insert(i);
+                        assignedTokenIndices_[expr.name].insert(i);
                         break;
                     }
                 }
@@ -283,7 +283,8 @@ public:
 private:
     Document* document_;
     std::unordered_map<std::string, std::vector<Token>> tokenMap_;
-    std::unordered_map<std::string, std::unordered_set<size_t>> usedTokenIndices_;
+    // Tracks which token occurrences have been assigned to symbols (definition or reference)
+    std::unordered_map<std::string, std::unordered_set<size_t>> assignedTokenIndices_;
 };
 
 // Document implementation
@@ -388,18 +389,19 @@ Position Document::offsetToPosition(size_t offset) const {
 
 size_t Document::positionToOffset(const Position& pos) const {
     int currentLine = 0;
-    size_t offset = 0;
+    int currentCharacter = 0;
     
     for (size_t i = 0; i < content_.size(); ++i) {
-        if (currentLine == pos.line && offset == static_cast<size_t>(pos.character)) {
+        // Check if we've reached the target position
+        if (currentLine == pos.line && currentCharacter == pos.character) {
             return i;
         }
         
         if (content_[i] == '\n') {
             currentLine++;
-            offset = 0;
+            currentCharacter = 0;
         } else {
-            offset++;
+            currentCharacter++;
         }
     }
     

@@ -473,7 +473,9 @@ void LSPServer::publishDiagnostics(const std::string& uri) {
         }
         
         Position start(diag.line - 1, diag.column - 1);
-        Position end(diag.line - 1, diag.column + 10);  // Approximate end
+        // Use a more reasonable range - highlight at least one character
+        // Default to highlighting the entire line if we don't have specific end info
+        Position end(diag.line - 1, diag.column > 0 ? diag.column : 1);
         
         diags.push_back({
             {"range", rangeToJson(Range(start, end))},
