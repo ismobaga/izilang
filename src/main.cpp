@@ -462,11 +462,10 @@ int main(int argc, char** argv) {
             // Report diagnostics
             const auto& diagnostics = analyzer.getDiagnostics();
             ErrorReporter reporter(src);
+            std::string filePrefix = "In file '" + options.input + "':\n";
             
             bool hasErrors = false;
             for (const auto& diag : diagnostics) {
-                std::string filePrefix = "In file '" + options.input + "':\n";
-                
                 if (diag.severity == SemanticDiagnostic::Severity::Error) {
                     hasErrors = true;
                     std::cerr << filePrefix;
