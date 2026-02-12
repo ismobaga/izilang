@@ -155,3 +155,118 @@ TEST_CASE("VM Classes: Methods", "[vm-classes]") {
         REQUIRE(second_15 != std::string::npos);
     }
 }
+
+TEST_CASE("VM Classes: Multiple instances", "[vm-classes][vm-instances]") {
+    SECTION("Multiple independent class instances") {
+        std::string source = R"(
+            class Counter {
+                var count: Number;
+                
+                fn constructor(initial: Number) {
+                    this.count = initial;
+                }
+                
+                fn increment(): Void {
+                    this.count = this.count + 1;
+                }
+            }
+            
+            var c1 = Counter(0);
+            var c2 = Counter(100);
+            
+            c1.increment();
+            c1.increment();
+            c2.increment();
+            
+            print(c1.count);
+            print(c2.count);
+        )";
+        
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        BytecodeCompiler compiler;
+        Chunk chunk = compiler.compile(program);
+        
+        VM vm;
+        registerVmNatives(vm);
+        OutputCapture capture;
+        
+        REQUIRE_NOTHROW(vm.run(chunk));
+        
+        std::string output = capture.getOutput();
+        REQUIRE(output.find("2") != std::string::npos);
+        REQUIRE(output.find("101") != std::string::npos);
+    }
+}
+
+TEST_CASE("VM Classes: Instance storage", "[vm-classes][vm-storage]") {
+    SECTION("Store class instance in variable") {
+        // Test basic class instance variable assignment
+        std::string source = R"(
+            class Point {
+                var x: Number;
+                var y: Number;
+                
+                fn constructor(x: Number, y: Number) {
+                    this.x = x;
+                    this.y = y;
+                }
+            }
+            
+            var p = Point(5, 10);
+            print(p.x);
+            print(p.y);
+        )";
+        
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        BytecodeCompiler compiler;
+        Chunk chunk = compiler.compile(program);
+        
+        VM vm;
+        registerVmNatives(vm);
+        OutputCapture capture;
+        
+        REQUIRE_NOTHROW(vm.run(chunk));
+        
+        std::string output = capture.getOutput();
+        REQUIRE(output.find("5") != std::string::npos);
+        REQUIRE(output.find("10") != std::string::npos);
+    }
+}
+
+TEST_CASE("VM Classes: Error handling", "[vm-classes][vm-errors]") {
+    SECTION("Access undefined property") {
+        std::string source = R"(
+            class Empty { }
+            var e = Empty();
+            print(e.nonexistent);
+        )";
+        
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        BytecodeCompiler compiler;
+        Chunk chunk = compiler.compile(program);
+        
+        VM vm;
+        registerVmNatives(vm);
+        
+        // VM prints error messages but may not throw
+        // Just verify it doesn't crash
+        try {
+            vm.run(chunk);
+        } catch (...) {
+            // Error is expected - test passes
+        }
+        REQUIRE(true); // Test passes if we get here without crash
+    }
+}

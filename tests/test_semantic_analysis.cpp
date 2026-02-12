@@ -473,3 +473,143 @@ TEST_CASE("Semantic Analysis: Function Call Validation", "[semantic][functions]"
         REQUIRE_FALSE(hasErrors(analyzer));
     }
 }
+
+TEST_CASE("Semantic Analysis: Advanced Type Checking", "[semantic][types][edge-cases]") {
+    SECTION("Nil type accepts only nil") {
+        std::string code = R"(
+            var x: Nil = nil;
+        )";
+        
+        auto analyzer = analyzeCode(code);
+        REQUIRE_FALSE(hasErrors(analyzer));
+    }
+    
+    SECTION("Any type accepts any value") {
+        std::string code = R"(
+            var a: Any = 42;
+            var b: Any = "string";
+            var c: Any = true;
+            var d: Any = nil;
+        )";
+        
+        auto analyzer = analyzeCode(code);
+        REQUIRE_FALSE(hasErrors(analyzer));
+    }
+    
+    SECTION("Void return type validation") {
+        std::string code = R"(
+            fn doNothing(): Void {
+                var x = 10;
+            }
+        )";
+        
+        auto analyzer = analyzeCode(code);
+        REQUIRE_FALSE(hasErrors(analyzer));
+    }
+    
+    SECTION("Array element type compatibility") {
+        std::string code = R"(
+            var nums: Array<Number> = [1, 2, 3];
+        )";
+        
+        auto analyzer = analyzeCode(code);
+        REQUIRE_FALSE(hasErrors(analyzer));
+    }
+    
+    SECTION("Map key-value type compatibility") {
+        std::string code = R"(
+            var data: Map<String,Number> = {"a": 1, "b": 2};
+        )";
+        
+        auto analyzer = analyzeCode(code);
+        REQUIRE_FALSE(hasErrors(analyzer));
+    }
+}
+
+TEST_CASE("Semantic Analysis: Class Instance Scenarios", "[semantic][classes][edge-cases]") {
+    SECTION("Multiple class instances") {
+        std::string code = R"(
+            class Point {
+                var x: Number;
+                var y: Number;
+            }
+            
+            var p1 = Point();
+            var p2 = Point();
+            p1.x = 10;
+            p2.x = 20;
+        )";
+        
+        auto analyzer = analyzeCode(code);
+        REQUIRE_FALSE(hasErrors(analyzer));
+    }
+    
+    SECTION("Class instance passed to function") {
+        std::string code = R"(
+            class Point {
+                var x: Number;
+            }
+            
+            fn usePoint(p) {
+                print(p.x);
+            }
+            
+            var point = Point();
+            usePoint(point);
+        )";
+        
+        auto analyzer = analyzeCode(code);
+        REQUIRE_FALSE(hasErrors(analyzer));
+    }
+    
+    SECTION("Nested property access") {
+        std::string code = R"(
+            class Inner {
+                var value: Number;
+            }
+            
+            class Outer {
+                var inner: Inner;
+            }
+            
+            var obj = Outer();
+            var inner = Inner();
+            obj.inner = inner;
+        )";
+        
+        auto analyzer = analyzeCode(code);
+        REQUIRE_FALSE(hasErrors(analyzer));
+    }
+}
+
+TEST_CASE("Semantic Analysis: Type Misuse Detection", "[semantic][types][errors]") {
+    SECTION("Array type mismatch") {
+        std::string code = R"(
+            var nums: Array<Number> = "not an array";
+        )";
+        
+        auto analyzer = analyzeCode(code);
+        REQUIRE(hasErrors(analyzer));
+        REQUIRE(hasErrorContaining(analyzer, "Type mismatch"));
+    }
+    
+    SECTION("Map type mismatch") {
+        std::string code = R"(
+            var data: Map<String,Number> = 42;
+        )";
+        
+        auto analyzer = analyzeCode(code);
+        REQUIRE(hasErrors(analyzer));
+        REQUIRE(hasErrorContaining(analyzer, "Type mismatch"));
+    }
+    
+    SECTION("Function type mismatch") {
+        std::string code = R"(
+            var callback: fn(Number) -> Number = "not a function";
+        )";
+        
+        auto analyzer = analyzeCode(code);
+        REQUIRE(hasErrors(analyzer));
+        REQUIRE(hasErrorContaining(analyzer, "Type mismatch"));
+    }
+}

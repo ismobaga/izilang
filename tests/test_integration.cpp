@@ -916,3 +916,128 @@ TEST_CASE("Integration: String interpolation", "[integration]") {
         REQUIRE(capture.getOutput() == "42\n");
     }
 }
+
+TEST_CASE("Integration: v0.3 - Types and Classes Combined", "[integration][v03]") {
+    SECTION("Typed class with methods") {
+        std::string source = R"(
+            class Calculator {
+                var result: Number;
+                
+                fn constructor(initial: Number) {
+                    this.result = initial;
+                }
+                
+                fn add(n: Number): Number {
+                    this.result = this.result + n;
+                    return this.result;
+                }
+                
+                fn subtract(n: Number): Number {
+                    this.result = this.result - n;
+                    return this.result;
+                }
+                
+                fn getResult(): Number {
+                    return this.result;
+                }
+            }
+            
+            var calc = Calculator(10);
+            print(calc.getResult());
+            calc.add(5);
+            print(calc.getResult());
+            calc.subtract(3);
+            print(calc.getResult());
+        )";
+        
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        std::string output = capture.getOutput();
+        REQUIRE(output.find("10") != std::string::npos);
+        REQUIRE(output.find("15") != std::string::npos);
+        REQUIRE(output.find("12") != std::string::npos);
+    }
+    
+    SECTION("Multiple typed classes interacting") {
+        std::string source = R"(
+            class Point {
+                var x: Number;
+                var y: Number;
+                
+                fn constructor(x: Number, y: Number) {
+                    this.x = x;
+                    this.y = y;
+                }
+                
+                fn distanceFrom(other): Number {
+                    var dx = this.x - other.x;
+                    var dy = this.y - other.y;
+                    return dx * dx + dy * dy;
+                }
+            }
+            
+            var p1 = Point(0, 0);
+            var p2 = Point(3, 4);
+            print(p1.distanceFrom(p2));
+        )";
+        
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        std::string output = capture.getOutput();
+        REQUIRE(output.find("25") != std::string::npos); // 3^2 + 4^2 = 25
+    }
+    
+    SECTION("Class with typed array field") {
+        std::string source = R"(
+            class Container {
+                var items: Array<Number>;
+                var count: Number;
+                
+                fn constructor() {
+                    this.items = [1, 2, 3];
+                    this.count = 3;
+                }
+                
+                fn size(): Number {
+                    return this.count;
+                }
+                
+                fn getItem(index: Number): Number {
+                    return this.items[index];
+                }
+            }
+            
+            var container = Container();
+            print(container.size());
+            print(container.getItem(0));
+            print(container.getItem(2));
+        )";
+        
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        std::string output = capture.getOutput();
+        REQUIRE(output.find("3") != std::string::npos);
+        REQUIRE(output.find("1") != std::string::npos);
+    }
+}
