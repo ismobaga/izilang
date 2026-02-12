@@ -6,6 +6,7 @@
 #include <sstream>
 #include <fstream>
 #include <string>
+#include <algorithm>
 
 #include "ast/expr.hpp"
 #include "ast/pattern.hpp"
@@ -13,6 +14,7 @@
 #include "common/callable.hpp"
 #include "common/token.hpp"
 #include "common/value.hpp"
+#include "common/module_path.hpp"
 #include "interp/native.hpp"
 #include "interp/native_modules.hpp"
 #include "interp/izi_class.hpp"
@@ -413,23 +415,58 @@ void Interpreter::visit(ImportStmt& stmt) {
         return;
     }
     
-    // Handle file-based modules (existing logic)
-    modulePath = normalizeModulePath(stmt.module);
-    if (importedModules.contains(modulePath)) {
-        // Module already imported
+    // Handle file-based modules with relative path resolution
+    modulePath = ModulePath::resolveImport(stmt.module, currentFile);
+    
+    // Canonicalize the path for proper deduplication and cycle detection
+    std::string canonicalPath = ModulePath::canonicalize(modulePath);
+    
+    // Check if module is already imported (avoid re-importing)
+    if (importedModules.contains(canonicalPath)) {
         return;
     }
-
+    
+    // Check for circular imports
+    auto it = std::find(importStack.begin(), importStack.end(), canonicalPath);
+    if (it != importStack.end()) {
+        // Build circular import chain message
+        std::string chain;
+        for (size_t i = std::distance(importStack.begin(), it); i < importStack.size(); ++i) {
+            if (!chain.empty()) chain += " -> ";
+            chain += importStack[i];
+        }
+        chain += " -> " + canonicalPath;
+        throw std::runtime_error("Circular import detected: " + chain);
+    }
+    
+    // Load and parse the module
     std::string source = loadFile(modulePath);
     Lexer lexer(source);
     auto tokens = lexer.scanTokens();
     Parser parser(std::move(tokens));
     auto program = parser.parse();
-    interpret(program);
-
-    // Execute the module in a new environment
-
-    importedModules.insert(modulePath);
+    
+    // Save current file and push to import stack
+    std::string previousFile = currentFile;
+    currentFile = canonicalPath;
+    importStack.push_back(canonicalPath);
+    
+    try {
+        // Execute the module
+        interpret(program);
+        
+        // Pop from import stack and mark as imported
+        importStack.pop_back();
+        importedModules.insert(canonicalPath);
+        
+        // Restore previous file
+        currentFile = previousFile;
+    } catch (...) {
+        // On error, restore state and rethrow
+        importStack.pop_back();
+        currentFile = previousFile;
+        throw;
+    }
 }
 std::string Interpreter::normalizeModulePath(const std::string& path) {
     // Turn "math" into "math.iz"

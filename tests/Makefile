@@ -77,6 +77,7 @@ GENERATED += $(OBJDIR)/error_reporter.o
 GENERATED += $(OBJDIR)/interpreter.o
 GENERATED += $(OBJDIR)/izi_class.o
 GENERATED += $(OBJDIR)/lexer.o
+GENERATED += $(OBJDIR)/module_path.o
 GENERATED += $(OBJDIR)/native.o
 GENERATED += $(OBJDIR)/native_compiler.o
 GENERATED += $(OBJDIR)/native_modules.o
@@ -113,6 +114,7 @@ OBJECTS += $(OBJDIR)/error_reporter.o
 OBJECTS += $(OBJDIR)/interpreter.o
 OBJECTS += $(OBJDIR)/izi_class.o
 OBJECTS += $(OBJDIR)/lexer.o
+OBJECTS += $(OBJDIR)/module_path.o
 OBJECTS += $(OBJDIR)/native.o
 OBJECTS += $(OBJDIR)/native_compiler.o
 OBJECTS += $(OBJDIR)/native_modules.o
@@ -228,6 +230,9 @@ $(OBJDIR)/cli.o: ../src/common/cli.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/error_reporter.o: ../src/common/error_reporter.cpp
+	@echo "$(notdir $<)"
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/module_path.o: ../src/common/module_path.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/semantic_analyzer.o: ../src/common/semantic_analyzer.cpp

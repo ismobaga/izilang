@@ -37,11 +37,13 @@ void runCode(const std::string& src, bool useVM, bool debug, const std::string& 
 
         if (!useVM) {
             Interpreter interp(src);
+            interp.setCurrentFile(filename);  // Set current file for relative imports
             interp.setCommandLineArgs(args);
             interp.interpret(program);
         } else {
             std::unordered_set<std::string> importedModules;
             BytecodeCompiler compiler;
+            compiler.setCurrentFile(filename);  // Set current file for relative imports
             compiler.setImportedModules(&importedModules);
             Chunk chunk = compiler.compile(program);
             VM vm;
@@ -70,6 +72,10 @@ void runCode(const std::string& src, bool useVM, bool debug, const std::string& 
         std::cerr << "Exception value: ";
         printValue(e.exception);
         std::cerr << '\n';
+        throw;
+    } catch (const std::runtime_error& e) {
+        std::cerr << "In file '" << filename << "':\n";
+        std::cerr << "Error: " << e.what() << '\n';
         throw;
     }
 }
@@ -398,6 +404,15 @@ int main(int argc, char** argv) {
     std::stringstream buffer;
     buffer << f.rdbuf();
     std::string src = buffer.str();
+    
+    // Convert input file to absolute path for proper relative import resolution
+    std::string absolutePath;
+    try {
+        absolutePath = fs::absolute(options.input).string();
+    } catch (const fs::filesystem_error&) {
+        // If canonicalization fails, use the original path
+        absolutePath = options.input;
+    }
 
     // Handle different commands
     if (options.command == CliOptions::Command::Run) {
@@ -408,7 +423,7 @@ int main(int argc, char** argv) {
             cmdArgs.push_back(options.input);  // Script name as first argument
             cmdArgs.insert(cmdArgs.end(), options.args.begin(), options.args.end());
             
-            runCode(src, useVM, options.debug, options.input, cmdArgs);
+            runCode(src, useVM, options.debug, absolutePath, cmdArgs);
         } catch (...) {
             return 1;
         }
