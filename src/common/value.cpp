@@ -2,6 +2,7 @@
 #include "bytecode/mv_callable.hpp"
 #include "interp/izi_class.hpp"
 #include "bytecode/vm_class.hpp"
+#include "error.hpp"
 #include <sstream>
 #include <cmath>
 
@@ -45,6 +46,9 @@ std::string valueToString(const Value& v) {
     } else if (std::holds_alternative<std::shared_ptr<Instance>>(v)) {
         auto instance = std::get<std::shared_ptr<Instance>>(v);
         oss << "<" << getInstanceClassName(*instance) << " instance>";
+    } else if (std::holds_alternative<std::shared_ptr<Error>>(v)) {
+        auto error = std::get<std::shared_ptr<Error>>(v);
+        oss << error->fullMessage();
     } else {
         oss << "<unknown>";
     }
@@ -73,6 +77,9 @@ void printValue(const Value& v) {
     } else if (std::holds_alternative<std::shared_ptr<Instance>>(v)) {
         auto instance = std::get<std::shared_ptr<Instance>>(v);
         std::cout << "<" << getInstanceClassName(*instance) << " instance>";
+    } else if (std::holds_alternative<std::shared_ptr<Error>>(v)) {
+        auto error = std::get<std::shared_ptr<Error>>(v);
+        std::cout << error->fullMessage() << error->formatStackTrace();
     } else {
         std::cout << "<unknown>";
     }
