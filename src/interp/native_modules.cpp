@@ -119,12 +119,24 @@ Value createEnvModule(Interpreter& interp) {
     return Value{module};
 }
 
+Value createProcessModule(Interpreter& interp) {
+    auto module = std::make_shared<Map>();
+    
+    // Process control functions
+    module->entries["exit"] = Value{std::make_shared<NativeFunction>("exit", 1, nativeProcessExit)};
+    module->entries["status"] = Value{std::make_shared<NativeFunction>("status", 0, nativeProcessStatus)};
+    module->entries["args"] = Value{std::make_shared<NativeFunction>("args", 0, nativeProcessArgs)};
+    
+    return Value{module};
+}
+
 bool isNativeModule(const std::string& path) {
     return path == "math" || path == "string" || path == "array" || 
            path == "io" || path == "json" || path == "http" || 
            path == "log" || path == "std.log" || 
            path == "assert" || path == "std.assert" ||
-           path == "env" || path == "std.env";
+           path == "env" || path == "std.env" ||
+           path == "process" || path == "std.process";
 }
 
 Value getNativeModule(const std::string& name, Interpreter& interp) {
@@ -142,6 +154,8 @@ Value getNativeModule(const std::string& name, Interpreter& interp) {
         return createAssertModule(interp);
     } else if (name == "env" || name == "std.env") {
         return createEnvModule(interp);
+    } else if (name == "process" || name == "std.process") {
+        return createProcessModule(interp);
     } else if (name == "json") {
         // Placeholder for future implementation
         auto module = std::make_shared<Map>();

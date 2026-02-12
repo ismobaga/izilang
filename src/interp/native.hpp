@@ -109,6 +109,11 @@ auto nativeEnvGet(Interpreter& interp, const std::vector<Value>& arguments) -> V
 auto nativeEnvSet(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 auto nativeEnvExists(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 
+// std.process functions
+auto nativeProcessExit(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeProcessStatus(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeProcessArgs(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+
 void registerNativeFunctions(Interpreter& interpreter);
 
 }  // namespace izi
