@@ -95,6 +95,11 @@ auto nativeLogWarn(Interpreter& interp, const std::vector<Value>& arguments) -> 
 auto nativeLogError(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 auto nativeLogDebug(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 
+// std.assert functions
+auto nativeAssertOk(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeAssertEq(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeAssertNe(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+
 void registerNativeFunctions(Interpreter& interpreter);
 
 }  // namespace izi

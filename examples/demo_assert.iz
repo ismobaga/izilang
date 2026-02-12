@@ -1,0 +1,58 @@
+// Demo of std.assert module functionality
+
+import * as assert from "std.assert";
+
+print("=== std.assert Module Demo ===");
+print("");
+
+// 1. Basic ok() assertions
+print("1. Testing assert.ok() with truthy values:");
+assert.ok(true);
+assert.ok(1 > 0);
+assert.ok("non-empty string");
+assert.ok([1, 2, 3]);
+print("   ✓ All ok() assertions passed");
+print("");
+
+// 2. ok() with custom message
+print("2. Testing assert.ok() with custom message:");
+var age = 25;
+assert.ok(age >= 18, "User must be at least 18 years old");
+print("   ✓ Custom message assertion passed");
+print("");
+
+// 3. Equality assertions
+print("3. Testing assert.eq() for equality:");
+assert.eq(2 + 2, 4);
+assert.eq("hello", "hello");
+assert.eq(true, true);
+var x = 10;
+var y = 10;
+assert.eq(x, y);
+print("   ✓ All equality assertions passed");
+print("");
+
+// 4. Inequality assertions
+print("4. Testing assert.ne() for inequality:");
+assert.ne(1, 2);
+assert.ne("hello", "world");
+assert.ne(true, false);
+var a = 5;
+var b = 10;
+assert.ne(a, b);
+print("   ✓ All inequality assertions passed");
+print("");
+
+// 5. Using assertions in functions
+print("5. Using assertions in a function:");
+fn divide(numerator, denominator) {
+    assert.ok(denominator != 0, "Denominator cannot be zero");
+    return numerator / denominator;
+}
+
+var result = divide(10, 2);
+print("   10 / 2 =", result);
+print("   ✓ Function assertion passed");
+print("");
+
+print("=== All demos completed successfully! ===");

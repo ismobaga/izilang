@@ -15,6 +15,7 @@ Value createMathModule(Interpreter& interp);
 Value createStringModule(Interpreter& interp);
 Value createArrayModule(Interpreter& interp);
 Value createIOModule(Interpreter& interp);
+Value createAssertModule(Interpreter& interp);
 
 // Check if a module path refers to a native module
 bool isNativeModule(const std::string& path);

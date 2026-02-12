@@ -93,10 +93,22 @@ Value createLogModule(Interpreter& interp) {
     return Value{module};
 }
 
+Value createAssertModule(Interpreter& interp) {
+    auto module = std::make_shared<Map>();
+    
+    // Assertion functions
+    module->entries["ok"] = Value{std::make_shared<NativeFunction>("ok", -1, nativeAssertOk)};
+    module->entries["eq"] = Value{std::make_shared<NativeFunction>("eq", 2, nativeAssertEq)};
+    module->entries["ne"] = Value{std::make_shared<NativeFunction>("ne", 2, nativeAssertNe)};
+    
+    return Value{module};
+}
+
 bool isNativeModule(const std::string& path) {
     return path == "math" || path == "string" || path == "array" || 
            path == "io" || path == "json" || path == "http" || 
-           path == "log" || path == "std.log";
+           path == "log" || path == "std.log" || 
+           path == "assert" || path == "std.assert";
 }
 
 Value getNativeModule(const std::string& name, Interpreter& interp) {
@@ -110,6 +122,8 @@ Value getNativeModule(const std::string& name, Interpreter& interp) {
         return createIOModule(interp);
     } else if (name == "log" || name == "std.log") {
         return createLogModule(interp);
+    } else if (name == "assert" || name == "std.assert") {
+        return createAssertModule(interp);
     } else if (name == "json") {
         // Placeholder for future implementation
         auto module = std::make_shared<Map>();
