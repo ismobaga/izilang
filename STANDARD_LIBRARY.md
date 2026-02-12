@@ -228,6 +228,59 @@ if (io.exists("/tmp/test.txt")) {
 io.appendFile("/tmp/test.txt", "\nNew line added.");
 ```
 
+## assert - Runtime Assertions
+
+Assertion helpers for defensive programming and testing.
+
+### Module Import
+
+```izilang
+import "assert";
+assert.ok(x > 0);
+```
+
+Or use the namespaced version:
+
+```izilang
+import * as assert from "std.assert";
+assert.ok(x > 0);
+assert.eq(a, b);
+assert.ne(a, b);
+```
+
+### Functions
+
+**Assertion Functions:**
+- `ok(condition, message?)` - Assert that a condition is truthy. Throws an error if condition is falsy. Optional custom error message.
+- `eq(a, b)` - Assert that two values are equal. Throws an error if values are not equal.
+- `ne(a, b)` - Assert that two values are not equal. Throws an error if values are equal.
+
+### Example
+
+```izilang
+import * as assert from "std.assert";
+
+// Basic assertions
+assert.ok(true);
+assert.ok(5 > 3);
+assert.ok(x !== nil, "x should not be nil");
+
+// Equality assertions
+assert.eq(1 + 1, 2);
+assert.eq("hello", greeting);
+
+// Inequality assertions
+assert.ne(a, b);
+assert.ne(true, false);
+
+// Assertions throw errors on failure
+try {
+    assert.ok(false, "This will fail");
+} catch(e) {
+    print("Caught assertion error:", e);
+}
+```
+
 ## json - JSON Parsing (Placeholder)
 
 JSON parsing and generation module. *Coming soon.*
