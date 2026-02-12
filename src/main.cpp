@@ -20,7 +20,7 @@ using namespace izi;
 namespace fs = std::filesystem;
 
 
-void runCode(const std::string& src, bool useVM, bool debug, const std::string& filename = "<stdin>") {
+void runCode(const std::string& src, bool useVM, bool debug, const std::string& filename = "<stdin>", const std::vector<std::string>& args = {}) {
     try {
         if (debug) {
             std::cout << "[DEBUG] Lexing and parsing...\n";
@@ -37,6 +37,7 @@ void runCode(const std::string& src, bool useVM, bool debug, const std::string& 
 
         if (!useVM) {
             Interpreter interp(src);
+            interp.setCommandLineArgs(args);
             interp.interpret(program);
         } else {
             std::unordered_set<std::string> importedModules;
@@ -402,7 +403,12 @@ int main(int argc, char** argv) {
     if (options.command == CliOptions::Command::Run) {
         // Execute the code
         try {
-            runCode(src, useVM, options.debug, options.input);
+            // Build command line arguments: script name followed by additional args
+            std::vector<std::string> cmdArgs;
+            cmdArgs.push_back(options.input);  // Script name as first argument
+            cmdArgs.insert(cmdArgs.end(), options.args.begin(), options.args.end());
+            
+            runCode(src, useVM, options.debug, options.input, cmdArgs);
         } catch (...) {
             return 1;
         }

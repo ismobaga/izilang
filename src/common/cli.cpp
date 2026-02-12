@@ -309,8 +309,13 @@ CliOptions CliOptions::parse(int argc, char** argv) {
                 if (options.input.empty()) {
                     options.input = arg;
                 } else {
-                    std::cerr << "Error: Unexpected argument: " << arg << "\n";
-                    std::exit(1);
+                    // For run command, additional arguments are passed to the script
+                    if (options.command == Command::Run) {
+                        options.args.push_back(arg);
+                    } else {
+                        std::cerr << "Error: Unexpected argument: " << arg << "\n";
+                        std::exit(1);
+                    }
                 }
             } else if (options.command == Command::Test) {
                 // Test command can have optional pattern arguments

@@ -1112,6 +1112,48 @@ auto nativeEnvExists(Interpreter& interp, const std::vector<Value>& arguments) -
     return value != nullptr;
 }
 
+// std.process functions
+auto nativeProcessExit(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 1) {
+        throw std::runtime_error("process.exit() takes exactly one argument.");
+    }
+    
+    if (!std::holds_alternative<double>(arguments[0])) {
+        throw std::runtime_error("process.exit() argument must be a number.");
+    }
+    
+    int exitCode = static_cast<int>(std::get<double>(arguments[0]));
+    std::exit(exitCode);
+    
+    // This line will never be reached, but is here to satisfy the compiler
+    return Nil{};
+}
+
+auto nativeProcessStatus(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
+    if (!arguments.empty()) {
+        throw std::runtime_error("process.status() takes no arguments.");
+    }
+    
+    // Return 0 as the status code (running normally)
+    // In a real implementation, this could track the last exit code or process state
+    return 0.0;
+}
+
+auto nativeProcessArgs(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
+    if (!arguments.empty()) {
+        throw std::runtime_error("process.args() takes no arguments.");
+    }
+    
+    const auto& cmdArgs = interp.getCommandLineArgs();
+    auto argsArray = std::make_shared<Array>();
+    
+    for (const auto& arg : cmdArgs) {
+        argsArray->elements.push_back(arg);
+    }
+    
+    return argsArray;
+}
+
 void registerNativeFunctions(Interpreter& interp) {
     // Core functions
     interp.defineGlobal("print", Value{std::make_shared<NativeFunction>(

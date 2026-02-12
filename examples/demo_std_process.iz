@@ -1,0 +1,64 @@
+print("===========================================");
+print("    std.process Module Demonstration");
+print("===========================================");
+print("");
+
+import * as proc from "std.process";
+
+print("1. Getting Command Line Arguments");
+print("----------------------------------------");
+
+var args = proc.args();
+print("Number of arguments: " + str(len(args)));
+print("Arguments:");
+for (var i = 0; i < len(args); i = i + 1) {
+    print("  [" + str(i) + "] " + args[i]);
+}
+
+print("");
+
+print("2. Process Status");
+print("----------------------------------------");
+
+var status = proc.status();
+print("Current process status: " + str(status));
+print("(Status 0 means the process is running normally)");
+
+print("");
+
+print("3. Named Imports");
+print("----------------------------------------");
+import { args, status } from "std.process";
+
+var scriptArgs = args();
+print("Script is: " + scriptArgs[0]);
+if (len(scriptArgs) > 1) {
+    print("Additional arguments:");
+    for (var i = 1; i < len(scriptArgs); i = i + 1) {
+        print("  " + scriptArgs[i]);
+    }
+} else {
+    print("No additional arguments provided");
+}
+
+print("");
+
+print("4. Practical Example: Simple CLI Tool");
+print("----------------------------------------");
+
+var programArgs = proc.args();
+if (len(programArgs) < 2) {
+    print("Usage: " + programArgs[0] + " <name>");
+    print("Example: izi run demo_std_process.iz Alice");
+} else {
+    var name = programArgs[1];
+    print("Hello, " + name + "!");
+}
+
+print("");
+print("===========================================");
+print("    Demonstration Complete!");
+print("===========================================");
+print("");
+print("Note: To test process.exit(), uncomment the line below:");
+print("// proc.exit(0);");

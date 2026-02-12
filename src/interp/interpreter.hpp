@@ -47,6 +47,14 @@ class Interpreter : public ExprVisitor, public StmtVisitor {
         globals->define(name, value);
     }
 
+    void setCommandLineArgs(const std::vector<std::string>& args) {
+        commandLineArgs = args;
+    }
+
+    const std::vector<std::string>& getCommandLineArgs() const {
+        return commandLineArgs;
+    }
+
     // ExprVisitor
     Value visit(BinaryExpr& expr) override;
     Value visit(UnaryExpr& expr) override;
@@ -97,6 +105,9 @@ class Interpreter : public ExprVisitor, public StmtVisitor {
       
     // for imports
     std::unordered_set<std::string> importedModules;
+
+    // command line arguments for std.process
+    std::vector<std::string> commandLineArgs;
 
     // helpers
     std::string loadFile(const std::string& path);
