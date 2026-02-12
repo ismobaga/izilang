@@ -105,6 +105,12 @@ private:
     bool inLoop_ = false;
     bool inFunction_ = false;
     bool hasReturnedInCurrentBlock_ = false;
+    bool inMethod_ = false;  // Track if we're inside a class method
+    std::string currentClassName_;  // Track current class name for validation
+    
+    // Class tracking for duplicate detection
+    std::unordered_set<std::string> currentClassFields_;
+    std::unordered_set<std::string> currentClassMethods_;
 
     // Helper methods
     void addError(const std::string& message, int line, int column);
@@ -121,6 +127,9 @@ private:
     TypePtr inferType(Expr& expr);
     bool areTypesCompatible(const TypeAnnotation& expected, const TypeAnnotation& actual);
     TypePtr valueToType(const Value& value);
+    
+    // Helper to check if a type is explicitly annotated (not Any)
+    bool isExplicitlyTyped(const TypeAnnotation* type);
 };
 
 } // namespace izi

@@ -84,8 +84,25 @@ TypeAnnotation* SemanticAnalyzer::lookupVariable(const std::string& name) {
 }
 
 TypePtr SemanticAnalyzer::inferType(Expr& expr) {
-    // For now, return Any type for untyped expressions
+    // Try to infer type from literal values
+    if (auto* literal = dynamic_cast<LiteralExpr*>(&expr)) {
+        return valueToType(literal->value);
+    }
+    
+    // Try to infer from variable reference
+    if (auto* var = dynamic_cast<VariableExpr*>(&expr)) {
+        auto* varType = lookupVariable(var->name);
+        if (varType) {
+            return TypeAnnotation::simple(varType->kind);
+        }
+    }
+    
+    // For now, return Any type for other expressions
     return TypeAnnotation::simple(TypeAnnotation::Kind::Any);
+}
+
+bool SemanticAnalyzer::isExplicitlyTyped(const TypeAnnotation* type) {
+    return type != nullptr && type->kind != TypeAnnotation::Kind::Any;
 }
 
 bool SemanticAnalyzer::areTypesCompatible(const TypeAnnotation& expected, const TypeAnnotation& actual) {
@@ -132,6 +149,49 @@ Value SemanticAnalyzer::visit(GroupingExpr& expr) {
 
 Value SemanticAnalyzer::visit(CallExpr& expr) {
     expr.callee->accept(*this);
+    
+    // Check if callee is a function and validate parameter types
+    if (auto* varExpr = dynamic_cast<VariableExpr*>(expr.callee.get())) {
+        auto* funcType = lookupVariable(varExpr->name);
+        
+        // If function has type information, validate parameter count and types
+        if (funcType && funcType->kind == TypeAnnotation::Kind::Function) {
+            // Check parameter count with proper pluralization
+            if (expr.args.size() != funcType->paramTypes.size()) {
+                std::string expectedWord = (funcType->paramTypes.size() == 1) ? "argument" : "arguments";
+                std::string gotWord = (expr.args.size() == 1) ? "argument" : "arguments";
+                addError(
+                    "Function '" + varExpr->name + "' expects " + 
+                    std::to_string(funcType->paramTypes.size()) + " " + expectedWord + " but got " +
+                    std::to_string(expr.args.size()) + " " + gotWord,
+                    0, 0
+                );
+            } else {
+                // Check parameter types
+                for (size_t i = 0; i < expr.args.size(); ++i) {
+                    expr.args[i]->accept(*this);
+                    
+                    // Only validate if parameter has explicit type annotation
+                    if (isExplicitlyTyped(funcType->paramTypes[i].get())) {
+                        TypePtr argType = inferType(*expr.args[i]);
+                        
+                        if (!areTypesCompatible(*funcType->paramTypes[i], *argType)) {
+                            addError(
+                                "Function '" + varExpr->name + "' expects parameter at position " + 
+                                std::to_string(i + 1) + " to be " + 
+                                funcType->paramTypes[i]->toString() + " but got " +
+                                argType->toString(),
+                                0, 0
+                            );
+                        }
+                    }
+                }
+            }
+            return Nil{};
+        }
+    }
+    
+    // For non-typed or unknown functions, just visit arguments
     for (auto& arg : expr.args) {
         arg->accept(*this);
     }
@@ -203,6 +263,9 @@ Value SemanticAnalyzer::visit(SetPropertyExpr& expr) {
 }
 
 Value SemanticAnalyzer::visit(ThisExpr& expr) {
+    if (!inMethod_) {
+        addError("'this' can only be used inside class methods. Use 'this' within a method defined inside a class.", 0, 0);
+    }
     return Nil{};
 }
 
@@ -233,9 +296,23 @@ void SemanticAnalyzer::visit(VarStmt& stmt) {
         TypeAnnotation::simple(stmt.typeAnnotation->kind) : 
         TypeAnnotation::simple(TypeAnnotation::Kind::Any);
     
+    // If initializer exists, check type compatibility
     if (stmt.initializer) {
         stmt.initializer->accept(*this);
-        // TODO: Check type compatibility if type annotation present
+        
+        // Only check type compatibility if variable has explicit type annotation
+        if (stmt.typeAnnotation && isExplicitlyTyped(varType.get())) {
+            TypePtr initType = inferType(*stmt.initializer);
+            
+            // Check if the initializer type is compatible with the declared type
+            if (!areTypesCompatible(*varType, *initType)) {
+                addError(
+                    "Type mismatch: variable '" + stmt.name + "' declared as " + 
+                    varType->toString() + " but initialized with " + initType->toString(),
+                    0, 0
+                );
+            }
+        }
     }
     
     defineVariable(stmt.name, std::move(varType), 0, 0);
@@ -280,6 +357,17 @@ void SemanticAnalyzer::visit(FunctionStmt& stmt) {
     enterScope();
     bool wasInFunction = inFunction_;
     inFunction_ = true;
+    
+    // Define parameters in function scope
+    for (size_t i = 0; i < stmt.params.size(); ++i) {
+        TypePtr paramType;
+        if (i < stmt.paramTypes.size() && stmt.paramTypes[i]) {
+            paramType = TypeAnnotation::simple(stmt.paramTypes[i]->kind);
+        } else {
+            paramType = TypeAnnotation::simple(TypeAnnotation::Kind::Any);
+        }
+        defineVariable(stmt.params[i], std::move(paramType), 0, 0);
+    }
     
     for (const auto& s : stmt.body) {
         s->accept(*this);
@@ -335,8 +423,98 @@ void SemanticAnalyzer::visit(ThrowStmt& stmt) {
 }
 
 void SemanticAnalyzer::visit(ClassStmt& stmt) {
-    // TODO: Implement class semantic analysis
-    addInfo("Class '" + stmt.name + "' semantic analysis not yet implemented", 0, 0);
+    currentClassName_ = stmt.name;
+    currentClassFields_.clear();
+    currentClassMethods_.clear();
+    
+    // Enter a new scope for the class
+    enterScope();
+    
+    // Check for duplicate fields
+    for (const auto& field : stmt.fields) {
+        if (currentClassFields_.count(field->name)) {
+            addError("Duplicate field '" + field->name + "' in class '" + stmt.name + "'", 0, 0);
+        } else {
+            currentClassFields_.insert(field->name);
+        }
+        
+        // Define field type in class scope (not global scope)
+        TypePtr fieldType = field->typeAnnotation ? 
+            TypeAnnotation::simple(field->typeAnnotation->kind) : 
+            TypeAnnotation::simple(TypeAnnotation::Kind::Any);
+        
+        // Check type of initializer if present
+        if (field->initializer) {
+            field->initializer->accept(*this);
+            
+            // Check type compatibility
+            if (field->typeAnnotation && isExplicitlyTyped(fieldType.get())) {
+                TypePtr initType = inferType(*field->initializer);
+                if (!areTypesCompatible(*fieldType, *initType)) {
+                    addError(
+                        "Type mismatch: field '" + field->name + "' declared as " + 
+                        fieldType->toString() + " but initialized with " + initType->toString(),
+                        0, 0
+                    );
+                }
+            }
+        }
+    }
+    
+    // Check for duplicate methods and validate constructor naming
+    for (const auto& method : stmt.methods) {
+        if (currentClassMethods_.count(method->name)) {
+            addError("Duplicate method '" + method->name + "' in class '" + stmt.name + "'", 0, 0);
+        } else {
+            currentClassMethods_.insert(method->name);
+        }
+        
+        // Validate constructor naming rules
+        if (method->name == "constructor") {
+            // Constructor is valid - this is the expected name
+        } else if (method->name == stmt.name) {
+            // Constructor with class name - should be named "constructor"
+            addError(
+                "Constructor should be named 'constructor', not '" + method->name + "'", 
+                0, 0
+            );
+        }
+        
+        // Analyze method body with method context
+        bool wasInMethod = inMethod_;
+        inMethod_ = true;
+        
+        enterScope();
+        bool wasInFunction = inFunction_;
+        inFunction_ = true;
+        
+        // Define parameters in function scope
+        for (size_t i = 0; i < method->params.size(); ++i) {
+            TypePtr paramType;
+            if (i < method->paramTypes.size() && method->paramTypes[i]) {
+                paramType = TypeAnnotation::simple(method->paramTypes[i]->kind);
+            } else {
+                paramType = TypeAnnotation::simple(TypeAnnotation::Kind::Any);
+            }
+            defineVariable(method->params[i], std::move(paramType), 0, 0);
+        }
+        
+        // Analyze method body
+        for (const auto& s : method->body) {
+            s->accept(*this);
+        }
+        
+        inFunction_ = wasInFunction;
+        exitScope();
+        inMethod_ = wasInMethod;
+    }
+    
+    // Exit class scope
+    exitScope();
+    
+    currentClassName_.clear();
+    currentClassFields_.clear();
+    currentClassMethods_.clear();
 }
 
 } // namespace izi
