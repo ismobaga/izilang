@@ -1,0 +1,41 @@
+// Example: Multi-File Project Structure
+//
+// This example demonstrates IziLang's package and module system
+// with support for relative imports and nested project structures.
+
+// Import shared configuration from parent directory
+import "./config";
+
+// Import utilities from subdirectory
+import "./utils/math_constants";
+import "./utils/strings";
+
+print("=== IziLang Multi-File Project Demo ===");
+print("");
+print("Application: " + APP_NAME);
+print("Version: " + VERSION);
+print("");
+
+print("Math Constants:");
+print("  PI = ");
+print(PI);
+print("  E = ");
+print(E);
+print("");
+
+print("String Prefixes:");
+print("  Greeting: " + GREETING_PREFIX);
+print("  Farewell: " + FAREWELL_PREFIX);
+print("");
+
+// Demonstrate using imported values
+var circle_area = PI * 10 * 10;
+print("Area of circle with radius 10: ");
+print(circle_area);
+print("");
+
+var greeting = GREETING_PREFIX + "World!";
+print(greeting);
+print("");
+
+print("=== Demo Complete ===");

@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include <string>
 #include <unordered_set>
+#include <vector>
 
 #include "ast/stmt.hpp"
 #include "ast/visitor.hpp"
@@ -106,6 +107,8 @@ class Interpreter : public ExprVisitor, public StmtVisitor {
       
     // for imports
     std::unordered_set<std::string> importedModules;
+    std::vector<std::string> importStack;  // Track files being imported (for circular detection)
+    std::string currentFile;  // Current file being executed
 
     // command line arguments for std.process
     std::vector<std::string> commandLineArgs;
@@ -113,6 +116,11 @@ class Interpreter : public ExprVisitor, public StmtVisitor {
     // helpers
     std::string loadFile(const std::string& path);
     std::string normalizeModulePath(const std::string& path);
+    
+public:
+    // Set current file for relative import resolution
+    void setCurrentFile(const std::string& filename) { currentFile = filename; }
+    const std::string& getCurrentFile() const { return currentFile; }
 };
 
 }  // namespace izi

@@ -1,0 +1,3 @@
+// String utility functions
+var GREETING_PREFIX = "Hello, ";
+var FAREWELL_PREFIX = "Goodbye, ";

@@ -59,6 +59,8 @@ namespace izi
     private:
         Chunk chunk;
         std::unordered_set<std::string>* importedModules = nullptr;
+        std::vector<std::string> importStack;  // Track files being imported (for circular detection)
+        std::string currentFile;  // Current file being compiled
         
         // Loop context for break/continue
         struct LoopContext {
@@ -85,6 +87,10 @@ namespace izi
         // Import helpers
         std::string normalizeModulePath(const std::string& path);
         std::string loadFile(const std::string& path);
-
+        
+    public:
+        // Set current file for relative import resolution
+        void setCurrentFile(const std::string& filename) { currentFile = filename; }
+        const std::string& getCurrentFile() const { return currentFile; }
     };
 } // namespace izi
