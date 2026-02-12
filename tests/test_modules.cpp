@@ -176,6 +176,21 @@ TEST_CASE("Native module system - log module", "[modules][log]") {
         REQUIRE_NOTHROW(interp.interpret(program));
     }
     
+    SECTION("std.log import syntax works") {
+        std::string source = R"(
+            import * as log from "std.log";
+            log.info("Test message");
+        )";
+        
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+        
+        Interpreter interp(source);
+        REQUIRE_NOTHROW(interp.interpret(program));
+    }
+    
     SECTION("Named imports work") {
         std::string source = R"(
             import { info, warn, error, debug } from "log";
@@ -194,9 +209,45 @@ TEST_CASE("Native module system - log module", "[modules][log]") {
         REQUIRE_NOTHROW(interp.interpret(program));
     }
     
+    SECTION("Named imports work with std.log") {
+        std::string source = R"(
+            import { info, warn, error, debug } from "std.log";
+            info("Information message");
+            warn("Warning message");
+            error("Error message");
+            debug("Debug message");
+        )";
+        
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+        
+        Interpreter interp(source);
+        REQUIRE_NOTHROW(interp.interpret(program));
+    }
+    
     SECTION("Wildcard import works") {
         std::string source = R"(
             import * as log from "log";
+            log.info("Server started");
+            log.warn("Low disk space");
+            log.error("Failed to connect");
+            log.debug("x = 42");
+        )";
+        
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+        
+        Interpreter interp(source);
+        REQUIRE_NOTHROW(interp.interpret(program));
+    }
+    
+    SECTION("Wildcard import works with std.log") {
+        std::string source = R"(
+            import * as log from "std.log";
             log.info("Server started");
             log.warn("Low disk space");
             log.error("Failed to connect");

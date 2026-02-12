@@ -95,7 +95,8 @@ Value createLogModule(Interpreter& interp) {
 
 bool isNativeModule(const std::string& path) {
     return path == "math" || path == "string" || path == "array" || 
-           path == "io" || path == "json" || path == "http" || path == "log";
+           path == "io" || path == "json" || path == "http" || 
+           path == "log" || path == "std.log";
 }
 
 Value getNativeModule(const std::string& name, Interpreter& interp) {
@@ -107,7 +108,7 @@ Value getNativeModule(const std::string& name, Interpreter& interp) {
         return createArrayModule(interp);
     } else if (name == "io") {
         return createIOModule(interp);
-    } else if (name == "log") {
+    } else if (name == "log" || name == "std.log") {
         return createLogModule(interp);
     } else if (name == "json") {
         // Placeholder for future implementation
