@@ -1731,8 +1731,13 @@ static std::string valueToJson(const Value& value) {
         oss << std::fixed << std::setprecision(10) << d;
         std::string str = oss.str();
         // Remove trailing zeros
-        str.erase(str.find_last_not_of('0') + 1, std::string::npos);
-        if (str.back() == '.') str.pop_back();
+        auto pos = str.find_last_not_of('0');
+        if (pos != std::string::npos) {
+            str.erase(pos + 1, std::string::npos);
+            if (!str.empty() && str.back() == '.') {
+                str.pop_back();
+            }
+        }
         return str;
     } else if (std::holds_alternative<std::string>(value)) {
         std::string str = std::get<std::string>(value);
