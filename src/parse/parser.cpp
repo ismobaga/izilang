@@ -287,8 +287,11 @@ StmtPtr Parser::forStatement() {
 
 StmtPtr Parser::returnStatement() {
     ExprPtr value = nullptr;
-    if (!check(TokenType::SEMICOLON) && !isAtEnd() && peek().line == previous().line) {
-        value = expression();
+    if (!isAtEnd() && peek().line == previous().line) {
+        // Check if there's actually an expression (not just a semicolon or newline)
+        if (!check(TokenType::SEMICOLON)) {
+            value = expression();
+        }
     }
     consumeSemicolonIfNeeded();
     return std::make_unique<ReturnStmt>(std::move(value));

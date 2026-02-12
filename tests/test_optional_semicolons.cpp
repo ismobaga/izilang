@@ -83,8 +83,9 @@ TEST_CASE("Parser handles optional semicolons", "[parser][semicolon]") {
         Parser parser(std::move(tokens));
         auto stmts = parser.parse();
         
-        // The parser should have encountered an error during parsing
-        // which results in a nullptr statement being added to the list
+        // The parser's error recovery mechanism catches parse errors internally
+        // and adds nullptr to the statements list. This is the standard pattern
+        // for testing parse errors in this codebase.
         bool hasError = false;
         for (const auto& stmt : stmts) {
             if (stmt == nullptr) {
