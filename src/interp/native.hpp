@@ -114,6 +114,13 @@ auto nativeProcessExit(Interpreter& interp, const std::vector<Value>& arguments)
 auto nativeProcessStatus(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 auto nativeProcessArgs(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 
+// std.path functions
+auto nativePathJoin(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativePathBasename(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativePathDirname(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativePathExtname(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativePathNormalize(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+
 void registerNativeFunctions(Interpreter& interpreter);
 
 }  // namespace izi

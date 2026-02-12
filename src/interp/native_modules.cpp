@@ -130,13 +130,27 @@ Value createProcessModule(Interpreter& interp) {
     return Value{module};
 }
 
+Value createPathModule(Interpreter& interp) {
+    auto module = std::make_shared<Map>();
+    
+    // Path manipulation functions
+    module->entries["join"] = Value{std::make_shared<NativeFunction>("join", -1, nativePathJoin)};
+    module->entries["basename"] = Value{std::make_shared<NativeFunction>("basename", 1, nativePathBasename)};
+    module->entries["dirname"] = Value{std::make_shared<NativeFunction>("dirname", 1, nativePathDirname)};
+    module->entries["extname"] = Value{std::make_shared<NativeFunction>("extname", 1, nativePathExtname)};
+    module->entries["normalize"] = Value{std::make_shared<NativeFunction>("normalize", 1, nativePathNormalize)};
+    
+    return Value{module};
+}
+
 bool isNativeModule(const std::string& path) {
     return path == "math" || path == "string" || path == "array" || 
            path == "io" || path == "json" || path == "http" || 
            path == "log" || path == "std.log" || 
            path == "assert" || path == "std.assert" ||
            path == "env" || path == "std.env" ||
-           path == "process" || path == "std.process";
+           path == "process" || path == "std.process" ||
+           path == "path" || path == "std.path";
 }
 
 Value getNativeModule(const std::string& name, Interpreter& interp) {
@@ -156,6 +170,8 @@ Value getNativeModule(const std::string& name, Interpreter& interp) {
         return createEnvModule(interp);
     } else if (name == "process" || name == "std.process") {
         return createProcessModule(interp);
+    } else if (name == "path" || name == "std.path") {
+        return createPathModule(interp);
     } else if (name == "json") {
         // Placeholder for future implementation
         auto module = std::make_shared<Map>();

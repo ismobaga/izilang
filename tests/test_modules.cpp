@@ -539,3 +539,197 @@ TEST_CASE("Native module system - log module", "[modules][log]") {
         REQUIRE_NOTHROW(interp.interpret(program));
     }
 }
+
+TEST_CASE("Native module system - path module", "[modules][path]") {
+    SECTION("Simple import creates module object") {
+        std::string source = R"(
+            import "path";
+            var result = path.join("a", "b");
+        )";
+        
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+        
+        Interpreter interp(source);
+        REQUIRE_NOTHROW(interp.interpret(program));
+    }
+    
+    SECTION("std.path import syntax works") {
+        std::string source = R"(
+            import * as path from "std.path";
+            var result = path.join("a", "b");
+        )";
+        
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+        
+        Interpreter interp(source);
+        REQUIRE_NOTHROW(interp.interpret(program));
+    }
+    
+    SECTION("path.join() works with multiple parts") {
+        std::string source = R"(
+            import * as path from "std.path";
+            import * as assert from "std.assert";
+            
+            var result1 = path.join("a", "b", "c.txt");
+            assert.eq(result1, "a/b/c.txt");
+            
+            var result2 = path.join("/tmp", "foo", "bar.txt");
+            assert.eq(result2, "/tmp/foo/bar.txt");
+            
+            var result3 = path.join("", "a", "", "b");
+            assert.eq(result3, "a/b");
+        )";
+        
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+        
+        Interpreter interp(source);
+        REQUIRE_NOTHROW(interp.interpret(program));
+    }
+    
+    SECTION("path.basename() extracts filename") {
+        std::string source = R"(
+            import * as path from "std.path";
+            import * as assert from "std.assert";
+            
+            var result1 = path.basename("/tmp/a.txt");
+            assert.eq(result1, "a.txt");
+            
+            var result2 = path.basename("/tmp/subdir/file.js");
+            assert.eq(result2, "file.js");
+            
+            var result3 = path.basename("file.txt");
+            assert.eq(result3, "file.txt");
+            
+            var result4 = path.basename("/tmp/");
+            assert.eq(result4, "tmp");
+        )";
+        
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+        
+        Interpreter interp(source);
+        REQUIRE_NOTHROW(interp.interpret(program));
+    }
+    
+    SECTION("path.dirname() extracts directory") {
+        std::string source = R"(
+            import * as path from "std.path";
+            import * as assert from "std.assert";
+            
+            var result1 = path.dirname("/tmp/a.txt");
+            assert.eq(result1, "/tmp");
+            
+            var result2 = path.dirname("/tmp/subdir/file.js");
+            assert.eq(result2, "/tmp/subdir");
+            
+            var result3 = path.dirname("file.txt");
+            assert.eq(result3, ".");
+            
+            var result4 = path.dirname("/file.txt");
+            assert.eq(result4, "/");
+        )";
+        
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+        
+        Interpreter interp(source);
+        REQUIRE_NOTHROW(interp.interpret(program));
+    }
+    
+    SECTION("path.extname() extracts extension") {
+        std::string source = R"(
+            import * as path from "std.path";
+            import * as assert from "std.assert";
+            
+            var result1 = path.extname("/tmp/a.txt");
+            assert.eq(result1, ".txt");
+            
+            var result2 = path.extname("file.js");
+            assert.eq(result2, ".js");
+            
+            var result3 = path.extname("file");
+            assert.eq(result3, "");
+            
+            var result4 = path.extname(".hidden");
+            assert.eq(result4, "");
+            
+            var result5 = path.extname("file.tar.gz");
+            assert.eq(result5, ".gz");
+        )";
+        
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+        
+        Interpreter interp(source);
+        REQUIRE_NOTHROW(interp.interpret(program));
+    }
+    
+    SECTION("path.normalize() resolves . and ..") {
+        std::string source = R"(
+            import * as path from "std.path";
+            import * as assert from "std.assert";
+            
+            var result1 = path.normalize("../a/./b");
+            assert.eq(result1, "../a/b");
+            
+            var result2 = path.normalize("/foo/bar/../baz");
+            assert.eq(result2, "/foo/baz");
+            
+            var result3 = path.normalize("./a/b/c");
+            assert.eq(result3, "a/b/c");
+            
+            var result4 = path.normalize("a//b///c");
+            assert.eq(result4, "a/b/c");
+            
+            var result5 = path.normalize("/a/b/../../c");
+            assert.eq(result5, "/c");
+        )";
+        
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+        
+        Interpreter interp(source);
+        REQUIRE_NOTHROW(interp.interpret(program));
+    }
+    
+    SECTION("Named imports work") {
+        std::string source = R"(
+            import { join, basename, dirname } from "std.path";
+            import * as assert from "std.assert";
+            
+            var joined = join("a", "b");
+            assert.eq(joined, "a/b");
+            
+            var base = basename("/tmp/file.txt");
+            assert.eq(base, "file.txt");
+            
+            var dir = dirname("/tmp/file.txt");
+            assert.eq(dir, "/tmp");
+        )";
+        
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+        
+        Interpreter interp(source);
+        REQUIRE_NOTHROW(interp.interpret(program));
+    }
+}

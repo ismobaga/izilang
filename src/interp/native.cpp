@@ -1154,6 +1154,209 @@ auto nativeProcessArgs(Interpreter& interp, const std::vector<Value>& arguments)
     return argsArray;
 }
 
+// std.path functions
+auto nativePathJoin(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
+    if (arguments.empty()) {
+        return std::string("");
+    }
+    
+    std::string result;
+    
+    for (size_t i = 0; i < arguments.size(); ++i) {
+        if (!std::holds_alternative<std::string>(arguments[i])) {
+            throw std::runtime_error("path.join() requires all arguments to be strings.");
+        }
+        
+        std::string part = std::get<std::string>(arguments[i]);
+        
+        // Skip empty parts
+        if (part.empty()) {
+            continue;
+        }
+        
+        // Add separator if needed
+        if (!result.empty() && result.back() != '/') {
+            result += '/';
+        }
+        
+        // Remove leading slashes from parts (except the first absolute path)
+        if (!result.empty() && !part.empty() && part[0] == '/') {
+            part = part.substr(1);
+        }
+        
+        result += part;
+    }
+    
+    return result;
+}
+
+auto nativePathBasename(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 1) {
+        throw std::runtime_error("path.basename() takes exactly one argument.");
+    }
+    
+    if (!std::holds_alternative<std::string>(arguments[0])) {
+        throw std::runtime_error("path.basename() requires a string argument.");
+    }
+    
+    std::string path = std::get<std::string>(arguments[0]);
+    
+    // Remove trailing slashes
+    while (!path.empty() && path.back() == '/') {
+        path.pop_back();
+    }
+    
+    // If path is empty after removing slashes, return "/"
+    if (path.empty()) {
+        return std::string("/");
+    }
+    
+    // Find the last slash
+    size_t pos = path.find_last_of('/');
+    if (pos == std::string::npos) {
+        return path;
+    }
+    
+    return path.substr(pos + 1);
+}
+
+auto nativePathDirname(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 1) {
+        throw std::runtime_error("path.dirname() takes exactly one argument.");
+    }
+    
+    if (!std::holds_alternative<std::string>(arguments[0])) {
+        throw std::runtime_error("path.dirname() requires a string argument.");
+    }
+    
+    std::string path = std::get<std::string>(arguments[0]);
+    
+    // Remove trailing slashes
+    while (!path.empty() && path.back() == '/') {
+        path.pop_back();
+    }
+    
+    // If path is empty or no slash, return "."
+    if (path.empty()) {
+        return std::string(".");
+    }
+    
+    // Find the last slash
+    size_t pos = path.find_last_of('/');
+    if (pos == std::string::npos) {
+        return std::string(".");
+    }
+    
+    // If slash is at the beginning, return "/"
+    if (pos == 0) {
+        return std::string("/");
+    }
+    
+    return path.substr(0, pos);
+}
+
+auto nativePathExtname(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 1) {
+        throw std::runtime_error("path.extname() takes exactly one argument.");
+    }
+    
+    if (!std::holds_alternative<std::string>(arguments[0])) {
+        throw std::runtime_error("path.extname() requires a string argument.");
+    }
+    
+    std::string path = std::get<std::string>(arguments[0]);
+    
+    // Get the basename first
+    size_t slashPos = path.find_last_of('/');
+    std::string basename = (slashPos == std::string::npos) ? path : path.substr(slashPos + 1);
+    
+    // Find the last dot in the basename
+    size_t dotPos = basename.find_last_of('.');
+    
+    // No extension if no dot, or if dot is at the beginning (hidden file)
+    if (dotPos == std::string::npos || dotPos == 0) {
+        return std::string("");
+    }
+    
+    return basename.substr(dotPos);
+}
+
+auto nativePathNormalize(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 1) {
+        throw std::runtime_error("path.normalize() takes exactly one argument.");
+    }
+    
+    if (!std::holds_alternative<std::string>(arguments[0])) {
+        throw std::runtime_error("path.normalize() requires a string argument.");
+    }
+    
+    std::string path = std::get<std::string>(arguments[0]);
+    
+    // Handle empty path
+    if (path.empty()) {
+        return std::string(".");
+    }
+    
+    bool isAbsolute = (!path.empty() && path[0] == '/');
+    
+    // Split path into parts
+    std::vector<std::string> parts;
+    std::string current;
+    
+    for (char c : path) {
+        if (c == '/') {
+            if (!current.empty()) {
+                parts.push_back(current);
+                current.clear();
+            }
+        } else {
+            current += c;
+        }
+    }
+    if (!current.empty()) {
+        parts.push_back(current);
+    }
+    
+    // Process parts, handling . and ..
+    std::vector<std::string> stack;
+    
+    for (const auto& part : parts) {
+        if (part == "..") {
+            // Go up one directory if possible
+            if (!stack.empty() && stack.back() != "..") {
+                stack.pop_back();
+            } else if (!isAbsolute) {
+                // For relative paths, keep .. if we can't go further up
+                stack.push_back(part);
+            }
+            // For absolute paths, ignore .. at root
+        } else if (part != ".") {
+            // Add normal parts (skip ".")
+            stack.push_back(part);
+        }
+    }
+    
+    // Build result
+    std::string result;
+    if (isAbsolute) {
+        result = "/";
+    }
+    
+    for (size_t i = 0; i < stack.size(); ++i) {
+        result += stack[i];
+        if (i + 1 < stack.size()) {
+            result += "/";
+        }
+    }
+    
+    // If result is empty, return "." for current directory
+    if (result.empty()) {
+        return std::string(".");
+    }
+    
+    return result;
+}
+
 void registerNativeFunctions(Interpreter& interp) {
     // Core functions
     interp.defineGlobal("print", Value{std::make_shared<NativeFunction>(
