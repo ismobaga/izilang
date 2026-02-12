@@ -13,6 +13,7 @@
 #include "bytecode/vm_native.hpp"
 #include "common/error_reporter.hpp"
 #include "common/cli.hpp"
+#include "common/semantic_analyzer.hpp"
 
 using namespace izi;
 namespace fs = std::filesystem;
@@ -448,6 +449,37 @@ int main(int argc, char** argv) {
             
             if (options.debug) {
                 std::cout << "[DEBUG] Parsing complete, " << program.size() << " statements\n";
+            }
+            
+            // Run semantic analysis
+            SemanticAnalyzer analyzer;
+            analyzer.analyze(program);
+            
+            if (options.debug) {
+                std::cout << "[DEBUG] Semantic analysis complete\n";
+            }
+            
+            // Report diagnostics
+            const auto& diagnostics = analyzer.getDiagnostics();
+            ErrorReporter reporter(src);
+            
+            bool hasErrors = false;
+            for (const auto& diag : diagnostics) {
+                if (diag.severity == SemanticDiagnostic::Severity::Error) {
+                    hasErrors = true;
+                    std::cerr << "In file '" << options.input << "':\n";
+                    std::cerr << reporter.formatError(diag.line, diag.column, diag.message, "Semantic Error") << '\n';
+                } else if (diag.severity == SemanticDiagnostic::Severity::Warning) {
+                    if (options.debug) {
+                        std::cout << "Warning: " << diag.message << " (line " << diag.line << ")\n";
+                    }
+                } else if (options.debug) {
+                    std::cout << "Info: " << diag.message << " (line " << diag.line << ")\n";
+                }
+            }
+            
+            if (hasErrors) {
+                return 1;
             }
             
             std::cout << "Check successful: " << options.input << "\n";
