@@ -72,7 +72,7 @@ void initializeFieldsRecursive(const IziClass* klass, std::shared_ptr<Instance> 
         if (it != klass->fieldDefaults.end()) {
             instance->fields[fieldName] = it->second;
         } else {
-            // Only initialize if not already set by a superclass
+            // Only initialize to Nil if not already initialized by a parent class
             if (instance->fields.find(fieldName) == instance->fields.end()) {
                 instance->fields[fieldName] = Nil{};
             }

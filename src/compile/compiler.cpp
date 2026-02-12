@@ -610,10 +610,11 @@ Value BytecodeCompiler::visit(ThisExpr& expr) {
 
 // v0.3: Super expression
 Value BytecodeCompiler::visit(SuperExpr& expr) {
-    // For bytecode, we implement super as:
-    // 1. Load 'super' (the superclass) from globals
-    // 2. Load 'this' from globals
+    // For bytecode VM, we implement super as:
+    // 1. Load 'super' (the superclass) - set in method closure during class creation
+    // 2. Load 'this' (the current instance) - bound when method is called
     // 3. Get the method from the superclass and bind it to this
+    // Note: Both 'super' and 'this' are treated as globals in the simplified VM implementation
     
     // Load super
     uint8_t superIndex = makeName("super");
