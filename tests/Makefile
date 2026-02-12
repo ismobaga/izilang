@@ -95,6 +95,7 @@ GENERATED += $(OBJDIR)/test_optional_semicolons.o
 GENERATED += $(OBJDIR)/test_parser.o
 GENERATED += $(OBJDIR)/test_pattern_matching.o
 GENERATED += $(OBJDIR)/test_process.o
+GENERATED += $(OBJDIR)/test_relative_imports.o
 GENERATED += $(OBJDIR)/test_semantic_analysis.o
 GENERATED += $(OBJDIR)/test_try_catch.o
 GENERATED += $(OBJDIR)/test_value.o
@@ -132,6 +133,7 @@ OBJECTS += $(OBJDIR)/test_optional_semicolons.o
 OBJECTS += $(OBJDIR)/test_parser.o
 OBJECTS += $(OBJDIR)/test_pattern_matching.o
 OBJECTS += $(OBJDIR)/test_process.o
+OBJECTS += $(OBJDIR)/test_relative_imports.o
 OBJECTS += $(OBJDIR)/test_semantic_analysis.o
 OBJECTS += $(OBJDIR)/test_try_catch.o
 OBJECTS += $(OBJDIR)/test_value.o
@@ -302,6 +304,9 @@ $(OBJDIR)/test_pattern_matching.o: test_pattern_matching.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/test_process.o: test_process.cpp
+	@echo "$(notdir $<)"
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/test_relative_imports.o: test_relative_imports.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/test_semantic_analysis.o: test_semantic_analysis.cpp

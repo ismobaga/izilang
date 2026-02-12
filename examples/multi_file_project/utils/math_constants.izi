@@ -1,0 +1,6 @@
+// Utility functions for math operations
+var PI = 3.14159;
+var E = 2.71828;
+
+// Note: Function exports are not yet fully supported
+// Functions are defined globally when a module is imported
