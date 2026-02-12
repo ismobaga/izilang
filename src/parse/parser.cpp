@@ -45,7 +45,7 @@ StmtPtr Parser::varDeclaration() {
         initializer = expression();
     }
 
-    consume(TokenType::SEMICOLON, "Expect ';' after variable declaration.");
+    consumeSemicolonIfNeeded();
     return std::make_unique<VarStmt>(std::string(name.lexeme), std::move(initializer), std::move(typeAnnotation));
 }
 
@@ -106,7 +106,7 @@ StmtPtr Parser::importStatement() {
         Token alias = consume(TokenType::IDENTIFIER, "Expect alias name after 'as'.");
         consume(TokenType::FROM, "Expect 'from' after alias in import statement.");
         Token moduleToken = consume(TokenType::STRING, "Expect module name as string.");
-        consume(TokenType::SEMICOLON, "Expect ';' after import statement.");
+        consumeSemicolonIfNeeded();
         
         // Remove quotes from string literal
         std::string moduleName = std::string(moduleToken.lexeme);
@@ -128,7 +128,7 @@ StmtPtr Parser::importStatement() {
         consume(TokenType::RIGHT_BRACE, "Expect '}' after import list.");
         consume(TokenType::FROM, "Expect 'from' after import list.");
         Token moduleToken = consume(TokenType::STRING, "Expect module name as string.");
-        consume(TokenType::SEMICOLON, "Expect ';' after import statement.");
+        consumeSemicolonIfNeeded();
         
         // Remove quotes from string literal
         std::string moduleName = std::string(moduleToken.lexeme);
@@ -141,7 +141,7 @@ StmtPtr Parser::importStatement() {
     
     // Simple import: import "module.iz";
     Token moduleToken = consume(TokenType::STRING, "Expect module name as string.");
-    consume(TokenType::SEMICOLON, "Expect ';' after import statement.");
+    consumeSemicolonIfNeeded();
     
     // Remove quotes from string literal
     std::string moduleName = std::string(moduleToken.lexeme);
@@ -186,13 +186,13 @@ StmtPtr Parser::statement() {
 
 StmtPtr Parser::printStatement() {
     ExprPtr expr = expression();
-    consume(TokenType::SEMICOLON, "Expect ';' after value.");
+    consumeSemicolonIfNeeded();
     return std::make_unique<ExprStmt>(std::move(expr));
 }
 
 StmtPtr Parser::expressionStatement() {
     ExprPtr expr = expression();
-    consume(TokenType::SEMICOLON, "Expect ';' after expression.");
+    consumeSemicolonIfNeeded();
     return std::make_unique<ExprStmt>(std::move(expr));
 }
 
@@ -287,20 +287,20 @@ StmtPtr Parser::forStatement() {
 
 StmtPtr Parser::returnStatement() {
     ExprPtr value = nullptr;
-    if (!check(TokenType::SEMICOLON)) {
+    if (!check(TokenType::SEMICOLON) && !isAtEnd() && peek().line == previous().line) {
         value = expression();
     }
-    consume(TokenType::SEMICOLON, "Expect ';' after return value.");
+    consumeSemicolonIfNeeded();
     return std::make_unique<ReturnStmt>(std::move(value));
 }
 
 StmtPtr Parser::breakStatement() {
-    consume(TokenType::SEMICOLON, "Expect ';' after 'break'.");
+    consumeSemicolonIfNeeded();
     return std::make_unique<BreakStmt>();
 }
 
 StmtPtr Parser::continueStatement() {
-    consume(TokenType::SEMICOLON, "Expect ';' after 'continue'.");
+    consumeSemicolonIfNeeded();
     return std::make_unique<ContinueStmt>();
 }
 
@@ -343,7 +343,7 @@ StmtPtr Parser::tryStatement() {
 StmtPtr Parser::throwStatement() {
     Token throwToken = previous();  // Get the 'throw' token
     ExprPtr value = expression();
-    consume(TokenType::SEMICOLON, "Expect ';' after throw value.");
+    consumeSemicolonIfNeeded();
     return std::make_unique<ThrowStmt>(std::move(throwToken), std::move(value));
 }
 
@@ -380,7 +380,7 @@ StmtPtr Parser::classDeclaration() {
                 initializer = expression();
             }
             
-            consume(TokenType::SEMICOLON, "Expect ';' after field declaration.");
+            consumeSemicolonIfNeeded();
             fields.push_back(std::make_unique<VarStmt>(
                 std::string(fieldName.lexeme), 
                 std::move(initializer), 
@@ -866,6 +866,53 @@ Token Parser::previous() const {
 Token Parser::consume(TokenType type, const std::string& message) {
     if (check(type)) return advance();
     throw error(peek(), message);
+}
+
+void Parser::consumeSemicolonIfNeeded() {
+    // If there's a semicolon, consume it
+    if (check(TokenType::SEMICOLON)) {
+        advance();
+        return;
+    }
+    
+    // Semicolons are optional at end of line (newline) or end of file
+    // They are required when multiple statements are on the same line
+    if (isAtEnd()) {
+        return;  // End of file - semicolon not needed
+    }
+    
+    // Check if the next token is on a different line
+    Token prev = previous();
+    Token next = peek();
+    
+    // If next token is on a different line, semicolon is optional
+    if (next.line > prev.line) {
+        return;
+    }
+    
+    // Multiple statements on same line without semicolon - error
+    // Check if next token starts a new statement
+    switch (next.type) {
+        case TokenType::VAR:
+        case TokenType::FN:
+        case TokenType::CLASS:
+        case TokenType::IF:
+        case TokenType::WHILE:
+        case TokenType::FOR:
+        case TokenType::RETURN:
+        case TokenType::BREAK:
+        case TokenType::CONTINUE:
+        case TokenType::PRINT:
+        case TokenType::IMPORT:
+        case TokenType::EXPORT:
+        case TokenType::TRY:
+        case TokenType::THROW:
+        case TokenType::MATCH:
+            throw error(next, "Expect ';' between statements on the same line.");
+        default:
+            // Other tokens might be part of the same expression or block delimiters
+            break;
+    }
 }
 
 void Parser::synchronize() {
