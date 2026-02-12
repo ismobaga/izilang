@@ -384,6 +384,9 @@ void SemanticAnalyzer::visit(ClassStmt& stmt) {
     currentClassFields_.clear();
     currentClassMethods_.clear();
     
+    // Enter a new scope for the class
+    enterScope();
+    
     // Check for duplicate fields
     for (const auto& field : stmt.fields) {
         if (currentClassFields_.count(field->name)) {
@@ -392,8 +395,27 @@ void SemanticAnalyzer::visit(ClassStmt& stmt) {
             currentClassFields_.insert(field->name);
         }
         
-        // Process field for type checking
-        field->accept(*this);
+        // Define field type in class scope (not global scope)
+        TypePtr fieldType = field->typeAnnotation ? 
+            TypeAnnotation::simple(field->typeAnnotation->kind) : 
+            TypeAnnotation::simple(TypeAnnotation::Kind::Any);
+        
+        // Check type of initializer if present
+        if (field->initializer) {
+            field->initializer->accept(*this);
+            
+            // Check type compatibility
+            if (field->typeAnnotation && isExplicitlyTyped(fieldType.get())) {
+                TypePtr initType = inferType(*field->initializer);
+                if (!areTypesCompatible(*fieldType, *initType)) {
+                    addError(
+                        "Type mismatch: field '" + field->name + "' declared as " + 
+                        fieldType->toString() + " but initialized with " + initType->toString(),
+                        0, 0
+                    );
+                }
+            }
+        }
     }
     
     // Check for duplicate methods and validate constructor naming
@@ -444,6 +466,9 @@ void SemanticAnalyzer::visit(ClassStmt& stmt) {
         exitScope();
         inMethod_ = wasInMethod;
     }
+    
+    // Exit class scope
+    exitScope();
     
     currentClassName_.clear();
     currentClassFields_.clear();
