@@ -369,3 +369,195 @@ TEST_CASE("Classes: Instances as function parameters", "[classes][functions]") {
         REQUIRE(output.find("10") != std::string::npos);
     }
 }
+
+TEST_CASE("Classes: Inheritance", "[classes][inheritance]") {
+    SECTION("Basic inheritance") {
+        std::string code = R"(
+            class Animal {
+                fn init(name) {
+                    this.name = name;
+                }
+                
+                fn speak() {
+                    print(this.name, "makes a sound");
+                }
+            }
+            
+            class Dog extends Animal {
+            }
+            
+            var dog = Dog("Buddy");
+            print(dog.name);
+        )";
+        
+        Lexer lexer(code);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto stmts = parser.parse();
+        
+        Interpreter interp;
+        OutputCapture capture;
+        
+        REQUIRE_NOTHROW(interp.interpret(stmts));
+        
+        std::string output = capture.getOutput();
+        REQUIRE(output.find("Buddy") != std::string::npos);
+    }
+    
+    SECTION("Method overriding") {
+        std::string code = R"(
+            class Animal {
+                fn init(name) {
+                    this.name = name;
+                }
+                
+                fn speak() {
+                    print(this.name, "makes a sound");
+                }
+            }
+            
+            class Dog extends Animal {
+                fn speak() {
+                    print(this.name, "barks");
+                }
+            }
+            
+            var dog = Dog("Buddy");
+            dog.speak();
+        )";
+        
+        Lexer lexer(code);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto stmts = parser.parse();
+        
+        Interpreter interp;
+        OutputCapture capture;
+        
+        REQUIRE_NOTHROW(interp.interpret(stmts));
+        
+        std::string output = capture.getOutput();
+        REQUIRE(output.find("Buddy barks") != std::string::npos);
+        REQUIRE(output.find("makes a sound") == std::string::npos);
+    }
+    
+    SECTION("Inherited methods") {
+        std::string code = R"(
+            class Animal {
+                fn init(name) {
+                    this.name = name;
+                }
+                
+                fn speak() {
+                    print(this.name, "makes a sound");
+                }
+            }
+            
+            class Cat extends Animal {
+                fn meow() {
+                    print(this.name, "meows");
+                }
+            }
+            
+            var cat = Cat("Whiskers");
+            cat.speak();
+            cat.meow();
+        )";
+        
+        Lexer lexer(code);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto stmts = parser.parse();
+        
+        Interpreter interp;
+        OutputCapture capture;
+        
+        REQUIRE_NOTHROW(interp.interpret(stmts));
+        
+        std::string output = capture.getOutput();
+        REQUIRE(output.find("Whiskers makes a sound") != std::string::npos);
+        REQUIRE(output.find("Whiskers meows") != std::string::npos);
+    }
+    
+    SECTION("Super calls") {
+        std::string code = R"(
+            class Animal {
+                fn init(name) {
+                    this.name = name;
+                }
+                
+                fn speak() {
+                    print(this.name, "makes a sound");
+                }
+            }
+            
+            class Bird extends Animal {
+                fn speak() {
+                    super.speak();
+                    print(this.name, "also chirps");
+                }
+            }
+            
+            var bird = Bird("Tweety");
+            bird.speak();
+        )";
+        
+        Lexer lexer(code);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto stmts = parser.parse();
+        
+        Interpreter interp;
+        OutputCapture capture;
+        
+        REQUIRE_NOTHROW(interp.interpret(stmts));
+        
+        std::string output = capture.getOutput();
+        REQUIRE(output.find("Tweety makes a sound") != std::string::npos);
+        REQUIRE(output.find("Tweety also chirps") != std::string::npos);
+    }
+    
+    SECTION("Multi-level inheritance") {
+        std::string code = R"(
+            class Animal {
+                fn init(name) {
+                    this.name = name;
+                }
+                
+                fn speak() {
+                    print(this.name, "makes a sound");
+                }
+            }
+            
+            class Mammal extends Animal {
+                fn walk() {
+                    print(this.name, "walks");
+                }
+            }
+            
+            class Horse extends Mammal {
+                fn speak() {
+                    print(this.name, "neighs");
+                }
+            }
+            
+            var horse = Horse("Spirit");
+            horse.speak();
+            horse.walk();
+        )";
+        
+        Lexer lexer(code);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto stmts = parser.parse();
+        
+        Interpreter interp;
+        OutputCapture capture;
+        
+        REQUIRE_NOTHROW(interp.interpret(stmts));
+        
+        std::string output = capture.getOutput();
+        REQUIRE(output.find("Spirit neighs") != std::string::npos);
+        REQUIRE(output.find("Spirit walks") != std::string::npos);
+    }
+}

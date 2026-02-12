@@ -50,6 +50,12 @@ int IziClass::arity() const {
             return constructor->arity();
         }
     }
+    
+    // If not found, check superclass
+    if (superclass) {
+        return superclass->arity();
+    }
+    
     return 0;  // No constructor means no arguments
 }
 
@@ -81,21 +87,20 @@ Value IziClass::call(Interpreter& interp, const std::vector<Value>& arguments) {
     }
     
     // Look for constructor or init method (init takes precedence for OOP convention)
-    auto initIt = methods.find("init");
-    auto constructorIt = methods.find("constructor");
-    
-    // Prefer "init" over "constructor"
-    if (initIt != methods.end()) {
-        Value init = getMethod("init", instance);
+    // Use getMethod to check the entire inheritance chain
+    Value init = getMethod("init", instance);
+    if (!std::holds_alternative<Nil>(init)) {
         if (std::holds_alternative<std::shared_ptr<Callable>>(init)) {
             auto initCallable = std::get<std::shared_ptr<Callable>>(init);
             initCallable->call(interp, arguments);
         }
-    } else if (constructorIt != methods.end()) {
+    } else {
         Value constructor = getMethod("constructor", instance);
-        if (std::holds_alternative<std::shared_ptr<Callable>>(constructor)) {
-            auto constructorCallable = std::get<std::shared_ptr<Callable>>(constructor);
-            constructorCallable->call(interp, arguments);
+        if (!std::holds_alternative<Nil>(constructor)) {
+            if (std::holds_alternative<std::shared_ptr<Callable>>(constructor)) {
+                auto constructorCallable = std::get<std::shared_ptr<Callable>>(constructor);
+                constructorCallable->call(interp, arguments);
+            }
         }
     }
     
