@@ -108,11 +108,23 @@ Value createAssertModule(Interpreter& interp) {
     return Value{module};
 }
 
+Value createEnvModule(Interpreter& interp) {
+    auto module = std::make_shared<Map>();
+    
+    // Environment variable functions
+    module->entries["get"] = Value{std::make_shared<NativeFunction>("get", 1, nativeEnvGet)};
+    module->entries["set"] = Value{std::make_shared<NativeFunction>("set", 2, nativeEnvSet)};
+    module->entries["exists"] = Value{std::make_shared<NativeFunction>("exists", 1, nativeEnvExists)};
+    
+    return Value{module};
+}
+
 bool isNativeModule(const std::string& path) {
     return path == "math" || path == "string" || path == "array" || 
            path == "io" || path == "json" || path == "http" || 
            path == "log" || path == "std.log" || 
-           path == "assert" || path == "std.assert";
+           path == "assert" || path == "std.assert" ||
+           path == "env" || path == "std.env";
 }
 
 Value getNativeModule(const std::string& name, Interpreter& interp) {
@@ -128,6 +140,8 @@ Value getNativeModule(const std::string& name, Interpreter& interp) {
         return createLogModule(interp);
     } else if (name == "assert" || name == "std.assert") {
         return createAssertModule(interp);
+    } else if (name == "env" || name == "std.env") {
+        return createEnvModule(interp);
     } else if (name == "json") {
         // Placeholder for future implementation
         auto module = std::make_shared<Map>();

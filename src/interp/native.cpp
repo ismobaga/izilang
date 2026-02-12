@@ -7,6 +7,7 @@
 #include <sstream>
 #include <iomanip>
 #include <cctype>
+#include <cstdlib>
 #include <sys/stat.h>
 
 namespace izi {
@@ -1042,6 +1043,68 @@ auto nativeAssertNe(Interpreter& interp, const std::vector<Value>& arguments) ->
     }
     
     return Nil{};
+}
+
+// ============ std.env functions ============
+
+auto nativeEnvGet(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 1) {
+        throw std::runtime_error("env.get() takes exactly one argument.");
+    }
+    
+    if (!std::holds_alternative<std::string>(arguments[0])) {
+        throw std::runtime_error("env.get() argument must be a string.");
+    }
+    
+    const std::string& name = std::get<std::string>(arguments[0]);
+    const char* value = std::getenv(name.c_str());
+    
+    if (value == nullptr) {
+        return Nil{};
+    }
+    
+    return std::string(value);
+}
+
+auto nativeEnvSet(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 2) {
+        throw std::runtime_error("env.set() takes exactly two arguments.");
+    }
+    
+    if (!std::holds_alternative<std::string>(arguments[0])) {
+        throw std::runtime_error("env.set() first argument must be a string.");
+    }
+    
+    if (!std::holds_alternative<std::string>(arguments[1])) {
+        throw std::runtime_error("env.set() second argument must be a string.");
+    }
+    
+    const std::string& name = std::get<std::string>(arguments[0]);
+    const std::string& value = std::get<std::string>(arguments[1]);
+    
+    // Use setenv for POSIX systems (Linux, macOS)
+    #ifdef _WIN32
+        _putenv_s(name.c_str(), value.c_str());
+    #else
+        setenv(name.c_str(), value.c_str(), 1);
+    #endif
+    
+    return Nil{};
+}
+
+auto nativeEnvExists(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 1) {
+        throw std::runtime_error("env.exists() takes exactly one argument.");
+    }
+    
+    if (!std::holds_alternative<std::string>(arguments[0])) {
+        throw std::runtime_error("env.exists() argument must be a string.");
+    }
+    
+    const std::string& name = std::get<std::string>(arguments[0]);
+    const char* value = std::getenv(name.c_str());
+    
+    return value != nullptr;
 }
 
 void registerNativeFunctions(Interpreter& interp) {
