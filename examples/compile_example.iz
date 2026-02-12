@@ -1,0 +1,62 @@
+// Example demonstrating features that work in compiled executables
+
+fn greet(name) {
+    print("Hello, " + name + "!");
+}
+
+fn factorial(n) {
+    if (n <= 1) {
+        return 1;
+    }
+    return n * factorial(n - 1);
+}
+
+fn main() {
+    print("=== IziLang Compiled Executable Demo ===");
+    print("");
+    
+    // Basic output
+    greet("World");
+    print("");
+    
+    // Recursion
+    print("Factorial calculations:");
+    var i = 1;
+    while (i <= 10) {
+        print("  " + str(i) + "! = " + str(factorial(i)));
+        i = i + 1;
+    }
+    print("");
+    
+    // Arrays
+    print("Array operations:");
+    var arr = [1, 2, 3, 4, 5];
+    var sum = 0;
+    var j = 0;
+    while (j < len(arr)) {
+        sum = sum + arr[j];
+        j = j + 1;
+    }
+    print("  Array: [1, 2, 3, 4, 5]");
+    print("  Sum: " + str(sum));
+    print("  Length: " + str(len(arr)));
+    print("");
+    
+    // String operations
+    print("String operations:");
+    var firstName = "John";
+    var lastName = "Doe";
+    var fullName = firstName + " " + lastName;
+    print("  Full name: " + fullName);
+    print("  Length: " + str(len(fullName)));
+    print("");
+    
+    print("=== Demo Complete ===");
+    print("");
+    print("This executable is:");
+    print("  - Fully statically linked");
+    print("  - Has no runtime dependencies");
+    print("  - Can be distributed standalone");
+}
+
+main();

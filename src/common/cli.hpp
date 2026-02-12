@@ -14,6 +14,7 @@ struct CliOptions {
         Run,          // Execute a file
         Build,        // Compile/check only, no execution
         Check,        // Parse + analyze, no execution
+        Compile,      // Compile to native executable
         Test,         // Execute test files
         Repl,         // Interactive REPL mode
         Fmt,          // Format code
@@ -30,6 +31,7 @@ struct CliOptions {
     Engine engine = Engine::Interpreter;
     bool debug = false;
     std::string input;  // Filename or inline code
+    std::string output; // Output filename for compile command
     std::vector<std::string> args;  // Additional arguments (e.g., test patterns)
 
     static CliOptions parse(int argc, char** argv);

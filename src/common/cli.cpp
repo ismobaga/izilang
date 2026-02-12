@@ -15,6 +15,7 @@ void CliOptions::printHelp() {
     std::cout << "  run <file>          Execute a source file (default command)\n";
     std::cout << "  build <file>        Compile/check without executing\n";
     std::cout << "  check <file>        Parse and analyze without executing\n";
+    std::cout << "  compile <file>      Compile to native executable\n";
     std::cout << "  test [pattern]      Run test files (searches for *.iz in tests/)\n";
     std::cout << "  repl                Start interactive REPL\n";
     std::cout << "  fmt <file>          Format source code (coming soon)\n";
@@ -33,6 +34,7 @@ void CliOptions::printHelp() {
     std::cout << "  izi run script.iz   Run a script file\n";
     std::cout << "  izi script.iz       Run a script file (shorthand)\n";
     std::cout << "  izi build app.iz    Check syntax without running\n";
+    std::cout << "  izi compile app.iz  Compile to native executable\n";
     std::cout << "  izi test            Run all tests\n";
     std::cout << "  izi repl            Start REPL explicitly\n";
     std::cout << "\n";
@@ -83,6 +85,24 @@ void CliOptions::printCommandHelp(Command cmd) {
             std::cout << "\n";
             std::cout << "Examples:\n";
             std::cout << "  izi check script.iz\n";
+            break;
+        
+        case Command::Compile:
+            std::cout << "izi compile - Compile to native executable\n\n";
+            std::cout << "Usage: izi compile [options] <file> [-o <output>]\n\n";
+            std::cout << "Description:\n";
+            std::cout << "  Compiles an IziLang source file into a standalone\n";
+            std::cout << "  native executable with no runtime dependencies.\n";
+            std::cout << "  Uses static linking for portability.\n";
+            std::cout << "\n";
+            std::cout << "Options:\n";
+            std::cout << "  -o <output>  Specify output executable name\n";
+            std::cout << "  --debug      Include debug symbols\n";
+            std::cout << "\n";
+            std::cout << "Examples:\n";
+            std::cout << "  izi compile app.iz\n";
+            std::cout << "  izi compile app.iz -o myapp\n";
+            std::cout << "  izi compile --debug app.iz\n";
             break;
         
         case Command::Test:
@@ -179,6 +199,9 @@ CliOptions CliOptions::parse(int argc, char** argv) {
     } else if (firstArg == "check") {
         options.command = Command::Check;
         i++;
+    } else if (firstArg == "compile") {
+        options.command = Command::Compile;
+        i++;
     } else if (firstArg == "test") {
         options.command = Command::Test;
         i++;
@@ -201,6 +224,8 @@ CliOptions CliOptions::parse(int argc, char** argv) {
                 printCommandHelp(Command::Build);
             } else if (helpCmd == "check") {
                 printCommandHelp(Command::Check);
+            } else if (helpCmd == "compile") {
+                printCommandHelp(Command::Compile);
             } else if (helpCmd == "test") {
                 printCommandHelp(Command::Test);
             } else if (helpCmd == "repl") {
@@ -240,6 +265,15 @@ CliOptions CliOptions::parse(int argc, char** argv) {
         } else if (arg == "--debug") {
             options.debug = true;
             i++;
+        } else if (arg == "-o" && options.command == Command::Compile) {
+            // Output file for compile command
+            if (i + 1 < argc) {
+                options.output = argv[i + 1];
+                i += 2;
+            } else {
+                std::cerr << "Error: -o option requires an output filename\n";
+                std::exit(1);
+            }
         } else if (arg == "--help" || arg == "-h") {
             printCommandHelp(options.command);
             options.command = Command::Help;
@@ -253,6 +287,7 @@ CliOptions CliOptions::parse(int argc, char** argv) {
                 case Command::Run: cmdName = "run"; break;
                 case Command::Build: cmdName = "build"; break;
                 case Command::Check: cmdName = "check"; break;
+                case Command::Compile: cmdName = "compile"; break;
                 case Command::Test: cmdName = "test"; break;
                 case Command::Repl: cmdName = "repl"; break;
                 case Command::Fmt: cmdName = "fmt"; break;
@@ -268,6 +303,7 @@ CliOptions CliOptions::parse(int argc, char** argv) {
             if (options.command == Command::Run || 
                 options.command == Command::Build || 
                 options.command == Command::Check ||
+                options.command == Command::Compile ||
                 options.command == Command::Fmt) {
                 // These commands expect a filename
                 if (options.input.empty()) {
@@ -287,7 +323,8 @@ CliOptions CliOptions::parse(int argc, char** argv) {
     // Validate command-specific requirements
     if (options.command == Command::Run || 
         options.command == Command::Build || 
-        options.command == Command::Check) {
+        options.command == Command::Check ||
+        options.command == Command::Compile) {
         if (options.input.empty()) {
             // Map command to string for error message
             std::string cmdName;
@@ -295,6 +332,7 @@ CliOptions CliOptions::parse(int argc, char** argv) {
                 case Command::Run: cmdName = "run"; break;
                 case Command::Build: cmdName = "build"; break;
                 case Command::Check: cmdName = "check"; break;
+                case Command::Compile: cmdName = "compile"; break;
                 default: cmdName = ""; break;
             }
             

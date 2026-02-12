@@ -17,6 +17,7 @@ IziLang provides a complete command-line interface for modern development workfl
 izi run script.iz      # Execute code
 izi build app.iz       # Compile without running
 izi check src/*.iz     # Fast syntax validation
+izi compile app.iz     # Compile to native executable
 izi test               # Run test suite
 izi repl               # Interactive REPL
 ```
@@ -70,6 +71,20 @@ Choose between tree-walker interpreter or bytecode VM:
 izi run --interp script.iz    # Tree-walker (default)
 izi run --vm script.iz         # Bytecode VM (faster)
 ```
+
+### 🔧 Native Compilation
+
+Compile IziLang programs to standalone executables with no runtime dependencies:
+
+```bash
+izi compile app.iz -o myapp    # Create standalone executable
+./myapp                        # Run without IziLang installed
+```
+
+Features:
+- **Fully static linking** - No runtime dependencies required
+- **Portable executables** - Distribute binaries without IziLang installation
+- **Native performance** - Optimized release builds
 
 ## Quick Start
 

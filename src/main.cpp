@@ -9,6 +9,7 @@
 #include "parse/lexer.hpp"
 #include "parse/parser.hpp"
 #include "compile/compiler.hpp"
+#include "compile/native_compiler.hpp"
 #include "bytecode/vm.hpp"
 #include "bytecode/vm_native.hpp"
 #include "common/error_reporter.hpp"
@@ -364,6 +365,27 @@ int main(int argc, char** argv) {
         std::cerr << "Error: 'fmt' command not yet implemented\n";
         std::cerr << "This feature is planned for v0.2\n";
         return 1;
+    }
+
+    // Handle compile command
+    if (options.command == CliOptions::Command::Compile) {
+        NativeCompiler::CompileOptions compileOpts;
+        compileOpts.inputFile = options.input;
+        compileOpts.debug = options.debug;
+        compileOpts.verbose = options.debug;
+        
+        // Determine output filename
+        if (!options.output.empty()) {
+            compileOpts.outputFile = options.output;
+        } else {
+            // Default: strip .iz extension and use as executable name
+            fs::path inputPath(options.input);
+            compileOpts.outputFile = inputPath.stem().string();
+        }
+        
+        // Perform compilation
+        bool success = NativeCompiler::compile(compileOpts);
+        return success ? 0 : 1;
     }
 
     // Get source code from file
