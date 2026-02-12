@@ -539,13 +539,11 @@ void BytecodeCompiler::visit(ClassStmt& stmt) {
     }
     
     // Extract field names and defaults
+    // Note: Field initializers are not yet supported in bytecode compilation
+    // All fields are initialized to nil; initializers should be set in constructors
     for (const auto& field : stmt.fields) {
         fieldNames.push_back(field->name);
-        if (field->initializer) {
-            // For now, we can't easily evaluate initializers at compile time
-            // We'll initialize to nil and handle defaults at runtime
-            fieldDefaults[field->name] = Nil{};
-        }
+        fieldDefaults[field->name] = Nil{};
     }
     
     // Create the VmClass
@@ -599,8 +597,10 @@ Value BytecodeCompiler::visit(SetPropertyExpr& expr) {
 
 // v0.3: This expression
 Value BytecodeCompiler::visit(ThisExpr& expr) {
-    // For now, 'this' is stored as a local variable named "this"
-    // We'll look it up as a global for simplicity
+    // 'this' is implemented as a global variable lookup
+    // Note: This is a simplified implementation. It works for basic use cases
+    // but has limitations with nested method calls or recursion. See VmBoundMethod
+    // for details. A proper implementation would use local variables or call frames.
     uint8_t nameIndex = makeName("this");
     emitOp(OpCode::GET_GLOBAL);
     emitByte(nameIndex);

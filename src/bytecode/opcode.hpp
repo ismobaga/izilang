@@ -57,9 +57,6 @@ enum class OpCode : uint8_t {
     END_TRY,       // End try-catch-finally block
     
     // Class support (v0.3)
-    CLASS,         // Create a class definition (followed by name index)
-    METHOD,        // Define a method in the current class (followed by name index)
-    INSTANCE,      // Create an instance of a class
     GET_PROPERTY,  // Get a property from an instance (followed by name index)
     SET_PROPERTY,  // Set a property on an instance (followed by name index)
 };

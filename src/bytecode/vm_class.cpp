@@ -7,14 +7,18 @@ namespace izi {
 
 Value VmBoundMethod::call(VM& vm, const std::vector<Value>& arguments) {
     // Set 'this' as a global variable before calling the method
-    // This is a simplified approach - ideally we'd use local scopes
+    // Note: This is a simplified implementation. Using a global variable means
+    // nested method calls or recursive methods will overwrite 'this', which could
+    // cause incorrect behavior. A proper implementation would use a call stack
+    // mechanism where 'this' is passed as a local variable or stored in call frames.
+    // For the current use cases (non-recursive, non-nested method calls), this works.
     vm.setGlobal("this", instance);
     
     // Call the method
     Value result = method->call(vm, arguments);
     
-    // Clean up 'this' after the call (optional - could be left for next call)
-    // vm.setGlobal("this", Nil{});
+    // Note: Not clearing 'this' here to allow it to persist for the next call
+    // This is acceptable since it will be overwritten by the next method call
     
     return result;
 }
