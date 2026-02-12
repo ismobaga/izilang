@@ -465,16 +465,18 @@ int main(int argc, char** argv) {
             
             bool hasErrors = false;
             for (const auto& diag : diagnostics) {
+                std::string filePrefix = "In file '" + options.input + "':\n";
+                
                 if (diag.severity == SemanticDiagnostic::Severity::Error) {
                     hasErrors = true;
-                    std::cerr << "In file '" << options.input << "':\n";
+                    std::cerr << filePrefix;
                     std::cerr << reporter.formatError(diag.line, diag.column, diag.message, "Semantic Error") << '\n';
                 } else if (diag.severity == SemanticDiagnostic::Severity::Warning) {
-                    std::cerr << "In file '" << options.input << "':\n";
+                    std::cerr << filePrefix;
                     std::cerr << reporter.formatError(diag.line, diag.column, diag.message, "Warning") << '\n';
                 } else {
                     // Info messages
-                    std::cout << "In file '" << options.input << "':\n";
+                    std::cout << filePrefix;
                     std::cout << reporter.formatError(diag.line, diag.column, diag.message, "Info") << '\n';
                 }
             }
