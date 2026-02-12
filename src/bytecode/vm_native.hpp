@@ -87,6 +87,12 @@ Value vmNativeWriteFile(VM& vm, const std::vector<Value>& arguments);
 Value vmNativeAppendFile(VM& vm, const std::vector<Value>& arguments);
 Value vmNativeFileExists(VM& vm, const std::vector<Value>& arguments);
 
+// std.log native functions
+Value vmNativeLogInfo(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeLogWarn(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeLogError(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeLogDebug(VM& vm, const std::vector<Value>& arguments);
+
 void registerVmNatives(VM& vm);
 
 } // namespace izi
