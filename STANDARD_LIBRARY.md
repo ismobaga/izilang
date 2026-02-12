@@ -281,6 +281,77 @@ try {
 }
 ```
 
+## env - Environment Variables
+
+Access and manipulate environment variables in a cross-platform manner.
+
+### Module Import
+
+```izilang
+import * as env from "std.env";
+var home = env.get("HOME");
+env.set("MODE", "production");
+var hasDebug = env.exists("DEBUG");
+```
+
+Or import specific functions:
+```izilang
+import { get, set, exists } from "std.env";
+var path = get("PATH");
+```
+
+### Functions
+
+**Environment Variable Access:**
+- `get(name: String): String | Nil` - Get an environment variable by name. Returns the value as a string, or `nil` if the variable doesn't exist.
+- `set(name: String, value: String): Nil` - Set an environment variable to a specific value. Both arguments must be strings.
+- `exists(name: String): Bool` - Check if an environment variable exists. Returns `true` if it exists, `false` otherwise.
+
+### Example
+
+```izilang
+import * as env from "std.env";
+
+// Get environment variables
+var home = env.get("HOME");
+var path = env.get("PATH");
+var user = env.get("USER");
+
+if (home != nil) {
+    print("Home directory:", home);
+}
+
+// Set environment variables
+env.set("APP_MODE", "production");
+env.set("DEBUG_LEVEL", "2");
+
+// Check if variables exist
+if (env.exists("DEBUG")) {
+    print("Debug mode is enabled");
+}
+
+// Set and retrieve
+env.set("MY_VAR", "my_value");
+var value = env.get("MY_VAR");
+print("MY_VAR =", value);  // "my_value"
+
+// Non-existent variables return nil
+var unknown = env.get("NON_EXISTENT_VAR");
+if (unknown == nil) {
+    print("Variable doesn't exist");
+}
+```
+
+### Platform Notes
+
+- Uses POSIX `getenv()` for reading (available on all platforms)
+- Uses `setenv()` on Linux/macOS for writing
+- Uses `_putenv_s()` on Windows for writing
+- Environment variable changes only affect the current process and child processes
+- Variable names and values are case-sensitive on Linux/macOS, case-insensitive on Windows
+}
+```
+
 ## json - JSON Parsing (Placeholder)
 
 JSON parsing and generation module. *Coming soon.*
