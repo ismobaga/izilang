@@ -105,6 +105,18 @@ struct ArrayExpr : Expr {
     }
 };
 
+// Spread expression for spreading arrays/maps (e.g., ...arr)
+struct SpreadExpr : Expr {
+    ExprPtr argument;
+
+    explicit SpreadExpr(ExprPtr arg)
+        : argument(std::move(arg)) {}
+
+    Value accept(ExprVisitor& v) override {
+        return v.visit(*this);
+    }
+};
+
 struct MapExpr : Expr {
     std::vector<std::pair<std::string, ExprPtr>> entries;
 

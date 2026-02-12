@@ -750,11 +750,17 @@ ExprPtr Parser::primary() {
 
     }
     if (match({TokenType::LEFT_BRACKET})) {
-        // Array literal
+        // Array literal with potential spread elements
         std::vector<ExprPtr> elements;
         if (!check(TokenType::RIGHT_BRACKET)) {
             do {
-                elements.push_back(expression());
+                // Check for spread operator
+                if (match({TokenType::DOT_DOT_DOT})) {
+                    ExprPtr spreadArg = expression();
+                    elements.push_back(std::make_unique<SpreadExpr>(std::move(spreadArg)));
+                } else {
+                    elements.push_back(expression());
+                }
             } while (match({TokenType::COMMA}));
         }
         consume(TokenType::RIGHT_BRACKET, "Expect ']' after array elements.");
@@ -762,19 +768,26 @@ ExprPtr Parser::primary() {
     }
 
     if(match({TokenType::LEFT_BRACE})){
-        // Map literal
+        // Map literal with potential spread elements
         std::vector<std::pair<std::string, ExprPtr>> entries;
         if (!check(TokenType::RIGHT_BRACE)) {
             do {
-                Token keyToken = consume(TokenType::STRING, "Expect string as map key.");
-                std::string key = std::string(keyToken.lexeme);
-                // Remove surrounding quotes
-                if (key.length() >= 2) {
-                    key = key.substr(1, key.length() - 2);
+                // Check for spread operator
+                if (match({TokenType::DOT_DOT_DOT})) {
+                    ExprPtr spreadArg = expression();
+                    // Use empty string as key to indicate spread
+                    entries.emplace_back("", std::make_unique<SpreadExpr>(std::move(spreadArg)));
+                } else {
+                    Token keyToken = consume(TokenType::STRING, "Expect string as map key.");
+                    std::string key = std::string(keyToken.lexeme);
+                    // Remove surrounding quotes
+                    if (key.length() >= 2) {
+                        key = key.substr(1, key.length() - 2);
+                    }
+                    consume(TokenType::COLON, "Expect ':' after map key.");
+                    ExprPtr value = expression();
+                    entries.emplace_back(std::move(key), std::move(value));
                 }
-                consume(TokenType::COLON, "Expect ':' after map key.");
-                ExprPtr value = expression();
-                entries.emplace_back(std::move(key), std::move(value));
             } while (match({TokenType::COMMA}));
         }
         consume(TokenType::RIGHT_BRACE, "Expect '}' after map entries.");

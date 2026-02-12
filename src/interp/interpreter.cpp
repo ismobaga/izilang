@@ -186,17 +186,54 @@ Value Interpreter::visit(VariableExpr& expr) {
 Value Interpreter::visit(ArrayExpr& expr) {
     auto array = std::make_shared<Array>();
     for (const auto& elementExpr : expr.elements) {
-        array->elements.push_back(evaluate(*elementExpr));
+        // Check if this element is a spread expression
+        if (auto* spreadExpr = dynamic_cast<SpreadExpr*>(elementExpr.get())) {
+            Value spreadValue = evaluate(*spreadExpr->argument);
+            // If it's an array, spread its elements
+            if (std::holds_alternative<std::shared_ptr<Array>>(spreadValue)) {
+                auto spreadArray = std::get<std::shared_ptr<Array>>(spreadValue);
+                for (const auto& elem : spreadArray->elements) {
+                    array->elements.push_back(elem);
+                }
+            } else {
+                throw std::runtime_error("Spread operator can only be used with arrays in array context.");
+            }
+        } else {
+            array->elements.push_back(evaluate(*elementExpr));
+        }
     }
     return array;
 }
 Value Interpreter::visit(MapExpr& expr) {
     auto map = std::make_shared<Map>();
     for (const auto& [key, valueExpr] : expr.entries) {
-        map->entries[key] = evaluate(*valueExpr);
+        // Check if this is a spread expression (indicated by empty key)
+        if (key.empty()) {
+            if (auto* spreadExpr = dynamic_cast<SpreadExpr*>(valueExpr.get())) {
+                Value spreadValue = evaluate(*spreadExpr->argument);
+                // If it's a map, spread its entries
+                if (std::holds_alternative<std::shared_ptr<Map>>(spreadValue)) {
+                    auto spreadMap = std::get<std::shared_ptr<Map>>(spreadValue);
+                    for (const auto& [k, v] : spreadMap->entries) {
+                        map->entries[k] = v;
+                    }
+                } else {
+                    throw std::runtime_error("Spread operator can only be used with maps in map context.");
+                }
+            }
+        } else {
+            map->entries[key] = evaluate(*valueExpr);
+        }
     }
     return map;
 }
+
+Value Interpreter::visit(SpreadExpr& expr) {
+    // SpreadExpr should only be evaluated in the context of array or map literals
+    // If we get here, it means spread was used outside of those contexts
+    throw std::runtime_error("Spread operator can only be used inside array or map literals.");
+}
+
 Value Interpreter::visit(IndexExpr& expr) {
     Value collection = evaluate(*expr.collection);
     Value index = evaluate(*expr.index);

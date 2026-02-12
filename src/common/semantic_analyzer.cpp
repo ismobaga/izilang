@@ -223,6 +223,12 @@ Value SemanticAnalyzer::visit(MapExpr& expr) {
     return Nil{};
 }
 
+Value SemanticAnalyzer::visit(SpreadExpr& expr) {
+    // Analyze the argument expression
+    expr.argument->accept(*this);
+    return Nil{};
+}
+
 Value SemanticAnalyzer::visit(IndexExpr& expr) {
     expr.collection->accept(*this);
     expr.index->accept(*this);

@@ -219,6 +219,13 @@ Value BytecodeCompiler::visit(ArrayExpr& expr) {
     return Nil{};
 }
 
+Value BytecodeCompiler::visit(SpreadExpr& expr) {
+    // For now, just compile the argument
+    // The actual spread logic should be handled at runtime in the VM
+    emitExpression(*expr.argument);
+    return Nil{};
+}
+
 Value BytecodeCompiler::visit(MapExpr& expr) {
     for (const auto& [key, valueExpr] : expr.entries) {
         emitExpression(*valueExpr);
