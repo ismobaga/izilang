@@ -156,12 +156,14 @@ Value SemanticAnalyzer::visit(CallExpr& expr) {
         
         // If function has type information, validate parameter count and types
         if (funcType && funcType->kind == TypeAnnotation::Kind::Function) {
-            // Check parameter count
+            // Check parameter count with proper pluralization
             if (expr.args.size() != funcType->paramTypes.size()) {
+                std::string expectedWord = (funcType->paramTypes.size() == 1) ? "argument" : "arguments";
+                std::string gotWord = (expr.args.size() == 1) ? "argument" : "arguments";
                 addError(
                     "Function '" + varExpr->name + "' expects " + 
-                    std::to_string(funcType->paramTypes.size()) + " arguments but got " +
-                    std::to_string(expr.args.size()),
+                    std::to_string(funcType->paramTypes.size()) + " " + expectedWord + " but got " +
+                    std::to_string(expr.args.size()) + " " + gotWord,
                     0, 0
                 );
             } else {
@@ -175,8 +177,8 @@ Value SemanticAnalyzer::visit(CallExpr& expr) {
                         
                         if (!areTypesCompatible(*funcType->paramTypes[i], *argType)) {
                             addError(
-                                "Function '" + varExpr->name + "' parameter " + 
-                                std::to_string(i + 1) + " expects " + 
+                                "Function '" + varExpr->name + "' expects parameter at position " + 
+                                std::to_string(i + 1) + " to be " + 
                                 funcType->paramTypes[i]->toString() + " but got " +
                                 argType->toString(),
                                 0, 0
@@ -262,7 +264,7 @@ Value SemanticAnalyzer::visit(SetPropertyExpr& expr) {
 
 Value SemanticAnalyzer::visit(ThisExpr& expr) {
     if (!inMethod_) {
-        addError("'this' can only be used inside class methods", 0, 0);
+        addError("'this' can only be used inside class methods. Use 'this' within a method defined inside a class.", 0, 0);
     }
     return Nil{};
 }
@@ -471,10 +473,9 @@ void SemanticAnalyzer::visit(ClassStmt& stmt) {
         if (method->name == "constructor") {
             // Constructor is valid - this is the expected name
         } else if (method->name == stmt.name) {
-            // Constructor with class name - warn that it should be named "constructor"
+            // Constructor with class name - should be named "constructor"
             addError(
-                "Constructor in class '" + stmt.name + "' should be named 'constructor', not '" + 
-                method->name + "'", 
+                "Constructor should be named 'constructor', not '" + method->name + "'", 
                 0, 0
             );
         }
