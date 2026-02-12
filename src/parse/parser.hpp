@@ -74,6 +74,7 @@ class Parser {
     Token peek() const;
     Token previous() const;
     Token consume(TokenType type, const std::string& message);
+    void consumeSemicolonIfNeeded();
     void synchronize();
 
     ParserError error(const Token& token, const std::string& message);
