@@ -10,6 +10,10 @@ namespace lsp {
 class SymbolTableBuilder : public StmtVisitor, public ExprVisitor {
 public:
     SymbolTableBuilder(Document* doc) : document_(doc) {}
+    
+    void setTokenMap(const std::unordered_map<std::string, std::vector<Token>>& map) {
+        tokenMap_ = map;
+    }
 
     void analyze(const std::vector<StmtPtr>& program) {
         for (const auto& stmt : program) {
@@ -21,10 +25,20 @@ public:
 
     // Statement visitors
     void visit(VarStmt& stmt) override {
-        // VarStmt.name is std::string, we don't have position info here
-        // We'll need to track this differently, for now just add the symbol without location
-        SymbolInfo info(stmt.name, "variable", Location());
-        document_->addSymbol(stmt.name, std::move(info));
+        // Find the token for this variable name
+        auto it = tokenMap_.find(stmt.name);
+        if (it != tokenMap_.end() && !it->second.empty()) {
+            const Token& token = it->second[0];  // Use first occurrence for definition
+            Position pos(token.line - 1, token.column - 1);
+            Range range(pos, Position(pos.line, pos.character + token.lexeme.length()));
+            Location loc(document_->getUri(), range);
+            
+            SymbolInfo info(stmt.name, "variable", loc);
+            document_->addSymbol(stmt.name, std::move(info));
+            
+            // Mark this token as used for definition
+            usedTokenIndices_[stmt.name].insert(0);
+        }
         
         if (stmt.initializer) {
             stmt.initializer->accept(*this);
@@ -32,14 +46,40 @@ public:
     }
 
     void visit(FunctionStmt& stmt) override {
-        // FunctionStmt.name and params are std::string
-        SymbolInfo info(stmt.name, "function", Location());
-        document_->addSymbol(stmt.name, std::move(info));
+        // Find the token for this function name
+        auto it = tokenMap_.find(stmt.name);
+        if (it != tokenMap_.end() && !it->second.empty()) {
+            const Token& token = it->second[0];
+            Position pos(token.line - 1, token.column - 1);
+            Range range(pos, Position(pos.line, pos.character + token.lexeme.length()));
+            Location loc(document_->getUri(), range);
+            
+            SymbolInfo info(stmt.name, "function", loc);
+            document_->addSymbol(stmt.name, std::move(info));
+            
+            usedTokenIndices_[stmt.name].insert(0);
+        }
 
         // Process parameters
         for (const auto& param : stmt.params) {
-            SymbolInfo paramInfo(param, "parameter", Location());
-            document_->addSymbol(param, std::move(paramInfo));
+            auto it = tokenMap_.find(param);
+            if (it != tokenMap_.end()) {
+                // Find unused token for this parameter
+                for (size_t i = 0; i < it->second.size(); ++i) {
+                    if (usedTokenIndices_[param].find(i) == usedTokenIndices_[param].end()) {
+                        const Token& token = it->second[i];
+                        Position pos(token.line - 1, token.column - 1);
+                        Range range(pos, Position(pos.line, pos.character + token.lexeme.length()));
+                        Location loc(document_->getUri(), range);
+                        
+                        SymbolInfo paramInfo(param, "parameter", loc);
+                        document_->addSymbol(param, std::move(paramInfo));
+                        
+                        usedTokenIndices_[param].insert(i);
+                        break;
+                    }
+                }
+            }
         }
 
         // Process body
@@ -51,9 +91,18 @@ public:
     }
 
     void visit(ClassStmt& stmt) override {
-        // ClassStmt.name is std::string
-        SymbolInfo info(stmt.name, "class", Location());
-        document_->addSymbol(stmt.name, std::move(info));
+        auto it = tokenMap_.find(stmt.name);
+        if (it != tokenMap_.end() && !it->second.empty()) {
+            const Token& token = it->second[0];
+            Position pos(token.line - 1, token.column - 1);
+            Range range(pos, Position(pos.line, pos.character + token.lexeme.length()));
+            Location loc(document_->getUri(), range);
+            
+            SymbolInfo info(stmt.name, "class", loc);
+            document_->addSymbol(stmt.name, std::move(info));
+            
+            usedTokenIndices_[stmt.name].insert(0);
+        }
 
         // Process methods
         for (const auto& method : stmt.methods) {
@@ -108,9 +157,21 @@ public:
     // Expression visitors - track variable references
     Value visit(VariableExpr& expr) override {
         if (auto* symbol = document_->findSymbol(expr.name)) {
-            // VariableExpr has name as std::string, not Token
-            // We need to find the token in the document's token list
-            // For now, we'll skip adding references here
+            // Find an unused token for this reference
+            auto it = tokenMap_.find(expr.name);
+            if (it != tokenMap_.end()) {
+                for (size_t i = 0; i < it->second.size(); ++i) {
+                    if (usedTokenIndices_[expr.name].find(i) == usedTokenIndices_[expr.name].end()) {
+                        const Token& token = it->second[i];
+                        Position pos(token.line - 1, token.column - 1);
+                        Range range(pos, Position(pos.line, pos.character + token.lexeme.length()));
+                        Location loc(document_->getUri(), range);
+                        symbol->references.push_back(loc);
+                        usedTokenIndices_[expr.name].insert(i);
+                        break;
+                    }
+                }
+            }
         }
         return Value();
     }
@@ -143,8 +204,21 @@ public:
     
     Value visit(AssignExpr& expr) override {
         if (auto* symbol = document_->findSymbol(expr.name)) {
-            // AssignExpr has name as std::string, not Token
-            // Skip adding references here for now
+            // Find an unused token for this assignment
+            auto it = tokenMap_.find(expr.name);
+            if (it != tokenMap_.end()) {
+                for (size_t i = 0; i < it->second.size(); ++i) {
+                    if (usedTokenIndices_[expr.name].find(i) == usedTokenIndices_[expr.name].end()) {
+                        const Token& token = it->second[i];
+                        Position pos(token.line - 1, token.column - 1);
+                        Range range(pos, Position(pos.line, pos.character + token.lexeme.length()));
+                        Location loc(document_->getUri(), range);
+                        symbol->references.push_back(loc);
+                        usedTokenIndices_[expr.name].insert(i);
+                        break;
+                    }
+                }
+            }
         }
         if (expr.value) expr.value->accept(*this);
         return Value();
@@ -208,6 +282,8 @@ public:
 
 private:
     Document* document_;
+    std::unordered_map<std::string, std::vector<Token>> tokenMap_;
+    std::unordered_map<std::string, std::unordered_set<size_t>> usedTokenIndices_;
 };
 
 // Document implementation
@@ -268,7 +344,17 @@ void Document::parse() {
 }
 
 void Document::buildSymbolTable() {
+    // First, create a map of symbol names to token positions
+    std::unordered_map<std::string, std::vector<Token>> tokenMap;
+    for (const auto& token : tokens_) {
+        if (token.type == TokenType::IDENTIFIER) {
+            tokenMap[token.lexeme].push_back(token);
+        }
+    }
+    
+    // Now build the symbol table with proper positions
     SymbolTableBuilder builder(this);
+    builder.setTokenMap(tokenMap);
     builder.analyze(ast_);
 }
 
