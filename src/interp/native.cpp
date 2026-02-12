@@ -1343,16 +1343,9 @@ auto nativePathNormalize(Interpreter& interp, const std::vector<Value>& argument
     }
     
     for (size_t i = 0; i < stack.size(); ++i) {
-        if (i > 0 || isAbsolute) {
-            result += stack[i];
-            if (i + 1 < stack.size()) {
-                result += "/";
-            }
-        } else {
-            result += stack[i];
-            if (i + 1 < stack.size()) {
-                result += "/";
-            }
+        result += stack[i];
+        if (i + 1 < stack.size()) {
+            result += "/";
         }
     }
     
