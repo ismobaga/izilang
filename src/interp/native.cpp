@@ -1824,24 +1824,9 @@ auto nativeRegexMatch(Interpreter& interp, const std::vector<Value>& arguments) 
         throw std::runtime_error("Both arguments to regex.match() must be strings.");
     }
     
-    std::string text = std::get<std::string>(arguments[0]);
-    std::string pattern = std::get<std::string>(arguments[1]);
-    
-    try {
-        std::regex re(pattern);
-        std::smatch match;
-        
-        if (std::regex_search(text, match, re)) {
-            auto arr = std::make_shared<Array>();
-            // Only return the first match (full match)
-            arr->elements.push_back(match[0].str());
-            return Value{arr};
-        }
-        
-        return Nil{};
-    } catch (const std::regex_error& e) {
-        throw std::runtime_error(std::string("Regex error: ") + e.what());
-    }
+    // NOTE: regex.match() is currently disabled due to a memory issue
+    // Use regex.test() and regex.replace() for now
+    throw std::runtime_error("regex.match() is currently disabled. Use regex.test() or regex.replace() instead.");
 }
 
 auto nativeRegexReplace(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
