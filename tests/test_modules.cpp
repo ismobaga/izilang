@@ -72,9 +72,19 @@ TEST_CASE("Native module system - math module", "[modules][math]") {
     SECTION("clamp() function works correctly") {
         std::string source = R"(
             import * as math from "math";
+            import * as assert from "std.assert";
+            
             var result1 = math.clamp(10, 0, 5);
+            assert.eq(result1, 5);
+            
             var result2 = math.clamp(-5, 0, 10);
+            assert.eq(result2, 0);
+            
             var result3 = math.clamp(5, 0, 10);
+            assert.eq(result3, 5);
+            
+            var result4 = math.clamp(7.5, 3.2, 8.9);
+            assert.eq(result4, 7.5);
         )";
         
         Lexer lexer(source);
@@ -89,9 +99,22 @@ TEST_CASE("Native module system - math module", "[modules][math]") {
     SECTION("sign() function returns correct values") {
         std::string source = R"(
             import { sign } from "math";
+            import * as assert from "std.assert";
+            
             var pos = sign(42);
+            assert.eq(pos, 1);
+            
             var neg = sign(-42);
+            assert.eq(neg, -1);
+            
             var zero = sign(0);
+            assert.eq(zero, 0);
+            
+            var posSmall = sign(0.001);
+            assert.eq(posSmall, 1);
+            
+            var negSmall = sign(-0.001);
+            assert.eq(negSmall, -1);
         )";
         
         Lexer lexer(source);
@@ -106,7 +129,16 @@ TEST_CASE("Native module system - math module", "[modules][math]") {
     SECTION("isFinite() function works correctly") {
         std::string source = R"(
             import "math";
-            var finite = math.isFinite(42.5);
+            import * as assert from "std.assert";
+            
+            var finite1 = math.isFinite(42.5);
+            assert.eq(finite1, true);
+            
+            var finite2 = math.isFinite(0);
+            assert.eq(finite2, true);
+            
+            var finite3 = math.isFinite(-100);
+            assert.eq(finite3, true);
         )";
         
         Lexer lexer(source);
@@ -121,7 +153,16 @@ TEST_CASE("Native module system - math module", "[modules][math]") {
     SECTION("isNaN() function works correctly") {
         std::string source = R"(
             import "math";
-            var notNaN = math.isNaN(42);
+            import * as assert from "std.assert";
+            
+            var notNaN1 = math.isNaN(42);
+            assert.eq(notNaN1, false);
+            
+            var notNaN2 = math.isNaN(3.14);
+            assert.eq(notNaN2, false);
+            
+            var notNaN3 = math.isNaN(0);
+            assert.eq(notNaN3, false);
         )";
         
         Lexer lexer(source);
