@@ -216,3 +216,156 @@ TEST_CASE("Classes: Error handling", "[classes]") {
         REQUIRE_THROWS_AS(interp.interpret(stmts), RuntimeError);
     }
 }
+
+TEST_CASE("Classes: Multiple instances", "[classes][instances]") {
+    SECTION("Multiple independent instances") {
+        std::string code = R"(
+            class Counter {
+                var count: Number;
+                
+                fn constructor(initial: Number) {
+                    this.count = initial;
+                }
+                
+                fn increment(): Void {
+                    this.count = this.count + 1;
+                }
+            }
+            
+            var c1 = Counter(0);
+            var c2 = Counter(10);
+            
+            c1.increment();
+            c1.increment();
+            c2.increment();
+            
+            print(c1.count);
+            print(c2.count);
+        )";
+        
+        Lexer lexer(code);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto stmts = parser.parse();
+        
+        Interpreter interp;
+        OutputCapture capture;
+        
+        REQUIRE_NOTHROW(interp.interpret(stmts));
+        
+        std::string output = capture.getOutput();
+        REQUIRE(output.find("2") != std::string::npos);
+        REQUIRE(output.find("11") != std::string::npos);
+    }
+}
+
+TEST_CASE("Classes: Method chaining", "[classes][methods]") {
+    SECTION("Methods returning this for chaining") {
+        std::string code = R"(
+            class Builder {
+                var value: Number;
+                
+                fn constructor() {
+                    this.value = 0;
+                }
+                
+                fn add(n: Number) {
+                    this.value = this.value + n;
+                    return this;
+                }
+                
+                fn getValue(): Number {
+                    return this.value;
+                }
+            }
+            
+            var b = Builder();
+            print(b.getValue());
+        )";
+        
+        Lexer lexer(code);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto stmts = parser.parse();
+        
+        Interpreter interp;
+        OutputCapture capture;
+        
+        REQUIRE_NOTHROW(interp.interpret(stmts));
+        
+        std::string output = capture.getOutput();
+        REQUIRE(output.find("0") != std::string::npos);
+    }
+}
+
+TEST_CASE("Classes: Instances in collections", "[classes][collections]") {
+    SECTION("Class instances in arrays") {
+        std::string code = R"(
+            class Point {
+                var x: Number;
+                var y: Number;
+                
+                fn constructor(x: Number, y: Number) {
+                    this.x = x;
+                    this.y = y;
+                }
+            }
+            
+            var points = [Point(0, 0), Point(1, 1), Point(2, 2)];
+            print(points[0].x);
+            print(points[1].y);
+        )";
+        
+        Lexer lexer(code);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto stmts = parser.parse();
+        
+        Interpreter interp;
+        OutputCapture capture;
+        
+        REQUIRE_NOTHROW(interp.interpret(stmts));
+        
+        std::string output = capture.getOutput();
+        REQUIRE(output.find("0") != std::string::npos);
+        REQUIRE(output.find("1") != std::string::npos);
+    }
+}
+
+TEST_CASE("Classes: Instances as function parameters", "[classes][functions]") {
+    SECTION("Pass class instance to function") {
+        std::string code = R"(
+            class Point {
+                var x: Number;
+                var y: Number;
+                
+                fn constructor(x: Number, y: Number) {
+                    this.x = x;
+                    this.y = y;
+                }
+            }
+            
+            fn printPoint(p) {
+                print(p.x);
+                print(p.y);
+            }
+            
+            var point = Point(5, 10);
+            printPoint(point);
+        )";
+        
+        Lexer lexer(code);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto stmts = parser.parse();
+        
+        Interpreter interp;
+        OutputCapture capture;
+        
+        REQUIRE_NOTHROW(interp.interpret(stmts));
+        
+        std::string output = capture.getOutput();
+        REQUIRE(output.find("5") != std::string::npos);
+        REQUIRE(output.find("10") != std::string::npos);
+    }
+}

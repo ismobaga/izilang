@@ -399,3 +399,62 @@ TEST_CASE("Parser handles function type annotations", "[parser]") {
         REQUIRE(funcExpr != nullptr);
     }
 }
+
+TEST_CASE("Parser handles edge case type annotations", "[parser][types]") {
+    SECTION("Parse variable with Nil type") {
+        Lexer lexer("var empty: Nil = nil;");
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto stmts = parser.parse();
+        
+        REQUIRE(stmts.size() == 1);
+        auto* varStmt = dynamic_cast<VarStmt*>(stmts[0].get());
+        REQUIRE(varStmt != nullptr);
+        REQUIRE(varStmt->typeAnnotation != nullptr);
+        REQUIRE(varStmt->typeAnnotation->kind == TypeAnnotation::Kind::Nil);
+    }
+    
+    SECTION("Parse variable with Any type") {
+        Lexer lexer("var dynamic: Any = 42;");
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto stmts = parser.parse();
+        
+        REQUIRE(stmts.size() == 1);
+        auto* varStmt = dynamic_cast<VarStmt*>(stmts[0].get());
+        REQUIRE(varStmt != nullptr);
+        REQUIRE(varStmt->typeAnnotation != nullptr);
+        REQUIRE(varStmt->typeAnnotation->kind == TypeAnnotation::Kind::Any);
+    }
+    
+    SECTION("Parse nested complex type") {
+        Lexer lexer("var data: Array<Map<String,Number>> = [];");
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto stmts = parser.parse();
+        
+        REQUIRE(stmts.size() == 1);
+        auto* varStmt = dynamic_cast<VarStmt*>(stmts[0].get());
+        REQUIRE(varStmt != nullptr);
+        REQUIRE(varStmt->typeAnnotation != nullptr);
+        REQUIRE(varStmt->typeAnnotation->kind == TypeAnnotation::Kind::Array);
+        REQUIRE(varStmt->typeAnnotation->elementType != nullptr);
+        REQUIRE(varStmt->typeAnnotation->elementType->kind == TypeAnnotation::Kind::Map);
+        REQUIRE(varStmt->typeAnnotation->elementType->keyType->kind == TypeAnnotation::Kind::String);
+        REQUIRE(varStmt->typeAnnotation->elementType->valueType->kind == TypeAnnotation::Kind::Number);
+    }
+    
+    SECTION("Parse function with Void return and no parameters") {
+        Lexer lexer("fn doSomething(): Void { print(42); }");
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto stmts = parser.parse();
+        
+        REQUIRE(stmts.size() == 1);
+        auto* funcStmt = dynamic_cast<FunctionStmt*>(stmts[0].get());
+        REQUIRE(funcStmt != nullptr);
+        REQUIRE(funcStmt->returnType != nullptr);
+        REQUIRE(funcStmt->returnType->kind == TypeAnnotation::Kind::Void);
+        REQUIRE(funcStmt->params.size() == 0);
+    }
+}
