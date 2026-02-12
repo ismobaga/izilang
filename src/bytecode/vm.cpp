@@ -1,6 +1,8 @@
 #include "vm.hpp"
 #include "bytecode/opcode.hpp"
 #include "bytecode/mv_callable.hpp"
+#include "bytecode/vm_class.hpp"
+#include "interp/izi_class.hpp"
 #include <cmath>
 
 
@@ -130,10 +132,16 @@ Value VM::run(const Chunk& entry) {
                 case OpCode::CALL: {
                     uint8_t argCount = readByte();
                     Value callee = stack[stack.size() - 1 - argCount];
-                    if (!std::holds_alternative<std::shared_ptr<VmCallable>>(callee)) {
-                        throw std::runtime_error("Can only call VM functions.");
+                    
+                    std::shared_ptr<VmCallable> function;
+                    if (std::holds_alternative<std::shared_ptr<VmCallable>>(callee)) {
+                        function = std::get<std::shared_ptr<VmCallable>>(callee);
+                    } else if (std::holds_alternative<std::shared_ptr<VmClass>>(callee)) {
+                        function = std::get<std::shared_ptr<VmClass>>(callee);
+                    } else {
+                        throw std::runtime_error("Can only call VM functions and classes.");
                     }
-                    auto function = std::get<std::shared_ptr<VmCallable>>(callee);
+                    
                     int ar = function->arity();
                     if (ar >= 0 && argCount != ar) {
                         throw std::runtime_error("Expected " + std::to_string(function->arity()) +
@@ -317,6 +325,51 @@ Value VM::run(const Chunk& entry) {
                     if (!exceptionHandlers.empty()) {
                         exceptionHandlers.pop_back();
                     }
+                    break;
+                }
+                case OpCode::GET_PROPERTY: {
+                    uint8_t nameIndex = readByte();
+                    const std::string& propertyName = currentFrame()->chunk->names[nameIndex];
+                    Value object = pop();
+                    
+                    if (!std::holds_alternative<std::shared_ptr<Instance>>(object)) {
+                        throw std::runtime_error("Only instances have properties.");
+                    }
+                    
+                    auto instance = std::get<std::shared_ptr<Instance>>(object);
+                    
+                    // Check if it's a field
+                    auto fieldIt = instance->fields.find(propertyName);
+                    if (fieldIt != instance->fields.end()) {
+                        push(fieldIt->second);
+                        break;
+                    }
+                    
+                    // Check if it's a method
+                    if (std::holds_alternative<std::shared_ptr<VmClass>>(instance->klass)) {
+                        auto klass = std::get<std::shared_ptr<VmClass>>(instance->klass);
+                        auto method = klass->getMethod(propertyName, instance);
+                        if (method) {
+                            push(method);
+                            break;
+                        }
+                    }
+                    
+                    throw std::runtime_error("Undefined property '" + propertyName + "'.");
+                }
+                case OpCode::SET_PROPERTY: {
+                    uint8_t nameIndex = readByte();
+                    const std::string& propertyName = currentFrame()->chunk->names[nameIndex];
+                    Value value = pop();
+                    Value object = pop();
+                    
+                    if (!std::holds_alternative<std::shared_ptr<Instance>>(object)) {
+                        throw std::runtime_error("Only instances have properties.");
+                    }
+                    
+                    auto instance = std::get<std::shared_ptr<Instance>>(object);
+                    instance->fields[propertyName] = value;
+                    push(value); // Assignment expression returns the value
                     break;
                 }
                 // ... handle other opcodes ...

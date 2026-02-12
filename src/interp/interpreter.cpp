@@ -561,7 +561,14 @@ Value Interpreter::visit(PropertyExpr& expr) {
         }
         
         // Check if it's a method
-        Value method = instance->klass->getMethod(expr.property, instance);
+        Value method = Nil{};
+        if (std::holds_alternative<std::shared_ptr<IziClass>>(instance->klass)) {
+            auto klass = std::get<std::shared_ptr<IziClass>>(instance->klass);
+            method = klass->getMethod(expr.property, instance);
+        } else {
+            throw RuntimeError(Token(TokenType::DOT, expr.property, 0, 0),
+                              "Cannot access method from VM class in interpreter mode");
+        }
         if (!std::holds_alternative<Nil>(method)) {
             return method;
         }

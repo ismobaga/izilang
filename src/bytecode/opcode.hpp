@@ -55,6 +55,10 @@ enum class OpCode : uint8_t {
     TRY,           // Set up exception handler (followed by catch offset and finally offset)
     THROW,         // Throw an exception
     END_TRY,       // End try-catch-finally block
+    
+    // Class support (v0.3)
+    GET_PROPERTY,  // Get a property from an instance (followed by name index)
+    SET_PROPERTY,  // Set a property on an instance (followed by name index)
 };
 
 } // namespace izi

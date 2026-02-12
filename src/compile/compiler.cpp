@@ -1,6 +1,7 @@
 #include "compiler.hpp"
 #include "common/value.hpp"
 #include "bytecode/vm_user_function.hpp"
+#include "bytecode/vm_class.hpp"
 #include "parse/lexer.hpp"
 #include "parse/parser.hpp"
 #include <stdexcept>
@@ -502,28 +503,109 @@ std::string BytecodeCompiler::loadFile(const std::string& path) {
     return buffer.str();
 }
 
-// v0.3: Class support (stub implementation)
+// v0.3: Class support
 void BytecodeCompiler::visit(ClassStmt& stmt) {
-    // TODO: Implement class compilation
-    throw std::runtime_error("Class support not yet implemented in compiler.");
+    // For a class, we need to:
+    // 1. Compile each method into a separate function
+    // 2. Create a VmClass with those methods
+    // 3. Store the class as a global
+    
+    std::unordered_map<std::string, std::shared_ptr<VmCallable>> methods;
+    std::vector<std::string> fieldNames;
+    std::unordered_map<std::string, Value> fieldDefaults;
+    
+    // Compile methods
+    for (const auto& method : stmt.methods) {
+        BytecodeCompiler methodCompiler;
+        
+        // Compile the method body
+        for (const auto& bodyStmt : method->body) {
+            methodCompiler.emitStatement(*bodyStmt);
+        }
+        
+        // Ensure the method returns nil if it doesn't have an explicit return
+        methodCompiler.emitOp(OpCode::NIL);
+        methodCompiler.emitOp(OpCode::RETURN);
+        
+        // Create a VmUserFunction for the method
+        auto methodChunk = std::make_shared<Chunk>(std::move(methodCompiler.chunk));
+        auto vmMethod = std::make_shared<VmUserFunction>(
+            method->name,
+            method->params,
+            methodChunk
+        );
+        
+        methods[method->name] = vmMethod;
+    }
+    
+    // Extract field names and defaults
+    // Note: Field initializers are not yet supported in bytecode compilation
+    // All fields are initialized to nil; initializers should be set in constructors
+    for (const auto& field : stmt.fields) {
+        fieldNames.push_back(field->name);
+        fieldDefaults[field->name] = Nil{};
+    }
+    
+    // Create the VmClass
+    auto vmClass = std::make_shared<VmClass>(
+        stmt.name,
+        fieldNames,
+        fieldDefaults,
+        methods
+    );
+    
+    // Store the class as a constant
+    uint8_t constantIndex = makeConstant(vmClass);
+    emitOp(OpCode::CONSTANT);
+    emitByte(constantIndex);
+    
+    // Store it in a global variable with the class name
+    uint8_t nameIndex = makeName(stmt.name);
+    emitOp(OpCode::SET_GLOBAL);
+    emitByte(nameIndex);
+    emitOp(OpCode::POP); // Pop the value left by SET_GLOBAL
 }
 
-// v0.3: Property access (stub implementation)
+// v0.3: Property access
 Value BytecodeCompiler::visit(PropertyExpr& expr) {
-    // TODO: Implement property access compilation
-    throw std::runtime_error("Property access not yet implemented in compiler.");
+    // Compile the object expression
+    emitExpression(*expr.object);
+    
+    // Emit GET_PROPERTY with the property name
+    uint8_t nameIndex = makeName(expr.property);
+    emitOp(OpCode::GET_PROPERTY);
+    emitByte(nameIndex);
+    
+    return Nil{}; // Return value not used in visitor pattern
 }
 
-// v0.3: Property assignment (stub implementation)
+// v0.3: Property assignment
 Value BytecodeCompiler::visit(SetPropertyExpr& expr) {
-    // TODO: Implement property assignment compilation
-    throw std::runtime_error("Property assignment not yet implemented in compiler.");
+    // Compile the object expression
+    emitExpression(*expr.object);
+    
+    // Compile the value expression
+    emitExpression(*expr.value);
+    
+    // Emit SET_PROPERTY with the property name
+    uint8_t nameIndex = makeName(expr.property);
+    emitOp(OpCode::SET_PROPERTY);
+    emitByte(nameIndex);
+    
+    return Nil{}; // Return value not used in visitor pattern
 }
 
-// v0.3: This expression (stub implementation)
+// v0.3: This expression
 Value BytecodeCompiler::visit(ThisExpr& expr) {
-    // TODO: Implement 'this' binding in compiler
-    throw std::runtime_error("'this' keyword not yet implemented in compiler.");
+    // 'this' is implemented as a global variable lookup
+    // Note: This is a simplified implementation. It works for basic use cases
+    // but has limitations with nested method calls or recursion. See VmBoundMethod
+    // for details. A proper implementation would use local variables or call frames.
+    uint8_t nameIndex = makeName("this");
+    emitOp(OpCode::GET_GLOBAL);
+    emitByte(nameIndex);
+    
+    return Nil{}; // Return value not used in visitor pattern
 }
 
 }
