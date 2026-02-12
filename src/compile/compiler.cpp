@@ -300,6 +300,12 @@ void BytecodeCompiler::visit(BlockStmt& stmt) {
 
 }
 void BytecodeCompiler::visit(VarStmt& stmt) {
+    // For now, bytecode compiler doesn't support destructuring
+    // Just handle simple variable declarations
+    if (stmt.pattern != nullptr) {
+        throw std::runtime_error("Bytecode compiler does not yet support destructuring syntax.");
+    }
+    
     Value initValue = Nil{};
     if (stmt.initializer) {
         emitExpression(*stmt.initializer);

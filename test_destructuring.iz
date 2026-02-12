@@ -1,0 +1,25 @@
+// Test array destructuring
+var arr = [1, 2, 3, 4, 5];
+var [a, b, c] = arr;
+print(a);
+print(b);
+print(c);
+
+// Test map destructuring
+var person = {"name": "John", "age": 30, "city": "NYC"};
+var {name, age, city} = person;
+print(name);
+print(age);
+print(city);
+
+// Test with fewer variables than values
+var [x, y] = [10, 20, 30];
+print(x);
+print(y);
+
+// Test with more variables than values (should get nil)
+var [p, q, r, s] = [100, 200];
+print(p);
+print(q);
+print(r);  // Should be nil
+print(s);  // Should be nil

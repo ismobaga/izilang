@@ -32,6 +32,56 @@ StmtPtr Parser::declaration() {
 }
 
 StmtPtr Parser::varDeclaration() {
+    // Check if this is a destructuring declaration
+    if (check(TokenType::LEFT_BRACKET)) {
+        // Array destructuring: var [a, b] = [1, 2];
+        advance();  // consume '['
+        
+        std::vector<PatternPtr> elements;
+        if (!check(TokenType::RIGHT_BRACKET)) {
+            do {
+                Token name = consume(TokenType::IDENTIFIER, "Expect variable name in array pattern.");
+                elements.push_back(std::make_unique<VariablePattern>(std::string(name.lexeme)));
+            } while (match({TokenType::COMMA}));
+        }
+        consume(TokenType::RIGHT_BRACKET, "Expect ']' after array pattern.");
+        
+        ExprPtr initializer = nullptr;
+        if (match({TokenType::EQUAL})) {
+            initializer = expression();
+        } else {
+            throw error(peek(), "Array destructuring requires an initializer.");
+        }
+        
+        consumeSemicolonIfNeeded();
+        return std::make_unique<VarStmt>(std::make_unique<ArrayPattern>(std::move(elements)), std::move(initializer));
+    }
+    
+    if (check(TokenType::LEFT_BRACE)) {
+        // Map destructuring: var {name, age} = person;
+        advance();  // consume '{'
+        
+        std::vector<std::string> keys;
+        if (!check(TokenType::RIGHT_BRACE)) {
+            do {
+                Token key = consume(TokenType::IDENTIFIER, "Expect identifier in map pattern.");
+                keys.push_back(std::string(key.lexeme));
+            } while (match({TokenType::COMMA}));
+        }
+        consume(TokenType::RIGHT_BRACE, "Expect '}' after map pattern.");
+        
+        ExprPtr initializer = nullptr;
+        if (match({TokenType::EQUAL})) {
+            initializer = expression();
+        } else {
+            throw error(peek(), "Map destructuring requires an initializer.");
+        }
+        
+        consumeSemicolonIfNeeded();
+        return std::make_unique<VarStmt>(std::make_unique<MapPattern>(std::move(keys)), std::move(initializer));
+    }
+    
+    // Simple variable declaration
     Token name = consume(TokenType::IDENTIFIER, "Expect variable name.");
 
     // Parse optional type annotation

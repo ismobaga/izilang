@@ -306,14 +306,38 @@ void SemanticAnalyzer::visit(BlockStmt& stmt) {
 }
 
 void SemanticAnalyzer::visit(VarStmt& stmt) {
+    // Analyze initializer first
+    if (stmt.initializer) {
+        stmt.initializer->accept(*this);
+    }
+    
+    // Handle destructuring patterns
+    if (stmt.pattern != nullptr) {
+        if (auto* arrayPattern = dynamic_cast<ArrayPattern*>(stmt.pattern.get())) {
+            // Register all variables from array pattern
+            for (const auto& elem : arrayPattern->elements) {
+                if (auto* varPattern = dynamic_cast<VariablePattern*>(elem.get())) {
+                    TypePtr varType = TypeAnnotation::simple(TypeAnnotation::Kind::Any);
+                    defineVariable(varPattern->name, std::move(varType), 0, 0);
+                }
+            }
+        } else if (auto* mapPattern = dynamic_cast<MapPattern*>(stmt.pattern.get())) {
+            // Register all variables from map pattern
+            for (const auto& key : mapPattern->keys) {
+                TypePtr varType = TypeAnnotation::simple(TypeAnnotation::Kind::Any);
+                defineVariable(key, std::move(varType), 0, 0);
+            }
+        }
+        return;
+    }
+    
+    // Simple variable declaration
     TypePtr varType = stmt.typeAnnotation ? 
         TypeAnnotation::simple(stmt.typeAnnotation->kind) : 
         TypeAnnotation::simple(TypeAnnotation::Kind::Any);
     
     // If initializer exists, check type compatibility
     if (stmt.initializer) {
-        stmt.initializer->accept(*this);
-        
         // Only check type compatibility if variable has explicit type annotation
         if (stmt.typeAnnotation && isExplicitlyTyped(varType.get())) {
             TypePtr initType = inferType(*stmt.initializer);

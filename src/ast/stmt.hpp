@@ -8,6 +8,7 @@
 #include "expr.hpp"
 #include "visitor.hpp"
 #include "type.hpp"
+#include "pattern.hpp"
 
 namespace izi {
 
@@ -39,14 +40,20 @@ struct BlockStmt : public Stmt {
     void accept(StmtVisitor& v) override { v.visit(*this); }
 };
 
-// Variable declaration (e.g., "var x = 10;" or "var x: Number = 10;")
+// Variable declaration (e.g., "var x = 10;" or "var x: Number = 10;" or "var [a, b] = [1, 2];")
 struct VarStmt : public Stmt {
-    std::string name;
+    std::string name;  // For simple variable declarations
+    PatternPtr pattern;  // For destructuring declarations
     ExprPtr initializer;
     TypePtr typeAnnotation;  // Optional type annotation (v0.3)
 
+    // Constructor for simple variable declaration
     VarStmt(std::string n, ExprPtr init, TypePtr type = nullptr)
-        : name(std::move(n)), initializer(std::move(init)), typeAnnotation(std::move(type)) {}
+        : name(std::move(n)), pattern(nullptr), initializer(std::move(init)), typeAnnotation(std::move(type)) {}
+    
+    // Constructor for destructuring declaration
+    VarStmt(PatternPtr pat, ExprPtr init, TypePtr type = nullptr)
+        : name(""), pattern(std::move(pat)), initializer(std::move(init)), typeAnnotation(std::move(type)) {}
 
     void accept(StmtVisitor& v) override { v.visit(*this); }
 };

@@ -378,6 +378,50 @@ void Interpreter::visit(VarStmt& stmt) {
     if (stmt.initializer) {
         value = evaluate(*stmt.initializer);
     }
+    
+    // Check if this is a destructuring declaration
+    if (stmt.pattern != nullptr) {
+        // Array destructuring
+        if (auto* arrayPattern = dynamic_cast<ArrayPattern*>(stmt.pattern.get())) {
+            if (!std::holds_alternative<std::shared_ptr<Array>>(value)) {
+                throw std::runtime_error("Array destructuring requires an array value.");
+            }
+            auto array = std::get<std::shared_ptr<Array>>(value);
+            
+            // Bind each variable in the pattern to corresponding array element
+            for (size_t i = 0; i < arrayPattern->elements.size(); ++i) {
+                if (auto* varPattern = dynamic_cast<VariablePattern*>(arrayPattern->elements[i].get())) {
+                    Value elemValue = Nil{};
+                    if (i < array->elements.size()) {
+                        elemValue = array->elements[i];
+                    }
+                    env->define(varPattern->name, elemValue);
+                }
+            }
+            return;
+        }
+        
+        // Map destructuring
+        if (auto* mapPattern = dynamic_cast<MapPattern*>(stmt.pattern.get())) {
+            if (!std::holds_alternative<std::shared_ptr<Map>>(value)) {
+                throw std::runtime_error("Map destructuring requires a map value.");
+            }
+            auto map = std::get<std::shared_ptr<Map>>(value);
+            
+            // Bind each variable in the pattern to corresponding map entry
+            for (const auto& key : mapPattern->keys) {
+                Value mapValue = Nil{};
+                auto it = map->entries.find(key);
+                if (it != map->entries.end()) {
+                    mapValue = it->second;
+                }
+                env->define(key, mapValue);
+            }
+            return;
+        }
+    }
+    
+    // Simple variable declaration
     env->define(stmt.name, value);
 }
 
