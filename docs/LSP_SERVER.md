@@ -2,14 +2,21 @@
 
 ## Overview
 
-The IziLang LSP server provides IDE integration for IziLang, enabling features like:
-- Code completion
-- Diagnostics (errors and warnings)
-- Hover information
-- Go to definition
-- Find references
+The IziLang LSP server provides comprehensive IDE integration for IziLang with fully implemented features:
+
+### ✅ Implemented Features
+- **Diagnostics**: Real-time syntax errors and semantic warnings
+- **Code Completion**: Context-aware suggestions (29+ keywords, all symbols)
+- **Hover Information**: Type info, definition location, reference counts
+- **Go to Definition**: Navigate from usage to declaration
+- **Find References**: Locate all usages of a symbol
+- **Rename Symbol**: Safe refactoring across the document
+- **Document Symbols**: Code outline for quick navigation
+
+### Future Enhancements
 - Code formatting
-- Rename symbols
+- Signature help
+- Code actions and quick fixes
 
 ## Architecture
 
