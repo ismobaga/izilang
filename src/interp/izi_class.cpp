@@ -33,12 +33,20 @@ Value BoundMethod::call(Interpreter& interp, const std::vector<Value>& arguments
 }
 
 int IziClass::arity() const {
-    // Check if there's a constructor method
-    auto it = methods.find("constructor");
-    if (it != methods.end()) {
+    // Check if there's an init method (preferred) or constructor method
+    auto initIt = methods.find("init");
+    if (initIt != methods.end()) {
+        if (std::holds_alternative<std::shared_ptr<Callable>>(initIt->second)) {
+            auto init = std::get<std::shared_ptr<Callable>>(initIt->second);
+            return init->arity();
+        }
+    }
+    
+    auto constructorIt = methods.find("constructor");
+    if (constructorIt != methods.end()) {
         // Get the arity from the constructor
-        if (std::holds_alternative<std::shared_ptr<Callable>>(it->second)) {
-            auto constructor = std::get<std::shared_ptr<Callable>>(it->second);
+        if (std::holds_alternative<std::shared_ptr<Callable>>(constructorIt->second)) {
+            auto constructor = std::get<std::shared_ptr<Callable>>(constructorIt->second);
             return constructor->arity();
         }
     }
@@ -49,7 +57,20 @@ Value IziClass::call(Interpreter& interp, const std::vector<Value>& arguments) {
     // Create a new instance
     auto instance = std::make_shared<Instance>(shared_from_this());
     
-    // Initialize fields with their default values
+    // Initialize fields from the entire inheritance chain
+    // Start with superclass fields first
+    if (superclass) {
+        for (const auto& fieldName : superclass->fieldNames) {
+            auto it = superclass->fieldDefaults.find(fieldName);
+            if (it != superclass->fieldDefaults.end()) {
+                instance->fields[fieldName] = it->second;
+            } else {
+                instance->fields[fieldName] = Nil{};
+            }
+        }
+    }
+    
+    // Then initialize this class's fields (can override superclass defaults)
     for (const auto& fieldName : fieldNames) {
         auto it = fieldDefaults.find(fieldName);
         if (it != fieldDefaults.end()) {
@@ -59,9 +80,18 @@ Value IziClass::call(Interpreter& interp, const std::vector<Value>& arguments) {
         }
     }
     
-    // If there's a constructor, call it with 'this' bound
+    // Look for constructor or init method (init takes precedence for OOP convention)
+    auto initIt = methods.find("init");
     auto constructorIt = methods.find("constructor");
-    if (constructorIt != methods.end()) {
+    
+    // Prefer "init" over "constructor"
+    if (initIt != methods.end()) {
+        Value init = getMethod("init", instance);
+        if (std::holds_alternative<std::shared_ptr<Callable>>(init)) {
+            auto initCallable = std::get<std::shared_ptr<Callable>>(init);
+            initCallable->call(interp, arguments);
+        }
+    } else if (constructorIt != methods.end()) {
         Value constructor = getMethod("constructor", instance);
         if (std::holds_alternative<std::shared_ptr<Callable>>(constructor)) {
             auto constructorCallable = std::get<std::shared_ptr<Callable>>(constructor);
@@ -73,18 +103,23 @@ Value IziClass::call(Interpreter& interp, const std::vector<Value>& arguments) {
 }
 
 Value IziClass::getMethod(const std::string& name, std::shared_ptr<Instance> instance) {
+    // First check this class's methods
     auto it = methods.find(name);
-    if (it == methods.end()) {
-        return Nil{};
+    if (it != methods.end()) {
+        // Bind the method to the instance
+        if (std::holds_alternative<std::shared_ptr<Callable>>(it->second)) {
+            auto callable = std::get<std::shared_ptr<Callable>>(it->second);
+            return std::make_shared<BoundMethod>(instance, callable);
+        }
+        return it->second;
     }
     
-    // Bind the method to the instance
-    if (std::holds_alternative<std::shared_ptr<Callable>>(it->second)) {
-        auto callable = std::get<std::shared_ptr<Callable>>(it->second);
-        return std::make_shared<BoundMethod>(instance, callable);
+    // If not found, check superclass
+    if (superclass) {
+        return superclass->getMethod(name, instance);
     }
     
-    return it->second;
+    return Nil{};
 }
 
 }  // namespace izi

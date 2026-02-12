@@ -516,6 +516,22 @@ void Interpreter::visit(ThrowStmt& stmt) {
 
 // v0.3: Class support
 void Interpreter::visit(ClassStmt& stmt) {
+    // Get superclass if it exists
+    std::shared_ptr<IziClass> superclass = nullptr;
+    if (!stmt.superclass.empty()) {
+        Value superValue = env->get(stmt.superclass);
+        if (!std::holds_alternative<std::shared_ptr<Callable>>(superValue)) {
+            throw RuntimeError(Token(TokenType::IDENTIFIER, stmt.superclass, 0, 0),
+                             "Superclass must be a class.");
+        }
+        auto superCallable = std::get<std::shared_ptr<Callable>>(superValue);
+        superclass = std::dynamic_pointer_cast<IziClass>(superCallable);
+        if (!superclass) {
+            throw RuntimeError(Token(TokenType::IDENTIFIER, stmt.superclass, 0, 0),
+                             "Superclass must be a class.");
+        }
+    }
+    
     // Evaluate field defaults
     std::unordered_map<std::string, Value> fieldDefaults;
     std::vector<std::string> fieldNames;
@@ -528,15 +544,25 @@ void Interpreter::visit(ClassStmt& stmt) {
     }
     
     // Create method callables
+    // If we have a superclass, we need to define 'super' in the method's environment
     std::unordered_map<std::string, Value> methods;
     for (const auto& method : stmt.methods) {
-        auto userFunc = std::make_shared<UserFunction>(method.get(), env);
+        std::shared_ptr<Environment> methodEnv = env;
+        
+        // If there's a superclass, create a new environment with 'super' defined
+        if (superclass) {
+            methodEnv = std::make_shared<Environment>(env);
+            methodEnv->define("super", superclass);
+        }
+        
+        auto userFunc = std::make_shared<UserFunction>(method.get(), methodEnv);
         methods[method->name] = userFunc;
     }
     
     // Create the class
     auto klass = std::make_shared<IziClass>(
         stmt.name,
+        superclass,
         std::move(fieldNames),
         std::move(fieldDefaults),
         std::move(methods)
@@ -623,6 +649,51 @@ Value Interpreter::visit(ThisExpr& expr) {
         throw RuntimeError(Token(TokenType::THIS, "this", 0, 0),
                           "Cannot use 'this' outside of a class method.");
     }
+}
+
+// v0.3: Super expression
+Value Interpreter::visit(SuperExpr& expr) {
+    // Get the superclass from the environment
+    std::shared_ptr<IziClass> superclass;
+    try {
+        Value superValue = env->get("super");
+        if (!std::holds_alternative<std::shared_ptr<Callable>>(superValue)) {
+            throw RuntimeError(Token(TokenType::SUPER, "super", 0, 0),
+                             "Invalid superclass reference.");
+        }
+        auto superCallable = std::get<std::shared_ptr<Callable>>(superValue);
+        superclass = std::dynamic_pointer_cast<IziClass>(superCallable);
+        if (!superclass) {
+            throw RuntimeError(Token(TokenType::SUPER, "super", 0, 0),
+                             "Invalid superclass reference.");
+        }
+    } catch (const std::runtime_error& e) {
+        throw RuntimeError(Token(TokenType::SUPER, "super", 0, 0),
+                          "Cannot use 'super' outside of a subclass method.");
+    }
+    
+    // Get 'this' to bind the method to
+    std::shared_ptr<Instance> instance;
+    try {
+        Value thisValue = env->get("this");
+        if (!std::holds_alternative<std::shared_ptr<Instance>>(thisValue)) {
+            throw RuntimeError(Token(TokenType::SUPER, "super", 0, 0),
+                             "Cannot use 'super' without a valid instance.");
+        }
+        instance = std::get<std::shared_ptr<Instance>>(thisValue);
+    } catch (const std::runtime_error& e) {
+        throw RuntimeError(Token(TokenType::SUPER, "super", 0, 0),
+                          "Cannot use 'super' outside of a class method.");
+    }
+    
+    // Get the method from the superclass
+    Value method = superclass->getMethod(expr.method, instance);
+    if (std::holds_alternative<Nil>(method)) {
+        throw RuntimeError(Token(TokenType::SUPER, "super", 0, 0),
+                          "Undefined method '" + expr.method + "' in superclass.");
+    }
+    
+    return method;
 }
 
 }  // namespace izi

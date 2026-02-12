@@ -46,15 +46,18 @@ public:
 class IziClass : public Callable, public std::enable_shared_from_this<IziClass> {
 public:
     std::string className;
+    std::shared_ptr<IziClass> superclass;  // Parent class for inheritance
     std::unordered_map<std::string, Value> methods;
     std::vector<std::string> fieldNames;
     std::unordered_map<std::string, Value> fieldDefaults;
     
     IziClass(std::string name, 
+             std::shared_ptr<IziClass> super,
              std::vector<std::string> fields,
              std::unordered_map<std::string, Value> defaults,
              std::unordered_map<std::string, Value> meths)
         : className(std::move(name)),
+          superclass(std::move(super)),
           methods(std::move(meths)),
           fieldNames(std::move(fields)),
           fieldDefaults(std::move(defaults)) {}

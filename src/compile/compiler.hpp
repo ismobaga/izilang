@@ -38,6 +38,7 @@ namespace izi
         Value visit(PropertyExpr& expr) override;      // v0.3
         Value visit(SetPropertyExpr& expr) override;   // v0.3
         Value visit(ThisExpr& expr) override;          // v0.3
+        Value visit(SuperExpr& expr) override;         // v0.3
 
         // Statement visitors
         void visit(ExprStmt& stmt) override;

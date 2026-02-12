@@ -349,6 +349,14 @@ StmtPtr Parser::throwStatement() {
 
 StmtPtr Parser::classDeclaration() {
     Token name = consume(TokenType::IDENTIFIER, "Expect class name.");
+    
+    // Check for extends clause
+    std::string superclass;
+    if (match({TokenType::EXTENDS})) {
+        Token superName = consume(TokenType::IDENTIFIER, "Expect superclass name.");
+        superclass = std::string(superName.lexeme);
+    }
+    
     consume(TokenType::LEFT_BRACE, "Expect '{' after class name.");
     
     std::vector<std::unique_ptr<VarStmt>> fields;
@@ -431,6 +439,7 @@ StmtPtr Parser::classDeclaration() {
     consume(TokenType::RIGHT_BRACE, "Expect '}' after class body.");
     return std::make_unique<ClassStmt>(
         std::string(name.lexeme),
+        std::move(superclass),
         std::move(fields),
         std::move(methods)
     );
@@ -648,6 +657,13 @@ ExprPtr Parser::primary() {
     if (match({TokenType::TRUE})) return std::make_unique<LiteralExpr>(true);
     if (match({TokenType::NIL})) return std::make_unique<LiteralExpr>(Nil{});
     if (match({TokenType::THIS})) return std::make_unique<ThisExpr>();  // v0.3
+    
+    // Super expression: super.method
+    if (match({TokenType::SUPER})) {
+        consume(TokenType::DOT, "Expect '.' after 'super'.");
+        Token method = consume(TokenType::IDENTIFIER, "Expect method name after 'super.'.");
+        return std::make_unique<SuperExpr>(std::string(method.lexeme));
+    }
 
     if (match({TokenType::NUMBER})) {
         double value = std::stod(std::string(previous().lexeme));
