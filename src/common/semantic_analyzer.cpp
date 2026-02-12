@@ -149,6 +149,47 @@ Value SemanticAnalyzer::visit(GroupingExpr& expr) {
 
 Value SemanticAnalyzer::visit(CallExpr& expr) {
     expr.callee->accept(*this);
+    
+    // Check if callee is a function and validate parameter types
+    if (auto* varExpr = dynamic_cast<VariableExpr*>(expr.callee.get())) {
+        auto* funcType = lookupVariable(varExpr->name);
+        
+        // If function has type information, validate parameter count and types
+        if (funcType && funcType->kind == TypeAnnotation::Kind::Function) {
+            // Check parameter count
+            if (expr.args.size() != funcType->paramTypes.size()) {
+                addError(
+                    "Function '" + varExpr->name + "' expects " + 
+                    std::to_string(funcType->paramTypes.size()) + " arguments but got " +
+                    std::to_string(expr.args.size()),
+                    0, 0
+                );
+            } else {
+                // Check parameter types
+                for (size_t i = 0; i < expr.args.size(); ++i) {
+                    expr.args[i]->accept(*this);
+                    
+                    // Only validate if parameter has explicit type annotation
+                    if (isExplicitlyTyped(funcType->paramTypes[i].get())) {
+                        TypePtr argType = inferType(*expr.args[i]);
+                        
+                        if (!areTypesCompatible(*funcType->paramTypes[i], *argType)) {
+                            addError(
+                                "Function '" + varExpr->name + "' parameter " + 
+                                std::to_string(i + 1) + " expects " + 
+                                funcType->paramTypes[i]->toString() + " but got " +
+                                argType->toString(),
+                                0, 0
+                            );
+                        }
+                    }
+                }
+            }
+            return Nil{};
+        }
+    }
+    
+    // For non-typed or unknown functions, just visit arguments
     for (auto& arg : expr.args) {
         arg->accept(*this);
     }

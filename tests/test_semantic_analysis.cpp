@@ -418,3 +418,58 @@ TEST_CASE("Semantic Analysis: Complex Scenarios", "[semantic][integration]") {
         REQUIRE_FALSE(hasErrors(analyzer));
     }
 }
+
+TEST_CASE("Semantic Analysis: Function Call Validation", "[semantic][functions]") {
+    SECTION("Function called with correct types") {
+        std::string code = R"(
+            fn add(a: Number, b: Number): Number {
+                return a + b;
+            }
+            var result = add(10, 20);
+        )";
+        
+        auto analyzer = analyzeCode(code);
+        REQUIRE_FALSE(hasErrors(analyzer));
+    }
+    
+    SECTION("Function called with wrong argument count") {
+        std::string code = R"(
+            fn add(a: Number, b: Number): Number {
+                return a + b;
+            }
+            var result = add(10);
+        )";
+        
+        auto analyzer = analyzeCode(code);
+        REQUIRE(hasErrors(analyzer));
+        REQUIRE(hasErrorContaining(analyzer, "expects 2 arguments"));
+    }
+    
+    SECTION("Function called with wrong type") {
+        std::string code = R"(
+            fn greet(name: String): String {
+                return name;
+            }
+            var result = greet(42);
+        )";
+        
+        auto analyzer = analyzeCode(code);
+        REQUIRE(hasErrors(analyzer));
+        REQUIRE(hasErrorContaining(analyzer, "parameter"));
+        REQUIRE(hasErrorContaining(analyzer, "String"));
+        REQUIRE(hasErrorContaining(analyzer, "Number"));
+    }
+    
+    SECTION("Untyped function calls should not error") {
+        std::string code = R"(
+            fn flexible(x) {
+                return x;
+            }
+            var a = flexible(10);
+            var b = flexible("test");
+        )";
+        
+        auto analyzer = analyzeCode(code);
+        REQUIRE_FALSE(hasErrors(analyzer));
+    }
+}
