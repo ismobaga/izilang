@@ -30,6 +30,7 @@ removefiles {
 
 includedirs {
     "src",
+    "third_party",
     IZILANG_SRC
 }
 
