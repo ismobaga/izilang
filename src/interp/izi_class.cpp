@@ -59,32 +59,33 @@ int IziClass::arity() const {
     return 0;  // No constructor means no arguments
 }
 
-Value IziClass::call(Interpreter& interp, const std::vector<Value>& arguments) {
-    // Create a new instance
-    auto instance = std::make_shared<Instance>(shared_from_this());
+// Helper method to recursively initialize fields from the entire inheritance chain
+void initializeFieldsRecursive(const IziClass* klass, std::shared_ptr<Instance> instance) {
+    // First initialize superclass fields (depth-first)
+    if (klass->superclass) {
+        initializeFieldsRecursive(klass->superclass.get(), instance);
+    }
     
-    // Initialize fields from the entire inheritance chain
-    // Start with superclass fields first
-    if (superclass) {
-        for (const auto& fieldName : superclass->fieldNames) {
-            auto it = superclass->fieldDefaults.find(fieldName);
-            if (it != superclass->fieldDefaults.end()) {
-                instance->fields[fieldName] = it->second;
-            } else {
+    // Then initialize this class's fields
+    for (const auto& fieldName : klass->fieldNames) {
+        auto it = klass->fieldDefaults.find(fieldName);
+        if (it != klass->fieldDefaults.end()) {
+            instance->fields[fieldName] = it->second;
+        } else {
+            // Only initialize if not already set by a superclass
+            if (instance->fields.find(fieldName) == instance->fields.end()) {
                 instance->fields[fieldName] = Nil{};
             }
         }
     }
+}
+
+Value IziClass::call(Interpreter& interp, const std::vector<Value>& arguments) {
+    // Create a new instance
+    auto instance = std::make_shared<Instance>(shared_from_this());
     
-    // Then initialize this class's fields (can override superclass defaults)
-    for (const auto& fieldName : fieldNames) {
-        auto it = fieldDefaults.find(fieldName);
-        if (it != fieldDefaults.end()) {
-            instance->fields[fieldName] = it->second;
-        } else {
-            instance->fields[fieldName] = Nil{};
-        }
-    }
+    // Initialize fields from the entire inheritance chain (recursive)
+    initializeFieldsRecursive(this, instance);
     
     // Look for constructor or init method (init takes precedence for OOP convention)
     // Use getMethod to check the entire inheritance chain

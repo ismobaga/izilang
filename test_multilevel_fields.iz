@@ -1,0 +1,21 @@
+class GrandParent {
+    var grandField = "grand";
+    
+    fn init(name) {
+        this.name = name;
+    }
+}
+
+class Parent extends GrandParent {
+    var parentField = "parent";
+}
+
+class Child extends Parent {
+    var childField = "child";
+}
+
+var c = Child("test");
+print(c.name);
+print(c.grandField);
+print(c.parentField);
+print(c.childField);
