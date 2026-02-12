@@ -107,6 +107,72 @@ izi check --debug script.iz
 
 ---
 
+### `compile` - Compile to Native Executable
+
+Compile an IziLang source file into a standalone native executable with no runtime dependencies. The resulting executable is fully statically linked and can be distributed without requiring IziLang or any runtime libraries to be installed.
+
+**Usage:**
+```bash
+izi compile [options] <file> [-o <output>]
+```
+
+**Arguments:**
+- `<file>` - IziLang source file to compile
+- `-o <output>` - Output executable name (optional, defaults to source filename without extension)
+
+**Options:**
+- `-o <name>` - Specify output executable name
+- `--debug` - Include debug symbols in the executable
+
+**Examples:**
+```bash
+# Compile to executable with default name
+izi compile app.iz
+# Creates executable: ./app
+
+# Specify output name
+izi compile app.iz -o myapp
+# Creates executable: ./myapp
+
+# Compile with debug symbols
+izi compile --debug app.iz -o app_debug
+```
+
+**Exit Codes:**
+- `0` - Compilation successful
+- `1` - Compilation error, syntax error, or file not found
+
+**Output:**
+```
+Validating source code...
+Source code validated successfully.
+Compiling to native executable...
+Successfully compiled to: myapp
+```
+
+**Features:**
+- **No runtime dependencies** - Fully statically linked executable
+- **Standalone distribution** - Share executables without requiring IziLang installation
+- **Cross-platform** - Compiles for the host platform (Linux, macOS, Windows)
+- **Optimized binaries** - Release builds are optimized for performance
+
+**Technical Details:**
+- Uses C++20 compiler (g++, clang++, or MSVC)
+- Static linking of all C/C++ runtime libraries
+- Embeds IziLang source code directly into the executable
+- Includes the IziLang interpreter for execution
+
+**Requirements:**
+- C++20 compatible compiler installed
+- Source files for IziLang interpreter (automatically located)
+
+**Limitations:**
+- Executable size is larger (~3-4MB) due to embedded interpreter
+- Compilation time depends on C++ compiler optimization level
+- Source code is embedded (not compiled to machine code directly)
+
+---
+
 ### `test` - Run Test Files
 
 Discover and execute test files from the `examples/` and `tests/` directories.
