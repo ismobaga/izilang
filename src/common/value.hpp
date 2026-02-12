@@ -13,6 +13,7 @@ using Nil = std::monostate;
 
 class Callable;
 class VmCallable;
+class VmClass;
 struct Array;
 struct Map;
 struct Set;
@@ -28,6 +29,7 @@ using Value = std::variant<
     std::shared_ptr<Set>,
     std::shared_ptr<Callable>,
     std::shared_ptr<VmCallable>,
+    std::shared_ptr<VmClass>,
     std::shared_ptr<Instance>
     >;
 
@@ -146,6 +148,8 @@ inline std::string getTypeName(const Value& v) {
         return "function";
     } else if (std::holds_alternative<std::shared_ptr<VmCallable>>(v)) {
         return "function";
+    } else if (std::holds_alternative<std::shared_ptr<VmClass>>(v)) {
+        return "class";
     } else if (std::holds_alternative<std::shared_ptr<Instance>>(v)) {
         return "instance";
     }

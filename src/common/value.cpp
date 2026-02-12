@@ -1,10 +1,20 @@
 #include "value.hpp"
 #include "bytecode/mv_callable.hpp"
 #include "interp/izi_class.hpp"
+#include "bytecode/vm_class.hpp"
 #include <sstream>
 #include <cmath>
 
 namespace izi {
+
+std::string getInstanceClassName(const Instance& instance) {
+    if (std::holds_alternative<std::shared_ptr<IziClass>>(instance.klass)) {
+        return std::get<std::shared_ptr<IziClass>>(instance.klass)->name();
+    } else if (std::holds_alternative<std::shared_ptr<VmClass>>(instance.klass)) {
+        return std::get<std::shared_ptr<VmClass>>(instance.klass)->name();
+    }
+    return "unknown";
+}
 
 std::string valueToString(const Value& v) {
     std::ostringstream oss;
@@ -34,7 +44,7 @@ std::string valueToString(const Value& v) {
         oss << "<vm fn " << std::get<std::shared_ptr<VmCallable>>(v)->name() << ">";
     } else if (std::holds_alternative<std::shared_ptr<Instance>>(v)) {
         auto instance = std::get<std::shared_ptr<Instance>>(v);
-        oss << "<" << instance->klass->name() << " instance>";
+        oss << "<" << getInstanceClassName(*instance) << " instance>";
     } else {
         oss << "<unknown>";
     }
@@ -62,7 +72,7 @@ void printValue(const Value& v) {
         std::cout << "<vm fn " << std::get<std::shared_ptr<VmCallable>>(v)->name() << ">";
     } else if (std::holds_alternative<std::shared_ptr<Instance>>(v)) {
         auto instance = std::get<std::shared_ptr<Instance>>(v);
-        std::cout << "<" << instance->klass->name() << " instance>";
+        std::cout << "<" << getInstanceClassName(*instance) << " instance>";
     } else {
         std::cout << "<unknown>";
     }

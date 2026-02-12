@@ -4,6 +4,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <variant>
 
 #include "common/callable.hpp"
 #include "common/value.hpp"
@@ -14,13 +15,15 @@ namespace izi {
 
 class Interpreter;
 class IziClass;
+class VmClass;
 
 // Represents an instance of a class
 struct Instance {
-    std::shared_ptr<IziClass> klass;
+    std::variant<std::shared_ptr<IziClass>, std::shared_ptr<VmClass>> klass;
     std::unordered_map<std::string, Value> fields;
     
     explicit Instance(std::shared_ptr<IziClass> k) : klass(std::move(k)) {}
+    explicit Instance(std::shared_ptr<VmClass> k) : klass(std::move(k)) {}
 };
 
 // Binds a method to an instance
