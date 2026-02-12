@@ -126,11 +126,17 @@ izi hello.iz
 
 ## Documentation
 
+### Getting Started
 - **[Getting Started](docs/GETTING_STARTED.md)** - Installation, basics, examples
 - **[CLI Reference](docs/CLI_REFERENCE.md)** - Complete command-line guide
 - **[Editor Setup](docs/EDITOR_SETUP.md)** - VS Code, Vim, Emacs integration
 - **[Troubleshooting](docs/ERRORS_TROUBLESHOOTING.md)** - Common errors and solutions
-- **[Roadmap](docs/ROADMAP.md)** - Development plans and milestones
+
+### Project Vision & Planning
+- **[Language Manifesto](LANGUAGE_MANIFESTO.md)** - Core philosophy, principles, and identity
+- **[v1.x Roadmap](V1_ROADMAP.md)** - Detailed development plan from v0.3 to v2.0
+- **[Feature Inventory](FEATURE_INVENTORY.md)** - Complete feature catalog with status
+- **[Analysis Summary](ANALYSIS_SUMMARY.md)** - Project analysis overview
 
 ## Language Examples
 
@@ -266,22 +272,38 @@ Areas where help is needed:
 - Editor extensions and tooling
 - Bug fixes and performance improvements
 
-## Roadmap
+## Vision & Roadmap
 
-**v0.2** (Current) - Tooling & Developer Experience ✅
-- ✅ CLI expansion (run, build, check, test, repl)
-- ✅ Enhanced error messages with file context
-- ✅ Interactive REPL with special commands
-- 🚧 Code formatter (`izi fmt`)
-- 🚧 LSP server MVP
+**IziLang** (from "easy") is a modern, expressive programming language that makes everyday programming tasks easy without sacrificing power.
 
-**v0.3** (Planned) - Language Power & Performance
-- Static/gradual typing
-- Advanced OOP features
-- Performance optimizations
-- Concurrency primitives
+### Current Status: v0.2 ✅
 
-**[→ Full Roadmap](docs/ROADMAP.md)**
+**Core Features Complete**:
+- ✅ Full language implementation (functions, closures, control flow)
+- ✅ Pattern matching and exception handling
+- ✅ Module system with 46 standard library functions
+- ✅ Dual execution modes (interpreter + bytecode VM)
+- ✅ Excellent error messages with source context
+
+### Next Milestones
+
+**v0.3** (Q2 2026) - Language Power
+- Classes and OOP
+- Gradual typing system
+- Semantic analysis
+- VM stabilization
+
+**v0.4** (Q3 2026) - Developer Experience
+- REPL, code formatter, LSP server
+- Test framework
+- Package manager MVP
+
+**v1.0** (Q4 2026) - Stable Release 🎉
+- Production-ready
+- Backward compatibility guarantee
+- Complete tooling ecosystem
+
+**[→ Complete Roadmap & Analysis](V1_ROADMAP.md)** | **[→ Language Manifesto](LANGUAGE_MANIFESTO.md)** | **[→ Feature Inventory](FEATURE_INVENTORY.md)**
 
 ## License
 
