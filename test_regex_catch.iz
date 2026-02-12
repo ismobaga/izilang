@@ -1,0 +1,15 @@
+// Test std.regex error handling
+import * as regex from "std.regex";
+
+print("Testing regex.match with try-catch");
+try {
+    var text = "Hello World";
+    var pattern = "\\w+";
+    print("Calling regex.match...");
+    var matches = regex.match(text, pattern);
+    print("Success! Matches:", matches);
+} catch (e) {
+    print("Error caught:", e);
+}
+
+print("Done!");

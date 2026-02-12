@@ -1,0 +1,45 @@
+// Test std.json module
+import * as json from "std.json";
+
+print("Testing std.json module:");
+print("=======================");
+
+// Test JSON stringify
+var obj = {
+    "name": "IziLang",
+    "version": 0.3,
+    "features": ["modules", "oop", "pattern matching"]
+};
+
+var jsonStr = json.stringify(obj);
+print("Stringified JSON:", jsonStr);
+
+// Test JSON parse
+var parsed = json.parse(jsonStr);
+print("Parsed back:", parsed);
+
+// Test with simple values
+var num = json.parse("42");
+print("Parsed number:", num);
+assert(num == 42, "Should parse number correctly");
+
+var bool = json.parse("true");
+print("Parsed boolean:", bool);
+assert(bool == true, "Should parse boolean correctly");
+
+var nil = json.parse("null");
+print("Parsed null:", nil);
+assert(nil == nil, "Should parse null correctly");
+
+var str = json.parse(json.stringify("hello world"));
+print("Parsed string:", str);
+assert(str == "hello world", "Should parse string correctly");
+
+// Test with arrays
+var arr = [1, 2, 3, 4, 5];
+var arrJson = json.stringify(arr);
+print("Array JSON:", arrJson);
+var parsedArr = json.parse(arrJson);
+print("Parsed array:", parsedArr);
+
+print("\nAll JSON tests passed!");

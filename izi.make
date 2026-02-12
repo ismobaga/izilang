@@ -89,6 +89,7 @@ GENERATED += $(OBJDIR)/value.o
 GENERATED += $(OBJDIR)/vm.o
 GENERATED += $(OBJDIR)/vm_class.o
 GENERATED += $(OBJDIR)/vm_native.o
+GENERATED += $(OBJDIR)/vm_native_modules.o
 GENERATED += $(OBJDIR)/vm_user_function.o
 OBJECTS += $(OBJDIR)/cli.o
 OBJECTS += $(OBJDIR)/compiler.o
@@ -108,6 +109,7 @@ OBJECTS += $(OBJDIR)/value.o
 OBJECTS += $(OBJDIR)/vm.o
 OBJECTS += $(OBJDIR)/vm_class.o
 OBJECTS += $(OBJDIR)/vm_native.o
+OBJECTS += $(OBJDIR)/vm_native_modules.o
 OBJECTS += $(OBJDIR)/vm_user_function.o
 
 # Rules
@@ -182,6 +184,9 @@ $(OBJDIR)/vm_class.o: src/bytecode/vm_class.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/vm_native.o: src/bytecode/vm_native.cpp
+	@echo "$(notdir $<)"
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/vm_native_modules.o: src/bytecode/vm_native_modules.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/vm_user_function.o: src/bytecode/vm_user_function.cpp

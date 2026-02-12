@@ -1,0 +1,37 @@
+// Test std.json module (simple version)
+import * as json from "std.json";
+
+print("Testing std.json module:");
+print("=======================");
+
+// Test with simple values
+var num = json.parse("42");
+print("Parsed number:", num);
+
+var bool = json.parse("true");
+print("Parsed boolean:", bool);
+
+var nil = json.parse("null");
+print("Parsed null:", nil);
+
+var str = json.stringify("hello world");
+print("Stringify string:", str);
+var parsed = json.parse(str);
+print("Parse string back:", parsed);
+
+// Test with arrays
+var arr = [1, 2, 3, 4, 5];
+var arrJson = json.stringify(arr);
+print("Array JSON:", arrJson);
+var parsedArr = json.parse(arrJson);
+print("Parsed array:", parsedArr);
+
+// Test with objects
+var obj = {"name": "IziLang", "version": 0.3};
+var objJson = json.stringify(obj);
+print("Object JSON:", objJson);
+var parsedObj = json.parse(objJson);
+print("Parsed object:", parsedObj);
+print("Object name:", parsedObj);
+
+print("\nJSON module tests completed!");

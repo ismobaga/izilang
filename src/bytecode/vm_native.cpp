@@ -1314,10 +1314,9 @@ Value vmNativeRegexMatch(VM& vm, const std::vector<Value>& arguments) {
         
         if (std::regex_search(text, match, re)) {
             auto arr = std::make_shared<Array>();
-            for (const auto& m : match) {
-                arr->elements.push_back(std::string(m.str()));
-            }
-            return arr;
+            // Only return the first match (full match)
+            arr->elements.push_back(match[0].str());
+            return Value{arr};
         }
         
         return Nil{};

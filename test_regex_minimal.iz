@@ -1,0 +1,19 @@
+// Test std.regex module (minimal)
+import * as regex from "std.regex";
+
+print("Test 1: regex.test");
+var hasWorld = regex.test("Hello World", "World");
+print("Result:", hasWorld);
+
+print("\nTest 2: regex.replace");
+var replaced = regex.replace("Hello World", "World", "IziLang");
+print("Result:", replaced);
+
+print("\nTest 3: regex.match");
+var text = "Hello World";
+var pattern = "\\w+";
+print("About to call regex.match...");
+var matches = regex.match(text, pattern);
+print("Match result:", matches);
+
+print("\nDone!");
