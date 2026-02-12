@@ -8,6 +8,9 @@
 #include <iomanip>
 #include <cctype>
 #include <sys/stat.h>
+#include <thread>
+#include <regex>
+#include <ctime>
 
 namespace izi {
 
@@ -938,6 +941,421 @@ Value vmNativeLogDebug(VM& vm, const std::vector<Value>& arguments) {
     }
     std::cout << "[DEBUG] " << std::get<std::string>(arguments[0]) << "\n";
     return Nil{};
+}
+
+// std.time functions
+Value vmNativeTimeNow(VM& vm, const std::vector<Value>& arguments) {
+    if (arguments.size() != 0) {
+        throw std::runtime_error("time.now() takes no arguments.");
+    }
+    
+    using namespace std::chrono;
+    auto now = system_clock::now();
+    auto ms = duration_cast<milliseconds>(now.time_since_epoch()).count();
+    return static_cast<double>(ms) / 1000.0;
+}
+
+Value vmNativeTimeSleep(VM& vm, const std::vector<Value>& arguments) {
+    if (arguments.size() != 1) {
+        throw std::runtime_error("time.sleep() takes exactly one argument.");
+    }
+    if (!std::holds_alternative<double>(arguments[0])) {
+        throw std::runtime_error("Argument to time.sleep() must be a number (seconds).");
+    }
+    
+    double seconds = std::get<double>(arguments[0]);
+    if (seconds < 0) {
+        throw std::runtime_error("time.sleep() argument must be non-negative.");
+    }
+    
+    auto duration = std::chrono::milliseconds(static_cast<long long>(seconds * 1000));
+    std::this_thread::sleep_for(duration);
+    
+    return Nil{};
+}
+
+Value vmNativeTimeFormat(VM& vm, const std::vector<Value>& arguments) {
+    if (arguments.size() < 1 || arguments.size() > 2) {
+        throw std::runtime_error("time.format() takes 1 or 2 arguments.");
+    }
+    if (!std::holds_alternative<double>(arguments[0])) {
+        throw std::runtime_error("First argument to time.format() must be a number (timestamp).");
+    }
+    
+    double timestamp = std::get<double>(arguments[0]);
+    std::string format = "%Y-%m-%d %H:%M:%S";
+    
+    if (arguments.size() == 2) {
+        if (!std::holds_alternative<std::string>(arguments[1])) {
+            throw std::runtime_error("Second argument to time.format() must be a string (format).");
+        }
+        format = std::get<std::string>(arguments[1]);
+    }
+    
+    std::time_t time = static_cast<std::time_t>(timestamp);
+    std::tm* tm_info = std::localtime(&time);
+    
+    char buffer[256];
+    std::strftime(buffer, sizeof(buffer), format.c_str(), tm_info);
+    
+    return std::string(buffer);
+}
+
+// std.json helper functions (shared with interpreter version)
+static Value vmJsonValueFromString(const std::string& jsonStr, size_t& pos);
+
+static void vmSkipWhitespace(const std::string& str, size_t& pos) {
+    while (pos < str.size() && std::isspace(str[pos])) {
+        ++pos;
+    }
+}
+
+static Value vmParseJsonNull(const std::string& str, size_t& pos) {
+    if (str.substr(pos, 4) == "null") {
+        pos += 4;
+        return Nil{};
+    }
+    throw std::runtime_error("Invalid JSON: expected 'null'");
+}
+
+static Value vmParseJsonBool(const std::string& str, size_t& pos) {
+    if (str.substr(pos, 4) == "true") {
+        pos += 4;
+        return true;
+    }
+    if (str.substr(pos, 5) == "false") {
+        pos += 5;
+        return false;
+    }
+    throw std::runtime_error("Invalid JSON: expected boolean");
+}
+
+static Value vmParseJsonNumber(const std::string& str, size_t& pos) {
+    size_t start = pos;
+    if (str[pos] == '-') ++pos;
+    
+    while (pos < str.size() && std::isdigit(str[pos])) ++pos;
+    
+    if (pos < str.size() && str[pos] == '.') {
+        ++pos;
+        while (pos < str.size() && std::isdigit(str[pos])) ++pos;
+    }
+    
+    if (pos < str.size() && (str[pos] == 'e' || str[pos] == 'E')) {
+        ++pos;
+        if (pos < str.size() && (str[pos] == '+' || str[pos] == '-')) ++pos;
+        while (pos < str.size() && std::isdigit(str[pos])) ++pos;
+    }
+    
+    return std::stod(str.substr(start, pos - start));
+}
+
+static Value vmParseJsonString(const std::string& str, size_t& pos) {
+    if (str[pos] != '"') {
+        throw std::runtime_error("Invalid JSON: expected string");
+    }
+    ++pos;
+    
+    std::string result;
+    while (pos < str.size() && str[pos] != '"') {
+        if (str[pos] == '\\') {
+            ++pos;
+            if (pos >= str.size()) {
+                throw std::runtime_error("Invalid JSON: unterminated string escape");
+            }
+            switch (str[pos]) {
+                case '"': result += '"'; break;
+                case '\\': result += '\\'; break;
+                case '/': result += '/'; break;
+                case 'b': result += '\b'; break;
+                case 'f': result += '\f'; break;
+                case 'n': result += '\n'; break;
+                case 'r': result += '\r'; break;
+                case 't': result += '\t'; break;
+                default:
+                    throw std::runtime_error("Invalid JSON: unknown escape sequence");
+            }
+        } else {
+            result += str[pos];
+        }
+        ++pos;
+    }
+    
+    if (pos >= str.size()) {
+        throw std::runtime_error("Invalid JSON: unterminated string");
+    }
+    ++pos;
+    
+    return result;
+}
+
+static Value vmParseJsonArray(const std::string& str, size_t& pos) {
+    if (str[pos] != '[') {
+        throw std::runtime_error("Invalid JSON: expected array");
+    }
+    ++pos;
+    
+    auto arr = std::make_shared<Array>();
+    vmSkipWhitespace(str, pos);
+    
+    if (pos < str.size() && str[pos] == ']') {
+        ++pos;
+        return arr;
+    }
+    
+    while (pos < str.size()) {
+        arr->elements.push_back(vmJsonValueFromString(str, pos));
+        vmSkipWhitespace(str, pos);
+        
+        if (pos >= str.size()) {
+            throw std::runtime_error("Invalid JSON: unterminated array");
+        }
+        
+        if (str[pos] == ']') {
+            ++pos;
+            return arr;
+        }
+        
+        if (str[pos] != ',') {
+            throw std::runtime_error("Invalid JSON: expected ',' or ']' in array");
+        }
+        ++pos;
+        vmSkipWhitespace(str, pos);
+    }
+    
+    throw std::runtime_error("Invalid JSON: unterminated array");
+}
+
+static Value vmParseJsonObject(const std::string& str, size_t& pos) {
+    if (str[pos] != '{') {
+        throw std::runtime_error("Invalid JSON: expected object");
+    }
+    ++pos;
+    
+    auto map = std::make_shared<Map>();
+    vmSkipWhitespace(str, pos);
+    
+    if (pos < str.size() && str[pos] == '}') {
+        ++pos;
+        return map;
+    }
+    
+    while (pos < str.size()) {
+        vmSkipWhitespace(str, pos);
+        
+        if (str[pos] != '"') {
+            throw std::runtime_error("Invalid JSON: expected string key in object");
+        }
+        
+        Value keyVal = vmParseJsonString(str, pos);
+        std::string key = std::get<std::string>(keyVal);
+        
+        vmSkipWhitespace(str, pos);
+        if (pos >= str.size() || str[pos] != ':') {
+            throw std::runtime_error("Invalid JSON: expected ':' after object key");
+        }
+        ++pos;
+        vmSkipWhitespace(str, pos);
+        
+        Value value = vmJsonValueFromString(str, pos);
+        map->entries[key] = value;
+        
+        vmSkipWhitespace(str, pos);
+        
+        if (pos >= str.size()) {
+            throw std::runtime_error("Invalid JSON: unterminated object");
+        }
+        
+        if (str[pos] == '}') {
+            ++pos;
+            return map;
+        }
+        
+        if (str[pos] != ',') {
+            throw std::runtime_error("Invalid JSON: expected ',' or '}' in object");
+        }
+        ++pos;
+    }
+    
+    throw std::runtime_error("Invalid JSON: unterminated object");
+}
+
+static Value vmJsonValueFromString(const std::string& jsonStr, size_t& pos) {
+    vmSkipWhitespace(jsonStr, pos);
+    
+    if (pos >= jsonStr.size()) {
+        throw std::runtime_error("Invalid JSON: unexpected end of input");
+    }
+    
+    char c = jsonStr[pos];
+    
+    if (c == 'n') return vmParseJsonNull(jsonStr, pos);
+    if (c == 't' || c == 'f') return vmParseJsonBool(jsonStr, pos);
+    if (c == '"') return vmParseJsonString(jsonStr, pos);
+    if (c == '[') return vmParseJsonArray(jsonStr, pos);
+    if (c == '{') return vmParseJsonObject(jsonStr, pos);
+    if (c == '-' || std::isdigit(c)) return vmParseJsonNumber(jsonStr, pos);
+    
+    throw std::runtime_error("Invalid JSON: unexpected character");
+}
+
+static std::string vmValueToJson(const Value& value) {
+    if (std::holds_alternative<Nil>(value)) {
+        return "null";
+    } else if (std::holds_alternative<bool>(value)) {
+        return std::get<bool>(value) ? "true" : "false";
+    } else if (std::holds_alternative<double>(value)) {
+        double d = std::get<double>(value);
+        if (std::isnan(d) || std::isinf(d)) {
+            return "null";
+        }
+        std::ostringstream oss;
+        oss << std::fixed << std::setprecision(10) << d;
+        std::string str = oss.str();
+        // Remove trailing zeros
+        auto pos = str.find_last_not_of('0');
+        if (pos != std::string::npos) {
+            str.erase(pos + 1, std::string::npos);
+            if (!str.empty() && str.back() == '.') {
+                str.pop_back();
+            }
+        }
+        return str;
+    } else if (std::holds_alternative<std::string>(value)) {
+        std::string str = std::get<std::string>(value);
+        std::ostringstream oss;
+        oss << '"';
+        for (char c : str) {
+            switch (c) {
+                case '"': oss << "\\\""; break;
+                case '\\': oss << "\\\\"; break;
+                case '\b': oss << "\\b"; break;
+                case '\f': oss << "\\f"; break;
+                case '\n': oss << "\\n"; break;
+                case '\r': oss << "\\r"; break;
+                case '\t': oss << "\\t"; break;
+                default: oss << c; break;
+            }
+        }
+        oss << '"';
+        return oss.str();
+    } else if (std::holds_alternative<std::shared_ptr<Array>>(value)) {
+        auto arr = std::get<std::shared_ptr<Array>>(value);
+        std::ostringstream oss;
+        oss << '[';
+        for (size_t i = 0; i < arr->elements.size(); ++i) {
+            if (i > 0) oss << ',';
+            oss << vmValueToJson(arr->elements[i]);
+        }
+        oss << ']';
+        return oss.str();
+    } else if (std::holds_alternative<std::shared_ptr<Map>>(value)) {
+        auto map = std::get<std::shared_ptr<Map>>(value);
+        std::ostringstream oss;
+        oss << '{';
+        bool first = true;
+        for (const auto& [key, val] : map->entries) {
+            if (!first) oss << ',';
+            first = false;
+            oss << '"' << key << "\":" << vmValueToJson(val);
+        }
+        oss << '}';
+        return oss.str();
+    }
+    
+    return "null";
+}
+
+Value vmNativeJsonParse(VM& vm, const std::vector<Value>& arguments) {
+    if (arguments.size() != 1) {
+        throw std::runtime_error("json.parse() takes exactly one argument.");
+    }
+    if (!std::holds_alternative<std::string>(arguments[0])) {
+        throw std::runtime_error("Argument to json.parse() must be a string.");
+    }
+    
+    std::string jsonStr = std::get<std::string>(arguments[0]);
+    size_t pos = 0;
+    
+    try {
+        Value result = vmJsonValueFromString(jsonStr, pos);
+        vmSkipWhitespace(jsonStr, pos);
+        if (pos < jsonStr.size()) {
+            throw std::runtime_error("Invalid JSON: unexpected characters after value");
+        }
+        return result;
+    } catch (const std::exception& e) {
+        throw std::runtime_error(std::string("JSON parse error: ") + e.what());
+    }
+}
+
+Value vmNativeJsonStringify(VM& vm, const std::vector<Value>& arguments) {
+    if (arguments.size() != 1) {
+        throw std::runtime_error("json.stringify() takes exactly one argument.");
+    }
+    
+    try {
+        return vmValueToJson(arguments[0]);
+    } catch (const std::exception& e) {
+        throw std::runtime_error(std::string("JSON stringify error: ") + e.what());
+    }
+}
+
+// std.regex functions
+Value vmNativeRegexMatch(VM& vm, const std::vector<Value>& arguments) {
+    if (arguments.size() != 2) {
+        throw std::runtime_error("regex.match() takes exactly two arguments.");
+    }
+    if (!std::holds_alternative<std::string>(arguments[0]) ||
+        !std::holds_alternative<std::string>(arguments[1])) {
+        throw std::runtime_error("Both arguments to regex.match() must be strings.");
+    }
+    
+    // NOTE: regex.match() is currently disabled due to a memory issue
+    // Use regex.test() and regex.replace() for now
+    throw std::runtime_error("regex.match() is currently disabled. Use regex.test() or regex.replace() instead.");
+}
+
+Value vmNativeRegexReplace(VM& vm, const std::vector<Value>& arguments) {
+    if (arguments.size() != 3) {
+        throw std::runtime_error("regex.replace() takes exactly three arguments.");
+    }
+    if (!std::holds_alternative<std::string>(arguments[0]) ||
+        !std::holds_alternative<std::string>(arguments[1]) ||
+        !std::holds_alternative<std::string>(arguments[2])) {
+        throw std::runtime_error("All arguments to regex.replace() must be strings.");
+    }
+    
+    std::string text = std::get<std::string>(arguments[0]);
+    std::string pattern = std::get<std::string>(arguments[1]);
+    std::string replacement = std::get<std::string>(arguments[2]);
+    
+    try {
+        std::regex re(pattern);
+        return std::regex_replace(text, re, replacement);
+    } catch (const std::regex_error& e) {
+        throw std::runtime_error(std::string("Regex error: ") + e.what());
+    }
+}
+
+Value vmNativeRegexTest(VM& vm, const std::vector<Value>& arguments) {
+    if (arguments.size() != 2) {
+        throw std::runtime_error("regex.test() takes exactly two arguments.");
+    }
+    if (!std::holds_alternative<std::string>(arguments[0]) ||
+        !std::holds_alternative<std::string>(arguments[1])) {
+        throw std::runtime_error("Both arguments to regex.test() must be strings.");
+    }
+    
+    std::string text = std::get<std::string>(arguments[0]);
+    std::string pattern = std::get<std::string>(arguments[1]);
+    
+    try {
+        std::regex re(pattern);
+        return std::regex_search(text, re);
+    } catch (const std::regex_error& e) {
+        throw std::runtime_error(std::string("Regex error: ") + e.what());
+    }
 }
 
 void registerVmNatives(VM& vm) {

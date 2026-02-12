@@ -1,0 +1,12 @@
+// Test simple regex operations
+import * as regex from "std.regex";
+
+print("Test regex.test:");
+var result1 = regex.test("Hello World", "World");
+print("  Result:", result1);
+
+print("\nTest regex.replace:");
+var result2 = regex.replace("Hello World", "World", "IziLang");
+print("  Result:", result2);
+
+print("\nDone!");

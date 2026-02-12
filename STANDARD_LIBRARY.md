@@ -349,18 +349,222 @@ if (unknown == nil) {
 - Uses `_putenv_s()` on Windows for writing
 - Environment variable changes only affect the current process and child processes
 - Variable names and values are case-sensitive on Linux/macOS, case-insensitive on Windows
-}
-```
 
-## json - JSON Parsing (Placeholder)
+## time - Time and Sleep Operations
 
-JSON parsing and generation module. *Coming soon.*
+Time-related functions for getting current time, sleeping, and formatting timestamps.
 
 ### Module Import
 
 ```izilang
-import "json";
+import * as time from "std.time";
+var now = time.now();
+time.sleep(1.5);
 ```
+
+Or import specific functions:
+```izilang
+import { now, sleep, format } from "std.time";
+```
+
+### Functions
+
+**Time Operations:**
+- `now(): Number` - Get current Unix timestamp in seconds (as floating point with millisecond precision)
+- `sleep(seconds: Number): Nil` - Sleep for the specified number of seconds (supports fractional seconds)
+- `format(timestamp: Number, format?: String): String` - Format a Unix timestamp as a human-readable string
+
+### Format Specifiers
+
+The `format()` function accepts standard C `strftime` format specifiers:
+
+- `%Y` - 4-digit year (e.g., 2026)
+- `%m` - Month (01-12)
+- `%d` - Day of month (01-31)
+- `%H` - Hour (00-23)
+- `%M` - Minute (00-59)
+- `%S` - Second (00-59)
+- Default format: `"%Y-%m-%d %H:%M:%S"`
+
+### Example
+
+```izilang
+import * as time from "std.time";
+
+// Get current time
+var now = time.now();
+print("Current timestamp:", now);  // e.g., 1708635123.456
+
+// Format with default format
+var formatted = time.format(now);
+print("Formatted:", formatted);  // "2026-02-12 21:15:23"
+
+// Custom format
+var dateOnly = time.format(now, "%Y-%m-%d");
+print("Date:", dateOnly);  // "2026-02-12"
+
+var timeOnly = time.format(now, "%H:%M:%S");
+print("Time:", timeOnly);  // "21:15:23"
+
+// Sleep for 1.5 seconds
+print("Sleeping...");
+time.sleep(1.5);
+print("Done!");
+```
+
+## json - JSON Parsing and Serialization
+
+Parse JSON strings into IziLang values and serialize IziLang values to JSON strings.
+
+### Module Import
+
+```izilang
+import * as json from "std.json";
+var data = json.parse('{"name": "IziLang"}');
+var jsonStr = json.stringify(data);
+```
+
+Or import specific functions:
+```izilang
+import { parse, stringify } from "std.json";
+```
+
+### Functions
+
+**JSON Operations:**
+- `parse(jsonString: String): Any` - Parse a JSON string into an IziLang value
+- `stringify(value: Any): String` - Convert an IziLang value to a JSON string
+
+### Supported Types
+
+| IziLang Type | JSON Type | Example |
+|--------------|-----------|---------|
+| `nil` | `null` | `nil` → `"null"` |
+| `bool` | `boolean` | `true` → `"true"` |
+| `double` | `number` | `42.5` → `"42.5"` |
+| `string` | `string` | `"hello"` → `"\"hello\""` |
+| `Array` | `array` | `[1, 2]` → `"[1,2]"` |
+| `Map` | `object` | `{a: 1}` → `"{\"a\":1}"` |
+
+### Example
+
+```izilang
+import * as json from "std.json";
+
+// Parse JSON
+var numJson = "42";
+var num = json.parse(numJson);
+print(num);  // 42
+
+var arrayJson = '[1, 2, 3, "four"]';
+var arr = json.parse(arrayJson);
+print(arr);  // [1, 2, 3, four]
+
+var objJson = '{"name": "IziLang", "version": 0.3}';
+var obj = json.parse(objJson);
+print(obj);  // {name: IziLang, version: 0.3}
+
+// Stringify values
+print(json.stringify(nil));  // "null"
+print(json.stringify(true));  // "true"
+print(json.stringify(42));  // "42"
+print(json.stringify("hello"));  // "\"hello\""
+print(json.stringify([1, 2, 3]));  // "[1,2,3]"
+print(json.stringify({"a": 1, "b": 2}));  // "{\"a\":1,\"b\":2}"
+
+// Round-trip conversion
+var data = {"users": ["alice", "bob"], "count": 2};
+var jsonStr = json.stringify(data);
+var parsed = json.parse(jsonStr);
+print(parsed);  // {users: [alice, bob], count: 2}
+```
+
+### Notes
+
+- JSON parsing is strict and will throw an error for invalid JSON
+- NaN and Infinity numbers are converted to `null` during stringify
+- Object keys must be strings in JSON
+- Circular references are not supported and will cause undefined behavior
+
+## regex - Regular Expression Operations
+
+Pattern matching and string replacement using regular expressions.
+
+### Module Import
+
+```izilang
+import * as regex from "std.regex";
+var hasMatch = regex.test("Hello World", "World");
+```
+
+Or import specific functions:
+```izilang
+import { test, replace } from "std.regex";
+```
+
+### Functions
+
+**Regex Operations:**
+- `test(text: String, pattern: String): Bool` - Test if a pattern matches anywhere in the text
+- `replace(text: String, pattern: String, replacement: String): String` - Replace all matches of pattern with replacement
+- ~~`match(text: String, pattern: String): Array | Nil`~~ - **Currently disabled due to a bug**
+
+### Pattern Syntax
+
+IziLang uses C++11 ECMAScript regex syntax:
+
+- `.` - Match any character
+- `*` - Match 0 or more
+- `+` - Match 1 or more
+- `?` - Match 0 or 1
+- `^` - Start of string
+- `$` - End of string
+- `[abc]` - Character class
+- `[^abc]` - Negated character class
+- `\d` - Digit (use `\\d` in string literals)
+- `\w` - Word character (use `\\w` in string literals)
+- `\s` - Whitespace (use `\\s` in string literals)
+- `(...)` - Capture group
+
+### Example
+
+```izilang
+import * as regex from "std.regex";
+
+// Test for pattern existence
+var text = "Hello, World! Welcome to IziLang.";
+print(regex.test(text, "World"));  // true
+print(regex.test(text, "xyz"));    // false
+
+// Case-insensitive test (use (?i) flag in pattern)
+print(regex.test(text, "(?i)world"));  // true
+
+// Replace patterns
+var replaced = regex.replace(text, "World", "Universe");
+print(replaced);  // "Hello, Universe! Welcome to IziLang."
+
+// Replace all digits
+var withDigits = "abc123def456";
+var noDigits = regex.replace(withDigits, "\\d+", "X");
+print(noDigits);  // "abcXdefX"
+
+// Remove all spaces
+var spaced = "a b c d";
+var compact = regex.replace(spaced, " ", "");
+print(compact);  // "abcd"
+
+// Replace with capture groups
+var dated = "Date: 2026-02-12";
+var reformatted = regex.replace(dated, "(\\d{4})-(\\d{2})-(\\d{2})", "$3/$2/$1");
+print(reformatted);  // "Date: 12/02/2026"
+```
+
+### Notes
+
+- Regex patterns use C++11 ECMAScript syntax (similar to JavaScript)
+- Backslashes in patterns must be escaped in string literals (e.g., `"\\d+"` for digits)
+- `replace()` replaces **all** matches, not just the first one
+- `match()` is currently disabled due to a segmentation fault bug and will throw an error if called
 
 ## http - HTTP Client (Placeholder)
 
@@ -398,7 +602,8 @@ These functions are available globally without imports:
 ## Known Limitations
 
 - The `fileExists()` function uses `<sys/stat.h>` which is POSIX-specific and may not work on all platforms
-- JSON and HTTP modules are placeholders for future implementation
+- HTTP module is a placeholder for future implementation
+- `regex.match()` is temporarily disabled due to a segmentation fault issue; use `regex.test()` and `regex.replace()` instead
 
 ## Module System Examples
 

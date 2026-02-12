@@ -2,6 +2,7 @@
 #include "common/value.hpp"
 #include "bytecode/vm_user_function.hpp"
 #include "bytecode/vm_class.hpp"
+#include "bytecode/vm_native_modules.hpp"
 #include "parse/lexer.hpp"
 #include "parse/parser.hpp"
 #include <stdexcept>
@@ -336,7 +337,20 @@ void BytecodeCompiler::visit(FunctionStmt& stmt) {
 }
 
 void BytecodeCompiler::visit(ImportStmt& stmt) {
-    std::string modulePath = normalizeModulePath(stmt.module);
+    std::string modulePath = stmt.module;  // Use original module name first
+    
+    // Check if this is a native module - if so, skip compilation
+    if (isVmNativeModule(modulePath)) {
+        // Native modules are registered at VM initialization
+        // Mark as imported to prevent duplicate processing
+        if (importedModules) {
+            importedModules->insert(modulePath);
+        }
+        return;
+    }
+    
+    // For file-based modules, normalize the path
+    modulePath = normalizeModulePath(stmt.module);
     
     // Check if module is already imported
     if (importedModules && importedModules->contains(modulePath)) {

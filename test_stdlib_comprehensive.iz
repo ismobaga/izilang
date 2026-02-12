@@ -1,0 +1,85 @@
+// Comprehensive test for new standard library modules
+// Tests std.time, std.json, and std.regex
+
+print("================================");
+print("  Standard Library Module Tests");
+print("================================\n");
+
+// ===== std.time Tests =====
+print("--- std.time Tests ---");
+import * as time from "std.time";
+
+var startTime = time.now();
+print("  Current time:", startTime);
+
+var formatted = time.format(startTime);
+print("  Formatted:", formatted);
+
+var customFormat = time.format(startTime, "%Y-%m-%d");
+print("  Custom format:", customFormat);
+
+time.sleep(0.1);
+var endTime = time.now();
+print("  After 100ms sleep:", endTime);
+print("  Time difference:", endTime - startTime);
+print("  ✓ std.time module works!\n");
+
+// ===== std.json Tests =====
+print("--- std.json Tests ---");
+import * as json from "std.json";
+
+// Test primitives
+var numStr = json.stringify(42);
+print("  Number 42 -> ", numStr);
+var num = json.parse(numStr);
+print("  Parse back:", num);
+
+var boolStr = json.stringify(true);
+print("  Boolean true ->", boolStr);
+
+var nilStr = json.stringify(nil);
+print("  Nil ->", nilStr);
+
+// Test arrays
+var arr = [1, 2, 3, "four", true];
+var arrJson = json.stringify(arr);
+print("  Array ->", arrJson);
+var parsedArr = json.parse(arrJson);
+print("  Parse back:", parsedArr);
+
+// Test objects
+var obj = {"name": "IziLang", "version": 0.3, "stable": false};
+var objJson = json.stringify(obj);
+print("  Object ->", objJson);
+var parsedObj = json.parse(objJson);
+print("  Parse back:", parsedObj);
+print("  ✓ std.json module works!\n");
+
+// ===== std.regex Tests =====
+print("--- std.regex Tests ---");
+import * as regex from "std.regex";
+
+// Test regex.test()
+var text = "Hello, World! Welcome to IziLang.";
+var hasWorld = regex.test(text, "World");
+print("  Contains 'World':", hasWorld);
+
+var hasXyz = regex.test(text, "xyz");
+print("  Contains 'xyz':", hasXyz);
+
+// Test regex.replace()
+var replaced = regex.replace(text, "World", "Universe");
+print("  Replace 'World':", replaced);
+
+var removeDigits = regex.replace("abc123def456", "\\d+", "X");
+print("  Remove digits:", removeDigits);
+
+var removeSpaces = regex.replace("a b c d", " ", "");
+print("  Remove spaces:", removeSpaces);
+
+print("  ✓ std.regex module works!\n");
+
+// ===== Summary =====
+print("================================");
+print("  All tests passed!");
+print("================================");

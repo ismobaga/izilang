@@ -128,6 +128,20 @@ auto nativeFsWrite(Interpreter& interp, const std::vector<Value>& arguments) -> 
 auto nativeFsAppend(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 auto nativeFsRemove(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 
+// std.time functions
+auto nativeTimeNow(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeTimeSleep(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeTimeFormat(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+
+// std.json functions
+auto nativeJsonParse(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeJsonStringify(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+
+// std.regex functions
+auto nativeRegexMatch(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeRegexReplace(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeRegexTest(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+
 void registerNativeFunctions(Interpreter& interpreter);
 
 }  // namespace izi
