@@ -3,11 +3,11 @@ print("Testing std.env module...");
 import * as env from "std.env";
 
 print("\n=== Test 1: env.get() - Getting existing environment variable ===");
-var home = env.get("HOME");
-if (home != nil) {
-    print("✓ HOME is set: " + home);
+var path = env.get("PATH");
+if (path != nil) {
+    print("✓ PATH is set");
 } else {
-    print("✗ HOME is not set (unexpected)");
+    print("✗ PATH is not set (unexpected)");
 }
 
 print("\n=== Test 2: env.get() - Getting non-existent environment variable ===");
@@ -28,11 +28,11 @@ if (testVar == "test_value") {
 }
 
 print("\n=== Test 4: env.exists() - Checking existing variable ===");
-var homeExists = env.exists("HOME");
-if (homeExists == true) {
-    print("✓ HOME exists (as expected)");
+var pathExists = env.exists("PATH");
+if (pathExists == true) {
+    print("✓ PATH exists (as expected)");
 } else {
-    print("✗ HOME should exist");
+    print("✗ PATH should exist");
 }
 
 print("\n=== Test 5: env.exists() - Checking non-existent variable ===");

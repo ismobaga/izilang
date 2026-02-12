@@ -1083,11 +1083,16 @@ auto nativeEnvSet(Interpreter& interp, const std::vector<Value>& arguments) -> V
     const std::string& value = std::get<std::string>(arguments[1]);
     
     // Use setenv for POSIX systems (Linux, macOS)
+    int result;
     #ifdef _WIN32
-        _putenv_s(name.c_str(), value.c_str());
+        result = _putenv_s(name.c_str(), value.c_str());
     #else
-        setenv(name.c_str(), value.c_str(), 1);
+        result = setenv(name.c_str(), value.c_str(), 1);
     #endif
+    
+    if (result != 0) {
+        throw std::runtime_error("env.set() failed to set environment variable '" + name + "'");
+    }
     
     return Nil{};
 }
