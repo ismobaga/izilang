@@ -1,0 +1,12 @@
+// Simple test for chunk compilation
+var x = 10;
+var y = 20;
+print("x + y =", x + y);
+
+fn greet(name) {
+    print("Hello,", name);
+    return "Greeting sent";
+}
+
+var result = greet("World");
+print("Result:", result);

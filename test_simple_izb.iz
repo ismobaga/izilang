@@ -1,0 +1,4 @@
+print("Before import");
+import "mymodule";
+print("After import");
+print("Testing function:", add(2, 3));

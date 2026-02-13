@@ -1,0 +1,7 @@
+// Test importing a precompiled .izb module
+import "mymodule";
+
+print("Testing precompiled module import");
+print("5 + 3 =", add(5, 3));
+print("4 * 7 =", multiply(4, 7));
+print("Module version:", MODULE_VERSION);

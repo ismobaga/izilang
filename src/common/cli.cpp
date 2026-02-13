@@ -16,6 +16,7 @@ void CliOptions::printHelp() {
     std::cout << "  build <file>        Compile/check without executing\n";
     std::cout << "  check <file>        Parse and analyze without executing\n";
     std::cout << "  compile <file>      Compile to native executable\n";
+    std::cout << "  chunk <file>        Compile to bytecode chunk (.izb)\n";
     std::cout << "  test [pattern]      Run test files (searches for *.iz in tests/)\n";
     std::cout << "  repl                Start interactive REPL\n";
     std::cout << "  fmt <file>          Format source code (coming soon)\n";
@@ -37,6 +38,7 @@ void CliOptions::printHelp() {
     std::cout << "  izi script.iz       Run a script file (shorthand)\n";
     std::cout << "  izi build app.iz    Check syntax without running\n";
     std::cout << "  izi compile app.iz  Compile to native executable\n";
+    std::cout << "  izi chunk app.iz -o app.izb  Compile to bytecode chunk\n";
     std::cout << "  izi test            Run all tests\n";
     std::cout << "  izi repl            Start REPL explicitly\n";
     std::cout << "\n";
@@ -105,6 +107,27 @@ void CliOptions::printCommandHelp(Command cmd) {
             std::cout << "  izi compile app.iz\n";
             std::cout << "  izi compile app.iz -o myapp\n";
             std::cout << "  izi compile --debug app.iz\n";
+            break;
+        
+        case Command::Chunk:
+            std::cout << "izi chunk - Compile to bytecode chunk (.izb)\n\n";
+            std::cout << "Usage: izi chunk [options] <file> [-o <output>]\n\n";
+            std::cout << "Description:\n";
+            std::cout << "  Compiles an IziLang source file into a bytecode chunk\n";
+            std::cout << "  file (.izb) that can be executed efficiently by the VM.\n";
+            std::cout << "  Bytecode chunks skip parsing and are faster to load.\n";
+            std::cout << "\n";
+            std::cout << "Options:\n";
+            std::cout << "  -o <output>  Specify output .izb file name\n";
+            std::cout << "  --debug      Show compilation details\n";
+            std::cout << "\n";
+            std::cout << "Examples:\n";
+            std::cout << "  izi chunk app.iz\n";
+            std::cout << "  izi chunk app.iz -o app.izb\n";
+            std::cout << "  izi chunk --debug script.iz\n";
+            std::cout << "\n";
+            std::cout << "To run a .izb file:\n";
+            std::cout << "  izi run --vm app.izb\n";
             break;
         
         case Command::Test:
@@ -204,6 +227,9 @@ CliOptions CliOptions::parse(int argc, char** argv) {
     } else if (firstArg == "compile") {
         options.command = Command::Compile;
         i++;
+    } else if (firstArg == "chunk") {
+        options.command = Command::Chunk;
+        i++;
     } else if (firstArg == "test") {
         options.command = Command::Test;
         i++;
@@ -228,6 +254,8 @@ CliOptions CliOptions::parse(int argc, char** argv) {
                 printCommandHelp(Command::Check);
             } else if (helpCmd == "compile") {
                 printCommandHelp(Command::Compile);
+            } else if (helpCmd == "chunk") {
+                printCommandHelp(Command::Chunk);
             } else if (helpCmd == "test") {
                 printCommandHelp(Command::Test);
             } else if (helpCmd == "repl") {
@@ -312,6 +340,7 @@ CliOptions CliOptions::parse(int argc, char** argv) {
                 options.command == Command::Build || 
                 options.command == Command::Check ||
                 options.command == Command::Compile ||
+                options.command == Command::Chunk ||
                 options.command == Command::Fmt) {
                 // These commands expect a filename
                 if (options.input.empty()) {
@@ -337,7 +366,8 @@ CliOptions CliOptions::parse(int argc, char** argv) {
     if (options.command == Command::Run || 
         options.command == Command::Build || 
         options.command == Command::Check ||
-        options.command == Command::Compile) {
+        options.command == Command::Compile ||
+        options.command == Command::Chunk) {
         if (options.input.empty()) {
             // Map command to string for error message
             std::string cmdName;
@@ -346,6 +376,7 @@ CliOptions CliOptions::parse(int argc, char** argv) {
                 case Command::Build: cmdName = "build"; break;
                 case Command::Check: cmdName = "check"; break;
                 case Command::Compile: cmdName = "compile"; break;
+                case Command::Chunk: cmdName = "chunk"; break;
                 default: cmdName = ""; break;
             }
             

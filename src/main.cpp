@@ -13,6 +13,7 @@
 #include "compile/native_compiler.hpp"
 #include "bytecode/vm.hpp"
 #include "bytecode/vm_native.hpp"
+#include "bytecode/chunk_serializer.hpp"
 #include "common/error_reporter.hpp"
 #include "common/cli.hpp"
 #include "common/semantic_analyzer.hpp"
@@ -405,7 +406,105 @@ int main(int argc, char** argv) {
         return success ? 0 : 1;
     }
 
-    // Get source code from file
+    // Handle chunk command (compile to .izb bytecode)
+    if (options.command == CliOptions::Command::Chunk) {
+        try {
+            if (options.debug) {
+                std::cout << "[DEBUG] Compiling to bytecode chunk...\n";
+            }
+            
+            // Read source file
+            std::ifstream f(options.input);
+            if (!f.is_open()) {
+                std::cerr << "Cannot open file: " << options.input << "\n";
+                return 1;
+            }
+            std::stringstream buffer;
+            buffer << f.rdbuf();
+            std::string src = buffer.str();
+            
+            // Lex and parse
+            Lexer lex(src);
+            auto tokens = lex.scanTokens();
+            
+            if (options.debug) {
+                std::cout << "[DEBUG] Lexing complete, " << tokens.size() << " tokens\n";
+            }
+            
+            Parser parser(std::move(tokens), src);
+            auto program = parser.parse();
+            
+            if (options.debug) {
+                std::cout << "[DEBUG] Parsing complete, " << program.size() << " statements\n";
+            }
+            
+            // Apply optimizations if enabled
+            if (options.optimize) {
+                if (options.debug) {
+                    std::cout << "[DEBUG] Applying optimizations...\n";
+                }
+                Optimizer optimizer;
+                program = optimizer.optimize(std::move(program));
+            }
+            
+            // Compile to bytecode
+            std::unordered_set<std::string> importedModules;
+            BytecodeCompiler compiler;
+            
+            // Convert input file to absolute path for proper relative import resolution
+            std::string absolutePath;
+            try {
+                absolutePath = fs::absolute(options.input).string();
+            } catch (const fs::filesystem_error&) {
+                absolutePath = options.input;
+            }
+            compiler.setCurrentFile(absolutePath);
+            compiler.setImportedModules(&importedModules);
+            
+            Chunk chunk = compiler.compile(program);
+            
+            if (options.debug) {
+                std::cout << "[DEBUG] Bytecode compilation complete\n";
+                std::cout << "[DEBUG] Code size: " << chunk.code.size() << " bytes\n";
+                std::cout << "[DEBUG] Constants: " << chunk.constants.size() << "\n";
+                std::cout << "[DEBUG] Names: " << chunk.names.size() << "\n";
+            }
+            
+            // Determine output filename
+            std::string outputFile;
+            if (!options.output.empty()) {
+                outputFile = options.output;
+            } else {
+                // Default: replace .iz with .izb
+                fs::path inputPath(options.input);
+                outputFile = inputPath.stem().string() + ".izb";
+            }
+            
+            // Serialize to file
+            if (!ChunkSerializer::serializeToFile(chunk, outputFile)) {
+                std::cerr << "Failed to write bytecode file: " << outputFile << "\n";
+                return 1;
+            }
+            
+            std::cout << "Successfully compiled to: " << outputFile << "\n";
+            
+        } catch (const LexerError& e) {
+            std::cerr << "In file '" << options.input << "':\n";
+            std::cerr << "Lexer Error: " << e.what() << '\n';
+            return 1;
+        } catch (const ParserError& e) {
+            std::cerr << "In file '" << options.input << "':\n";
+            std::cerr << "Parse Error: " << e.what() << '\n';
+            return 1;
+        } catch (const std::exception& e) {
+            std::cerr << "Compilation failed: " << e.what() << '\n';
+            return 1;
+        }
+        
+        return 0;
+    }
+
+    // Get source code from file (skip for .izb files)
     std::ifstream f(options.input);
     if (!f.is_open()) {
         std::cerr << "Cannot open file: " << options.input << "\n";
@@ -426,7 +525,45 @@ int main(int argc, char** argv) {
 
     // Handle different commands
     if (options.command == CliOptions::Command::Run) {
-        // Execute the code
+        // Check if input is a .izb bytecode file
+        fs::path inputPath(options.input);
+        if (inputPath.extension() == ".izb") {
+            // Load and execute bytecode chunk directly
+            if (!useVM) {
+                std::cerr << "Error: .izb files can only be executed with the VM.\n";
+                std::cerr << "Use: izi run --vm " << options.input << "\n";
+                return 1;
+            }
+            
+            try {
+                if (options.debug) {
+                    std::cout << "[DEBUG] Loading bytecode chunk from " << options.input << "\n";
+                }
+                
+                Chunk chunk = ChunkSerializer::deserializeFromFile(options.input);
+                
+                if (options.debug) {
+                    std::cout << "[DEBUG] Chunk loaded successfully\n";
+                    std::cout << "[DEBUG] Code size: " << chunk.code.size() << " bytes\n";
+                    std::cout << "[DEBUG] Constants: " << chunk.constants.size() << "\n";
+                    std::cout << "[DEBUG] Names: " << chunk.names.size() << "\n";
+                }
+                
+                VM vm;
+                registerVmNatives(vm);
+                Value result = vm.run(chunk);
+                
+                if (options.debug) {
+                    std::cout << "[DEBUG] Execution complete\n";
+                }
+            } catch (const std::exception& e) {
+                std::cerr << "Error executing bytecode: " << e.what() << '\n';
+                return 1;
+            }
+            return 0;
+        }
+        
+        // Execute the code (source file)
         try {
             // Build command line arguments: script name followed by additional args
             std::vector<std::string> cmdArgs;

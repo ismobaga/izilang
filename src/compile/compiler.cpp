@@ -4,12 +4,15 @@
 #include "bytecode/vm_user_function.hpp"
 #include "bytecode/vm_class.hpp"
 #include "bytecode/vm_native_modules.hpp"
+#include "bytecode/chunk_serializer.hpp"
+#include "bytecode/opcode.hpp"
 #include "parse/lexer.hpp"
 #include "parse/parser.hpp"
 #include <stdexcept>
 #include <fstream>
 #include <sstream>
 #include <algorithm>
+#include <filesystem>
 
 namespace izi {
 Chunk BytecodeCompiler::compile(const std::vector<StmtPtr>& program) {
@@ -365,10 +368,43 @@ void BytecodeCompiler::visit(ImportStmt& stmt) {
     }
     
     // For file-based modules, resolve relative paths
-    modulePath = ModulePath::resolveImport(stmt.module, currentFile);
+    // Note: We handle extension resolution ourselves to support .izb files
+    std::string basePath = stmt.module;
+    
+    // If it's a relative path, resolve it relative to the importing file's directory
+    if (ModulePath::isRelativePath(basePath)) {
+        std::string importingDir = ModulePath::getDirectory(currentFile);
+        std::filesystem::path dirPath(importingDir);
+        std::filesystem::path modulePath = dirPath / basePath;
+        basePath = modulePath.lexically_normal().string();
+    }
+    
+    // Check if we need to try .izb extension first
+    std::string actualPath = basePath;
+    bool isPrecompiled = false;
+    
+    // If path doesn't have an extension, try .izb first, then .iz
+    if (!basePath.ends_with(".iz") && !basePath.ends_with(".izb") && !basePath.ends_with(".izi")) {
+        std::string izbPath = basePath + ".izb";
+        std::ifstream izbFile(izbPath);
+        if (izbFile.good()) {
+            actualPath = izbPath;
+            isPrecompiled = true;
+        } else {
+            // Fall back to .izi extension
+            actualPath = basePath + ".izi";
+        }
+    } else if (basePath.ends_with(".izb")) {
+        isPrecompiled = true;
+        actualPath = basePath;
+    } else if (basePath.ends_with(".iz")) {
+        actualPath = basePath;
+    } else if (basePath.ends_with(".izi")) {
+        actualPath = basePath;
+    }
     
     // Canonicalize the path for proper deduplication and cycle detection
-    std::string canonicalPath = ModulePath::canonicalize(modulePath);
+    std::string canonicalPath = ModulePath::canonicalize(actualPath);
     
     // Check if module is already imported (avoid re-importing)
     if (importedModules && importedModules->contains(canonicalPath)) {
@@ -388,22 +424,106 @@ void BytecodeCompiler::visit(ImportStmt& stmt) {
         throw std::runtime_error("Circular import detected: " + chain);
     }
     
-    // Load and parse the module
-    std::string source = loadFile(modulePath);
-    Lexer lexer(source);
-    auto tokens = lexer.scanTokens();
-    Parser parser(std::move(tokens));
-    auto program = parser.parse();
-    
-    // Save current file and push to import stack
+    // Push to import stack
+    importStack.push_back(canonicalPath);
     std::string previousFile = currentFile;
     currentFile = canonicalPath;
-    importStack.push_back(canonicalPath);
     
     try {
-        // Compile the module's statements inline
-        for (const auto& moduleStmt : program) {
-            emitStatement(*moduleStmt);
+        if (isPrecompiled) {
+            // Load precompiled bytecode chunk
+            Chunk moduleChunk = ChunkSerializer::deserializeFromFile(actualPath);
+            
+            // We need to remap constant and name indices as we merge chunks
+            size_t constantOffset = chunk.constants.size();
+            size_t nameOffset = chunk.names.size();
+            
+            // Merge constants
+            for (const auto& constant : moduleChunk.constants) {
+                chunk.constants.push_back(constant);
+            }
+            
+            // Merge names
+            for (const auto& name : moduleChunk.names) {
+                chunk.names.push_back(name);
+            }
+            
+            // Copy and remap bytecode, but skip the final NIL+RETURN that was added during compilation
+            // The final NIL+RETURN is always the last 2 bytes in a compiled chunk
+            size_t codeEndPos = moduleChunk.code.size();
+            if (codeEndPos >= 2 && 
+                static_cast<OpCode>(moduleChunk.code[codeEndPos - 2]) == OpCode::NIL &&
+                static_cast<OpCode>(moduleChunk.code[codeEndPos - 1]) == OpCode::RETURN) {
+                codeEndPos -= 2;  // Skip the final NIL+RETURN
+            }
+            
+            for (size_t i = 0; i < codeEndPos; ++i) {
+                uint8_t byte = moduleChunk.code[i];
+                OpCode op = static_cast<OpCode>(byte);
+                
+                chunk.code.push_back(byte);
+                
+                // Check if this opcode is followed by a constant or name index
+                if (op == OpCode::CONSTANT) {
+                    // Next byte is a constant index
+                    if (i + 1 < moduleChunk.code.size()) {
+                        ++i;
+                        uint8_t constIndex = moduleChunk.code[i];
+                        uint8_t remappedIndex = static_cast<uint8_t>(constIndex + constantOffset);
+                        chunk.code.push_back(remappedIndex);
+                    }
+                } else if (op == OpCode::GET_GLOBAL || op == OpCode::SET_GLOBAL || 
+                          op == OpCode::GET_PROPERTY || op == OpCode::SET_PROPERTY) {
+                    // Next byte is a name index
+                    if (i + 1 < moduleChunk.code.size()) {
+                        ++i;
+                        uint8_t nameIndex = moduleChunk.code[i];
+                        uint8_t remappedIndex = static_cast<uint8_t>(nameIndex + nameOffset);
+                        chunk.code.push_back(remappedIndex);
+                    }
+                } else if (op == OpCode::JUMP || op == OpCode::JUMP_IF_FALSE || op == OpCode::LOOP) {
+                    // Next 2 bytes are jump offset (no remapping needed, relative offset)
+                    if (i + 2 < moduleChunk.code.size()) {
+                        ++i;
+                        chunk.code.push_back(moduleChunk.code[i]);
+                        ++i;
+                        chunk.code.push_back(moduleChunk.code[i]);
+                    }
+                } else if (op == OpCode::CALL) {
+                    // Next byte is argument count (no remapping needed)
+                    if (i + 1 < moduleChunk.code.size()) {
+                        ++i;
+                        chunk.code.push_back(moduleChunk.code[i]);
+                    }
+                } else if (op == OpCode::TRY) {
+                    // Next 5 bytes: catch offset (2), finally offset (2), catch var name index (1)
+                    if (i + 5 < moduleChunk.code.size()) {
+                        ++i; chunk.code.push_back(moduleChunk.code[i]); // catch offset high
+                        ++i; chunk.code.push_back(moduleChunk.code[i]); // catch offset low
+                        ++i; chunk.code.push_back(moduleChunk.code[i]); // finally offset high
+                        ++i; chunk.code.push_back(moduleChunk.code[i]); // finally offset low
+                        ++i;
+                        uint8_t catchVarIndex = moduleChunk.code[i];
+                        if (catchVarIndex != 0) {
+                            // Remap catch variable name index
+                            catchVarIndex = static_cast<uint8_t>(catchVarIndex + nameOffset);
+                        }
+                        chunk.code.push_back(catchVarIndex);
+                    }
+                }
+            }
+        } else {
+            // Load and parse the module source
+            std::string source = loadFile(actualPath);
+            Lexer lexer(source);
+            auto tokens = lexer.scanTokens();
+            Parser parser(std::move(tokens));
+            auto program = parser.parse();
+            
+            // Compile the module's statements inline
+            for (const auto& moduleStmt : program) {
+                emitStatement(*moduleStmt);
+            }
         }
         
         // Pop from import stack and mark as imported

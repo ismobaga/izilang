@@ -15,6 +15,7 @@ struct CliOptions {
         Build,        // Compile/check only, no execution
         Check,        // Parse + analyze, no execution
         Compile,      // Compile to native executable
+        Chunk,        // Compile to bytecode chunk (.izb)
         Test,         // Execute test files
         Repl,         // Interactive REPL mode
         Fmt,          // Format code
