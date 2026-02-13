@@ -43,7 +43,12 @@ void Lexer::scanToken() {
             addToken(TokenType::COMMA);
             break;
         case '.':
-            addToken(TokenType::DOT);
+            // Check for ... (spread operator)
+            if (match('.') && match('.')) {
+                addToken(TokenType::DOT_DOT_DOT);
+            } else {
+                addToken(TokenType::DOT);
+            }
             break;
         case ';':
             addToken(TokenType::SEMICOLON);

@@ -1041,3 +1041,234 @@ TEST_CASE("Integration: v0.3 - Types and Classes Combined", "[integration][v03]"
         REQUIRE(output.find("1") != std::string::npos);
     }
 }
+
+TEST_CASE("Integration: Array spread operator", "[integration][spread]") {
+    SECTION("Spread two arrays") {
+        std::string source = R"(
+            var arr1 = [1, 2, 3];
+            var arr2 = [4, 5, 6];
+            var combined = [...arr1, ...arr2];
+            print(combined[0]);
+            print(combined[5]);
+        )";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        REQUIRE(capture.getOutput() == "1\n6\n");
+    }
+    
+    SECTION("Spread with mixed elements") {
+        std::string source = R"(
+            var arr = [2, 3];
+            var mixed = [1, ...arr, 4];
+            print(mixed[0]);
+            print(mixed[1]);
+            print(mixed[2]);
+            print(mixed[3]);
+        )";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        REQUIRE(capture.getOutput() == "1\n2\n3\n4\n");
+    }
+}
+
+TEST_CASE("Integration: Map spread operator", "[integration][spread]") {
+    SECTION("Spread two maps") {
+        std::string source = R"(
+            var obj1 = {"name": "John", "age": 30};
+            var obj2 = {"city": "NYC"};
+            var merged = {...obj1, ...obj2};
+            print(merged["name"]);
+            print(merged["city"]);
+        )";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        REQUIRE(capture.getOutput() == "John\nNYC\n");
+    }
+    
+    SECTION("Spread with override") {
+        std::string source = R"(
+            var obj1 = {"x": 1, "y": 2};
+            var obj2 = {"y": 3, "z": 4};
+            var merged = {...obj1, ...obj2};
+            print(merged["x"]);
+            print(merged["y"]);
+            print(merged["z"]);
+        )";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        REQUIRE(capture.getOutput() == "1\n3\n4\n");
+    }
+}
+
+TEST_CASE("Integration: Array destructuring", "[integration][destructuring]") {
+    SECTION("Basic array destructuring") {
+        std::string source = R"(
+            var arr = [1, 2, 3];
+            var [a, b, c] = arr;
+            print(a);
+            print(b);
+            print(c);
+        )";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        REQUIRE(capture.getOutput() == "1\n2\n3\n");
+    }
+    
+    SECTION("Destructuring with fewer variables") {
+        std::string source = R"(
+            var [x, y] = [10, 20, 30];
+            print(x);
+            print(y);
+        )";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        REQUIRE(capture.getOutput() == "10\n20\n");
+    }
+    
+    SECTION("Destructuring with more variables (nil for missing)") {
+        std::string source = R"(
+            var [a, b, c] = [1, 2];
+            print(a);
+            print(b);
+            print(c);
+        )";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        REQUIRE(capture.getOutput() == "1\n2\nnil\n");
+    }
+}
+
+TEST_CASE("Integration: Map destructuring", "[integration][destructuring]") {
+    SECTION("Basic map destructuring") {
+        std::string source = R"(
+            var person = {"name": "Alice", "age": 25};
+            var {name, age} = person;
+            print(name);
+            print(age);
+        )";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        REQUIRE(capture.getOutput() == "Alice\n25\n");
+    }
+    
+    SECTION("Destructuring with missing keys (nil)") {
+        std::string source = R"(
+            var data = {"x": 10};
+            var {x, y, z} = data;
+            print(x);
+            print(y);
+            print(z);
+        )";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        REQUIRE(capture.getOutput() == "10\nnil\nnil\n");
+    }
+}
+
+TEST_CASE("Integration: Combined spread and destructuring", "[integration][spread][destructuring]") {
+    SECTION("Destructure spread arrays") {
+        std::string source = R"(
+            var arr1 = [1, 2];
+            var arr2 = [3, 4];
+            var [a, b, c, d] = [...arr1, ...arr2];
+            print(a);
+            print(b);
+            print(c);
+            print(d);
+        )";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        REQUIRE(capture.getOutput() == "1\n2\n3\n4\n");
+    }
+    
+    SECTION("Destructure spread maps") {
+        std::string source = R"(
+            var user = {"name": "Bob"};
+            var profile = {"email": "bob@example.com"};
+            var merged = {...user, ...profile};
+            var {name, email} = merged;
+            print(name);
+            print(email);
+        )";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        REQUIRE(capture.getOutput() == "Bob\nbob@example.com\n");
+    }
+}

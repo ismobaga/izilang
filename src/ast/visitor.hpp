@@ -12,6 +12,7 @@ struct LiteralExpr;
 struct GroupingExpr;
 struct ArrayExpr;
 struct MapExpr;
+struct SpreadExpr;
 struct IndexExpr;
 struct SetIndexExpr;
 struct FunctionExpr;
@@ -50,6 +51,7 @@ class ExprVisitor {
     virtual Value visit(GroupingExpr&) = 0;
     virtual Value visit(ArrayExpr&) = 0;
     virtual Value visit(MapExpr&) = 0;
+    virtual Value visit(SpreadExpr&) = 0;
     virtual Value visit(IndexExpr&) = 0;
     virtual Value visit(SetIndexExpr&) = 0;
     virtual Value visit(FunctionExpr&) = 0;

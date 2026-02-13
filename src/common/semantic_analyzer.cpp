@@ -223,6 +223,12 @@ Value SemanticAnalyzer::visit(MapExpr& expr) {
     return Nil{};
 }
 
+Value SemanticAnalyzer::visit(SpreadExpr& expr) {
+    // Analyze the argument expression
+    expr.argument->accept(*this);
+    return Nil{};
+}
+
 Value SemanticAnalyzer::visit(IndexExpr& expr) {
     expr.collection->accept(*this);
     expr.index->accept(*this);
@@ -300,26 +306,47 @@ void SemanticAnalyzer::visit(BlockStmt& stmt) {
 }
 
 void SemanticAnalyzer::visit(VarStmt& stmt) {
+    // Analyze initializer first (only once for all cases)
+    if (stmt.initializer) {
+        stmt.initializer->accept(*this);
+    }
+    
+    // Handle destructuring patterns
+    if (stmt.pattern != nullptr) {
+        if (auto* arrayPattern = dynamic_cast<ArrayPattern*>(stmt.pattern.get())) {
+            // Register all variables from array pattern
+            for (const auto& elem : arrayPattern->elements) {
+                if (auto* varPattern = dynamic_cast<VariablePattern*>(elem.get())) {
+                    TypePtr varType = TypeAnnotation::simple(TypeAnnotation::Kind::Any);
+                    defineVariable(varPattern->name, std::move(varType), 0, 0);
+                }
+            }
+        } else if (auto* mapPattern = dynamic_cast<MapPattern*>(stmt.pattern.get())) {
+            // Register all variables from map pattern
+            for (const auto& key : mapPattern->keys) {
+                TypePtr varType = TypeAnnotation::simple(TypeAnnotation::Kind::Any);
+                defineVariable(key, std::move(varType), 0, 0);
+            }
+        }
+        return;
+    }
+    
+    // Simple variable declaration
     TypePtr varType = stmt.typeAnnotation ? 
         TypeAnnotation::simple(stmt.typeAnnotation->kind) : 
         TypeAnnotation::simple(TypeAnnotation::Kind::Any);
     
-    // If initializer exists, check type compatibility
-    if (stmt.initializer) {
-        stmt.initializer->accept(*this);
+    // Type check if both type annotation and initializer are present
+    if (stmt.initializer && stmt.typeAnnotation && isExplicitlyTyped(varType.get())) {
+        TypePtr initType = inferType(*stmt.initializer);
         
-        // Only check type compatibility if variable has explicit type annotation
-        if (stmt.typeAnnotation && isExplicitlyTyped(varType.get())) {
-            TypePtr initType = inferType(*stmt.initializer);
-            
-            // Check if the initializer type is compatible with the declared type
-            if (!areTypesCompatible(*varType, *initType)) {
-                addError(
-                    "Type mismatch: variable '" + stmt.name + "' declared as " + 
-                    varType->toString() + " but initialized with " + initType->toString(),
-                    0, 0
-                );
-            }
+        // Check if the initializer type is compatible with the declared type
+        if (!areTypesCompatible(*varType, *initType)) {
+            addError(
+                "Type mismatch: variable '" + stmt.name + "' declared as " + 
+                varType->toString() + " but initialized with " + initType->toString(),
+                0, 0
+            );
         }
     }
     

@@ -21,6 +21,7 @@ enum class TokenType {
     STAR,
     COLON,
     QUESTION,
+    DOT_DOT_DOT,
 
     // One or two character tokens
     BANG,
@@ -116,6 +117,8 @@ inline const char* tokenTypeToString(TokenType type) {
             return "COLON";
         case TokenType::QUESTION:
             return "QUESTION";
+        case TokenType::DOT_DOT_DOT:
+            return "DOT_DOT_DOT";
         case TokenType::BANG:
             return "BANG";
         case TokenType::BANG_EQUAL:

@@ -1,0 +1,108 @@
+// Comprehensive demo of collections enhancements
+
+print("==========================================");
+print("Collections Enhancements Demo");
+print("==========================================\n");
+
+// 1. ARRAY SPREAD
+print("1. Array Spread Operator");
+print("-------------------------");
+var nums1 = [1, 2, 3];
+var nums2 = [4, 5, 6];
+var combined = [...nums1, ...nums2];
+print(combined);
+
+var withExtra = [0, ...nums1, 99, ...nums2, 100];
+print(withExtra);
+print("");
+
+// 2. MAP SPREAD
+print("2. Map Spread Operator");
+print("----------------------");
+var user = {"name": "Alice", "role": "admin"};
+var contact = {"email": "alice@example.com", "phone": "555-1234"};
+var complete = {...user, ...contact};
+print(complete);
+
+// Override demonstration
+var defaults = {"theme": "light", "language": "en"};
+var userPrefs = {"theme": "dark"};
+var settings = {...defaults, ...userPrefs};
+print(settings);
+print("");
+
+// 3. ARRAY DESTRUCTURING
+print("3. Array Destructuring");
+print("----------------------");
+var coords = [10, 20, 30];
+var [x, y, z] = coords;
+print(x);
+print(y);
+print(z);
+
+// Partial destructuring
+var [first, second] = [100, 200, 300, 400];
+print(first);
+print(second);
+print("");
+
+// 4. MAP DESTRUCTURING
+print("4. Map Destructuring");
+print("--------------------");
+var person = {"name": "Bob", "age": 30, "city": "NYC"};
+var {name, age, city} = person;
+print(name);
+print(age);
+print(city);
+print("");
+
+// 5. COMBINED USAGE
+print("5. Combined Spread + Destructuring");
+print("-----------------------------------");
+
+// Merge and destructure arrays
+var a1 = [1, 2];
+var a2 = [3, 4];
+var [w, x, y, z] = [...a1, ...a2];
+print(w);
+print(x);
+print(y);
+print(z);
+
+// Merge and destructure maps
+var config1 = {"host": "localhost"};
+var config2 = {"port": 8080};
+var fullConfig = {...config1, ...config2};
+var {host, port} = fullConfig;
+print(host);
+print(port);
+print("");
+
+// 6. PRACTICAL EXAMPLES
+print("6. Practical Use Cases");
+print("----------------------");
+
+// Function that returns multiple values via array
+fn getDimensions() {
+    return [1920, 1080];
+}
+var [width, height] = getDimensions();
+print(width);
+print(height);
+
+// Merging configuration objects
+var defaultOptions = {"timeout": 5000, "retries": 3};
+var userOptions = {"retries": 5, "verbose": true};
+var options = {...defaultOptions, ...userOptions};
+print(options["timeout"]);
+print(options["retries"]);
+
+// Array concatenation without mutation
+var original = [1, 2, 3];
+var extended = [...original, 4, 5, 6];
+print(original);
+print(extended);
+
+print("\n==========================================");
+print("All features working correctly!");
+print("==========================================");

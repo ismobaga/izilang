@@ -66,6 +66,7 @@ public:
     Value visit(AssignExpr& expr) override;
     Value visit(ArrayExpr& expr) override;
     Value visit(MapExpr& expr) override;
+    Value visit(SpreadExpr& expr) override;
     Value visit(IndexExpr& expr) override;
     Value visit(SetIndexExpr& expr) override;
     Value visit(FunctionExpr& expr) override;
