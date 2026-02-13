@@ -8,11 +8,26 @@ Complete reference for all IziLang command-line interface commands and options.
 izi [command] [options] [arguments]
 ```
 
+## Quick Reference
+
+| Command | Description |
+|---------|-------------|
+| `run` | Execute a source file (.iz or .izb) |
+| `build` | Compile/check without executing |
+| `check` | Parse and analyze (fastest validation) |
+| `compile` | Compile to native executable |
+| `chunk` | Compile to bytecode chunk (.izb) |
+| `test` | Run test files |
+| `repl` | Interactive Read-Eval-Print Loop |
+| `fmt` | Format source code (coming soon) |
+| `version` | Show version information |
+| `help` | Show help for commands |
+
 ## Commands
 
 ### `run` - Execute a Source File
 
-Execute an IziLang source file.
+Execute an IziLang source file (`.iz`) or bytecode chunk file (`.izb`).
 
 **Usage:**
 ```bash
@@ -22,22 +37,29 @@ izi <file>
 ```
 
 **Options:**
-- `--vm` - Use bytecode VM for execution
-- `--interp` - Use tree-walker interpreter (default)
+- `--vm` - Use bytecode VM for execution (required for .izb files)
+- `--interp` - Use tree-walker interpreter (default for .iz files)
 - `--debug` - Enable debug/verbose output
 
 **Examples:**
 ```bash
-# Run with interpreter (default)
+# Run with interpreter (default for .iz)
 izi run script.iz
 izi script.iz
 
 # Run with VM
 izi run --vm script.iz
 
+# Run bytecode file (requires --vm)
+izi run --vm app.izb
+
 # Run with debug output
 izi run --debug script.iz
 ```
+
+**File Types:**
+- `.iz` - Source files (can run with interpreter or VM)
+- `.izb` - Bytecode chunk files (VM only, faster loading)
 
 **Exit Codes:**
 - `0` - Success
@@ -170,6 +192,96 @@ Successfully compiled to: myapp
 - Executable size is larger (~3-4MB) due to embedded interpreter
 - Compilation time depends on C++ compiler optimization level
 - Source code is embedded (not compiled to machine code directly)
+
+---
+
+### `chunk` - Compile to Bytecode Chunk
+
+Compile an IziLang source file into a bytecode chunk file (`.izb`) that can be executed efficiently by the VM without reparsing. This is similar to Python's `.pyc` files or Lua's compiled chunks.
+
+**Usage:**
+```bash
+izi chunk [options] <file> [-o <output>]
+```
+
+**Arguments:**
+- `<file>` - IziLang source file to compile
+- `-o <output>` - Output .izb file name (optional, defaults to source filename with .izb extension)
+
+**Options:**
+- `-o <name>` - Specify output bytecode file name
+- `--debug` - Show compilation details
+
+**Examples:**
+```bash
+# Compile to bytecode with default name
+izi chunk app.iz
+# Creates: app.izb
+
+# Specify output name
+izi chunk app.iz -o application.izb
+
+# Compile with debug information
+izi chunk --debug script.iz
+```
+
+**Running Bytecode Files:**
+```bash
+# Execute .izb file (VM required)
+izi run --vm app.izb
+
+# .izb files can only run with --vm flag
+izi run --vm script.izb
+```
+
+**Importing Bytecode Modules:**
+```bash
+# If mymodule.izb exists, it will be preferred over mymodule.iz
+import "mymodule";
+```
+
+**Exit Codes:**
+- `0` - Compilation successful
+- `1` - Compilation error, syntax error, or file not found
+
+**Output:**
+```
+[DEBUG] Compiling to bytecode chunk...
+[DEBUG] Lexing complete, 52 tokens
+[DEBUG] Parsing complete, 6 statements
+[DEBUG] Applying optimizations...
+[DEBUG] Bytecode compilation complete
+[DEBUG] Code size: 47 bytes
+[DEBUG] Constants: 6
+[DEBUG] Names: 10
+Successfully compiled to: app.izb
+```
+
+**Features:**
+- **Faster Loading** - Skip parsing and lexing during execution
+- **Module Precompilation** - Precompile frequently imported modules
+- **Auto-Discovery** - VM automatically uses .izb files when available
+- **Optimization Preserved** - Optimizations are baked into bytecode
+- **VM Execution Only** - Requires `--vm` flag to execute
+
+**Binary Format:**
+- Magic number: `IZB\0` (4 bytes)
+- Version: uint32 (format version)
+- Code section: Bytecode instructions
+- Constants section: Serialized values
+- Names section: Global variable and function names
+
+**Use Cases:**
+- **Distribution** - Ship precompiled modules for faster startup
+- **Library Development** - Precompile standard libraries
+- **Production Deployments** - Reduce parsing overhead in production
+- **Module Caching** - Cache compiled versions of large modules
+
+**Limitations:**
+- `.izb` files are platform-independent (bytecode is portable)
+- Format version must match (incompatible versions will error)
+- Native functions cannot be serialized (must be registered at runtime)
+- Instance objects cannot be serialized (runtime-only constructs)
 
 ---
 

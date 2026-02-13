@@ -42,3 +42,9 @@ node_modules/
 
 # Test files (not part of test suite)
 test_optimization.iz
+test_chunk.iz
+test_chunk.izb
+test_import_izb.iz
+test_simple_izb.iz
+mymodule.iz
+mymodule.izb
