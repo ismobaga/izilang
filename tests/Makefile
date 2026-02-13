@@ -81,6 +81,7 @@ GENERATED += $(OBJDIR)/module_path.o
 GENERATED += $(OBJDIR)/native.o
 GENERATED += $(OBJDIR)/native_compiler.o
 GENERATED += $(OBJDIR)/native_modules.o
+GENERATED += $(OBJDIR)/optimizer.o
 GENERATED += $(OBJDIR)/parser.o
 GENERATED += $(OBJDIR)/semantic_analyzer.o
 GENERATED += $(OBJDIR)/test_classes.o
@@ -91,6 +92,7 @@ GENERATED += $(OBJDIR)/test_integration.o
 GENERATED += $(OBJDIR)/test_lexer.o
 GENERATED += $(OBJDIR)/test_main.o
 GENERATED += $(OBJDIR)/test_modules.o
+GENERATED += $(OBJDIR)/test_optimizer.o
 GENERATED += $(OBJDIR)/test_optional_semicolons.o
 GENERATED += $(OBJDIR)/test_parser.o
 GENERATED += $(OBJDIR)/test_pattern_matching.o
@@ -119,6 +121,7 @@ OBJECTS += $(OBJDIR)/module_path.o
 OBJECTS += $(OBJDIR)/native.o
 OBJECTS += $(OBJDIR)/native_compiler.o
 OBJECTS += $(OBJDIR)/native_modules.o
+OBJECTS += $(OBJDIR)/optimizer.o
 OBJECTS += $(OBJDIR)/parser.o
 OBJECTS += $(OBJDIR)/semantic_analyzer.o
 OBJECTS += $(OBJDIR)/test_classes.o
@@ -129,6 +132,7 @@ OBJECTS += $(OBJDIR)/test_integration.o
 OBJECTS += $(OBJDIR)/test_lexer.o
 OBJECTS += $(OBJDIR)/test_main.o
 OBJECTS += $(OBJDIR)/test_modules.o
+OBJECTS += $(OBJDIR)/test_optimizer.o
 OBJECTS += $(OBJDIR)/test_optional_semicolons.o
 OBJECTS += $(OBJDIR)/test_parser.o
 OBJECTS += $(OBJDIR)/test_pattern_matching.o
@@ -249,6 +253,9 @@ $(OBJDIR)/compiler.o: ../src/compile/compiler.cpp
 $(OBJDIR)/native_compiler.o: ../src/compile/native_compiler.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/optimizer.o: ../src/compile/optimizer.cpp
+	@echo "$(notdir $<)"
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/interpreter.o: ../src/interp/interpreter.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
@@ -292,6 +299,9 @@ $(OBJDIR)/test_main.o: test_main.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/test_modules.o: test_modules.cpp
+	@echo "$(notdir $<)"
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/test_optimizer.o: test_optimizer.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/test_optional_semicolons.o: test_optional_semicolons.cpp

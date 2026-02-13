@@ -39,3 +39,6 @@ node_modules/
 /tmp/
 *.tmp
 *.log
+
+# Test files (not part of test suite)
+test_optimization.iz

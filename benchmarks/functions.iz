@@ -1,0 +1,39 @@
+// Benchmark: Function calls
+// Tests function call overhead and optimization
+
+fn add(a, b) {
+    return a + b;
+}
+
+fn multiply(a, b) {
+    return a * b;
+}
+
+fn calculate(x) {
+    var result = add(x, 10);
+    result = multiply(result, 2);
+    return result;
+}
+
+// Recursive function
+fn factorial(n) {
+    if (n <= 1) {
+        return 1;
+    }
+    return n * factorial(n - 1);
+}
+
+// Many function calls
+var total = 0;
+var i = 0;
+while (i < 1000) {
+    total = total + calculate(i);
+    i = i + 1;
+}
+
+// Factorial calculation
+var fact = factorial(15);
+
+print("Function benchmark complete");
+print(total);
+print(fact);
