@@ -1,0 +1,27 @@
+// Benchmark: Array operations
+// Tests collection performance
+
+var arr = [];
+var i = 0;
+while (i < 1000) {
+    push(arr, i);
+    i = i + 1;
+}
+
+// Access elements
+var sum = 0;
+var j = 0;
+while (j < length(arr)) {
+    sum = sum + arr[j];
+    j = j + 1;
+}
+
+// Modify elements
+var k = 0;
+while (k < length(arr)) {
+    arr[k] = arr[k] * 2;
+    k = k + 1;
+}
+
+print("Array benchmark complete");
+print(sum);
