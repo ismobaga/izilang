@@ -1,0 +1,18 @@
+╔════════════════════════════════════════╗
+║   IziLang Performance Benchmarks      ║
+╚════════════════════════════════════════╝
+
+Benchmark            No Optimize     Optimized       Difference     
+────────────────────────────────────────────────────────────────
+arithmetic           128ms           128ms           ±0ms (same)   
+arrays               2ms             2ms             ±0ms (same)   
+functions            18ms            15ms            -3ms (faster)  
+loops                7ms             7ms             ±0ms (same)   
+
+════════════════════════════════════════
+Benchmarking complete!
+
+Notes:
+  - Each benchmark was run 3 times and averaged
+  - Times are in milliseconds
+  - Negative difference indicates optimization improved performance
