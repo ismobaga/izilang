@@ -82,6 +82,7 @@ GENERATED += $(OBJDIR)/module_path.o
 GENERATED += $(OBJDIR)/native.o
 GENERATED += $(OBJDIR)/native_compiler.o
 GENERATED += $(OBJDIR)/native_modules.o
+GENERATED += $(OBJDIR)/optimizer.o
 GENERATED += $(OBJDIR)/parser.o
 GENERATED += $(OBJDIR)/semantic_analyzer.o
 GENERATED += $(OBJDIR)/type.o
@@ -103,6 +104,7 @@ OBJECTS += $(OBJDIR)/module_path.o
 OBJECTS += $(OBJDIR)/native.o
 OBJECTS += $(OBJDIR)/native_compiler.o
 OBJECTS += $(OBJDIR)/native_modules.o
+OBJECTS += $(OBJDIR)/optimizer.o
 OBJECTS += $(OBJDIR)/parser.o
 OBJECTS += $(OBJDIR)/semantic_analyzer.o
 OBJECTS += $(OBJDIR)/type.o
@@ -213,6 +215,9 @@ $(OBJDIR)/compiler.o: src/compile/compiler.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/native_compiler.o: src/compile/native_compiler.cpp
+	@echo "$(notdir $<)"
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/optimizer.o: src/compile/optimizer.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/interpreter.o: src/interp/interpreter.cpp

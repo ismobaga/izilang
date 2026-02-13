@@ -26,6 +26,8 @@ void CliOptions::printHelp() {
     std::cout << "  --vm                Use bytecode VM (default: tree-walker)\n";
     std::cout << "  --interp            Use tree-walker interpreter (default)\n";
     std::cout << "  --debug             Enable debug/verbose output\n";
+    std::cout << "  --optimize, -O      Enable optimizations (default: on)\n";
+    std::cout << "  --no-optimize, -O0  Disable optimizations\n";
     std::cout << "  --help, -h          Show this help message\n";
     std::cout << "  --version, -v       Show version information\n";
     std::cout << "\n";
@@ -264,6 +266,12 @@ CliOptions CliOptions::parse(int argc, char** argv) {
             i++;
         } else if (arg == "--debug") {
             options.debug = true;
+            i++;
+        } else if (arg == "--optimize" || arg == "-O") {
+            options.optimize = true;
+            i++;
+        } else if (arg == "--no-optimize" || arg == "-O0") {
+            options.optimize = false;
             i++;
         } else if (arg == "-o" && options.command == Command::Compile) {
             // Output file for compile command

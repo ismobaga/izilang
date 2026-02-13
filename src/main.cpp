@@ -9,6 +9,7 @@
 #include "parse/lexer.hpp"
 #include "parse/parser.hpp"
 #include "compile/compiler.hpp"
+#include "compile/optimizer.hpp"
 #include "compile/native_compiler.hpp"
 #include "bytecode/vm.hpp"
 #include "bytecode/vm_native.hpp"
@@ -20,7 +21,7 @@ using namespace izi;
 namespace fs = std::filesystem;
 
 
-void runCode(const std::string& src, bool useVM, bool debug, const std::string& filename = "<stdin>", const std::vector<std::string>& args = {}) {
+void runCode(const std::string& src, bool useVM, bool debug, bool optimize, const std::string& filename = "<stdin>", const std::vector<std::string>& args = {}) {
     try {
         if (debug) {
             std::cout << "[DEBUG] Lexing and parsing...\n";
@@ -30,6 +31,15 @@ void runCode(const std::string& src, bool useVM, bool debug, const std::string& 
         auto tokens = lex.scanTokens();
         Parser parser(std::move(tokens), src);
         auto program = parser.parse();
+
+        // Apply optimizations if enabled
+        if (optimize) {
+            if (debug) {
+                std::cout << "[DEBUG] Applying optimizations...\n";
+            }
+            Optimizer optimizer;
+            program = optimizer.optimize(std::move(program));
+        }
 
         if (debug) {
             std::cout << "[DEBUG] Execution mode: " << (useVM ? "VM" : "Interpreter") << "\n";
@@ -201,7 +211,7 @@ void runRepl(bool useVM, bool debug) {
             // interpreter/VM created above could be used for true state
             // preservation, but would require refactoring runCode() to accept
             // an existing interpreter/VM instance.
-            runCode(line, useVM, debug, "<repl>");
+            runCode(line, useVM, debug, true, "<repl>");
         } catch (const std::exception& e) {
             // Most errors are already printed by runCode
             // This catch is for unexpected std::exception types
@@ -294,7 +304,7 @@ int runTests(const CliOptions& options) {
             std::streambuf* oldCout = std::cout.rdbuf(capturedOutput.rdbuf());
             
             try {
-                runCode(src, useVM, options.debug, testFile.string());
+                runCode(src, useVM, options.debug, options.optimize, testFile.string());
                 
                 // Restore stdout
                 std::cout.rdbuf(oldCout);
@@ -423,7 +433,7 @@ int main(int argc, char** argv) {
             cmdArgs.push_back(options.input);  // Script name as first argument
             cmdArgs.insert(cmdArgs.end(), options.args.begin(), options.args.end());
             
-            runCode(src, useVM, options.debug, absolutePath, cmdArgs);
+            runCode(src, useVM, options.debug, options.optimize, absolutePath, cmdArgs);
         } catch (...) {
             return 1;
         }
@@ -446,6 +456,15 @@ int main(int argc, char** argv) {
             
             if (options.debug) {
                 std::cout << "[DEBUG] Parsing complete\n";
+            }
+            
+            // Apply optimizations if enabled
+            if (options.optimize) {
+                if (options.debug) {
+                    std::cout << "[DEBUG] Applying optimizations...\n";
+                }
+                Optimizer optimizer;
+                program = optimizer.optimize(std::move(program));
             }
             
             // Compile to bytecode to check for compilation errors
