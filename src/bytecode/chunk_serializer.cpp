@@ -265,8 +265,8 @@ Value ChunkSerializer::readValue(std::ifstream& in) {
             // For native functions, we can't restore them from name alone
             // They need to be registered during VM initialization
             std::string funcName = readString(in);
-            throw std::runtime_error("Cannot deserialize native function: " + funcName + 
-                                   ". Native functions must be registered at runtime.");
+            throw std::runtime_error("Cannot deserialize native function '" + funcName + 
+                                   "': native functions must be registered at runtime");
         }
         
         case ValueType::CLASS: {

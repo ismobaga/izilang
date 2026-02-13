@@ -301,8 +301,8 @@ CliOptions CliOptions::parse(int argc, char** argv) {
         } else if (arg == "--no-optimize" || arg == "-O0") {
             options.optimize = false;
             i++;
-        } else if (arg == "-o" && options.command == Command::Compile) {
-            // Output file for compile command
+        } else if (arg == "-o" && (options.command == Command::Compile || options.command == Command::Chunk)) {
+            // Output file for compile or chunk command
             if (i + 1 < argc) {
                 options.output = argv[i + 1];
                 i += 2;

@@ -383,7 +383,9 @@ void BytecodeCompiler::visit(ImportStmt& stmt) {
     std::string actualPath = basePath;
     bool isPrecompiled = false;
     
-    // If path doesn't have an extension, try .izb first, then .iz
+    // If path doesn't have an extension, try .izb first, then .izi
+    // Note: We support both .iz and .izi extensions for compatibility
+    // .izi is the canonical extension, but .iz is also widely used
     if (!basePath.ends_with(".iz") && !basePath.ends_with(".izb") && !basePath.ends_with(".izi")) {
         std::string izbPath = basePath + ".izb";
         std::ifstream izbFile(izbPath);
@@ -391,15 +393,14 @@ void BytecodeCompiler::visit(ImportStmt& stmt) {
             actualPath = izbPath;
             isPrecompiled = true;
         } else {
-            // Fall back to .izi extension
+            // Fall back to .izi extension (canonical)
             actualPath = basePath + ".izi";
         }
     } else if (basePath.ends_with(".izb")) {
         isPrecompiled = true;
         actualPath = basePath;
-    } else if (basePath.ends_with(".iz")) {
-        actualPath = basePath;
-    } else if (basePath.ends_with(".izi")) {
+    } else {
+        // .iz or .izi - both are source files
         actualPath = basePath;
     }
     
@@ -437,6 +438,14 @@ void BytecodeCompiler::visit(ImportStmt& stmt) {
             // We need to remap constant and name indices as we merge chunks
             size_t constantOffset = chunk.constants.size();
             size_t nameOffset = chunk.names.size();
+            
+            // Check for overflow before merging
+            if (constantOffset + moduleChunk.constants.size() > 255) {
+                throw std::runtime_error("Too many constants when importing module (limit: 256 per chunk)");
+            }
+            if (nameOffset + moduleChunk.names.size() > 255) {
+                throw std::runtime_error("Too many names when importing module (limit: 256 per chunk)");
+            }
             
             // Merge constants
             for (const auto& constant : moduleChunk.constants) {
