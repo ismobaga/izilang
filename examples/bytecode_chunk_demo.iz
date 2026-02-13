@@ -1,0 +1,64 @@
+// Bytecode Chunk Demo
+// This file demonstrates the .izb bytecode compilation feature
+
+print("=== IziLang Bytecode Chunk Demo ===");
+print("");
+
+// Step 1: Show basic functionality
+print("1. Functions work in bytecode:");
+fn greet(name) {
+    print("  Hello,", name);
+}
+
+greet("World");
+print("");
+
+// Step 2: Variables and arithmetic
+print("2. Variables and arithmetic:");
+var x = 10;
+var y = 20;
+var sum = x + y;
+var product = x * y;
+
+print("  x =", x);
+print("  y =", y);
+print("  x + y =", sum);
+print("  x * y =", product);
+print("");
+
+// Step 3: Nested functions
+print("3. Nested function calls:");
+fn factorial(n) {
+    if (n <= 1) {
+        return 1;
+    }
+    return n * factorial(n - 1);
+}
+
+print("  5! =", factorial(5));
+print("  7! =", factorial(7));
+print("");
+
+// Step 4: Conditional logic
+print("4. Conditional logic:");
+fn checkNumber(n) {
+    if (n > 0) {
+        print("  ", n, "is positive");
+    } else if (n < 0) {
+        print("  ", n, "is negative");
+    } else {
+        print("  ", n, "is zero");
+    }
+}
+
+checkNumber(42);
+checkNumber(-10);
+checkNumber(0);
+print("");
+
+print("=== Demo Complete ===");
+print("To compile this to bytecode:");
+print("  izi chunk bytecode_chunk_demo.iz");
+print("");
+print("To run the bytecode:");
+print("  izi run --vm bytecode_chunk_demo.izb");

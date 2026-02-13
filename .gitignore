@@ -48,3 +48,6 @@ test_import_izb.iz
 test_simple_izb.iz
 mymodule.iz
 mymodule.izb
+
+# Bytecode files (generated from .iz source)
+*.izb
