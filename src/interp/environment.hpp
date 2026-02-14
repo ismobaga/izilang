@@ -46,6 +46,15 @@ class Environment : public std::enable_shared_from_this<Environment> {
 
         throw std::runtime_error("Undefined variable '" + name + "'.");
     }
+    
+    // Get all variables in this environment (for REPL :vars command)
+    const std::unordered_map<std::string, Value>& getAll() const {
+        return values;
+    }
+    
+    std::shared_ptr<Environment> getParent() const {
+        return parent;
+    }
 
    private:
     std::unordered_map<std::string, Value> values;

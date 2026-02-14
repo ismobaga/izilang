@@ -58,6 +58,11 @@ class Interpreter : public ExprVisitor, public StmtVisitor {
     const std::vector<std::string>& getCommandLineArgs() const {
         return commandLineArgs;
     }
+    
+    // Get global environment (for REPL :vars command)
+    std::shared_ptr<Environment> getGlobals() const {
+        return globals;
+    }
 
     // ExprVisitor
     Value visit(BinaryExpr& expr) override;

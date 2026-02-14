@@ -1,8 +1,0 @@
-// Test recursive function that will cause stack overflow
-fn infiniteRecursion(n) {
-    return infiniteRecursion(n + 1);
-}
-
-print("Testing stack overflow protection...");
-infiniteRecursion(0);
-

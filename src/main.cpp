@@ -4,6 +4,7 @@
 #include <unordered_set>
 #include <filesystem>
 #include <vector>
+#include <chrono>
 
 #include "interp/interpreter.hpp"
 #include "parse/lexer.hpp"
@@ -91,6 +92,70 @@ void runCode(const std::string& src, bool useVM, bool debug, bool optimize, cons
     }
 }
 
+void runReplLine(const std::string& src, Interpreter* interp, VM* vm, bool useVM, bool debug, bool optimize, const std::string& filename = "<repl>") {
+    try {
+        if (debug) {
+            std::cout << "[DEBUG] Lexing and parsing...\n";
+        }
+        
+        Lexer lex(src);
+        auto tokens = lex.scanTokens();
+        Parser parser(std::move(tokens), src);
+        auto program = parser.parse();
+
+        // Apply optimizations if enabled
+        if (optimize) {
+            if (debug) {
+                std::cout << "[DEBUG] Applying optimizations...\n";
+            }
+            Optimizer optimizer;
+            program = optimizer.optimize(std::move(program));
+        }
+
+        if (debug) {
+            std::cout << "[DEBUG] Execution mode: " << (useVM ? "VM" : "Interpreter") << "\n";
+        }
+
+        if (!useVM && interp) {
+            interp->interpret(program);
+        } else if (useVM && vm) {
+            std::unordered_set<std::string> importedModules;
+            BytecodeCompiler compiler;
+            compiler.setCurrentFile(filename);
+            compiler.setImportedModules(&importedModules);
+            Chunk chunk = compiler.compile(program);
+            Value result = vm->run(chunk);
+        }
+    } catch (const LexerError& e) {
+        ErrorReporter reporter(src);
+        std::cerr << "In file '" << filename << "':\n";
+        std::cerr << reporter.formatError(e.line, e.column, e.what(), "Lexer Error") << '\n';
+        // Don't rethrow in REPL, just continue
+    } catch (const ParserError& e) {
+        ErrorReporter reporter(src);
+        std::cerr << "In file '" << filename << "':\n";
+        std::cerr << reporter.formatError(e.token, e.what(), "Parse Error") << '\n';
+        // Don't rethrow in REPL, just continue
+    } catch (const RuntimeError& e) {
+        ErrorReporter reporter(src);
+        std::cerr << "In file '" << filename << "':\n";
+        std::cerr << reporter.formatError(e.token, e.what()) << '\n';
+        // Don't rethrow in REPL, just continue
+    } catch (const ThrowSignal& e) {
+        ErrorReporter reporter(src);
+        std::cerr << "In file '" << filename << "':\n";
+        std::cerr << reporter.formatError(e.token, "Uncaught exception") << '\n';
+        std::cerr << "Exception value: ";
+        printValue(e.exception);
+        std::cerr << '\n';
+        // Don't rethrow in REPL, just continue
+    } catch (const std::runtime_error& e) {
+        std::cerr << "In file '" << filename << "':\n";
+        std::cerr << "Error: " << e.what() << '\n';
+        // Don't rethrow in REPL, just continue
+    }
+}
+
 void runRepl(bool useVM, bool debug) {
     std::cout << IZILANG_VERSION << " REPL\n";
     std::cout << "Type 'exit()' or press Ctrl+D to quit\n";
@@ -138,6 +203,8 @@ void runRepl(bool useVM, bool debug) {
                 std::cout << "  :exit      Exit the REPL\n";
                 std::cout << "  :reset     Reset the REPL environment\n";
                 std::cout << "  :debug     Toggle debug mode\n";
+                std::cout << "  :vars      Show all defined variables\n";
+                std::cout << "  :tasks     Show async tasks (not yet implemented)\n";
                 std::cout << "\nTo exit, you can also use: exit(), quit(), or Ctrl+D\n\n";
                 continue;
             } else if (line == ":exit") {
@@ -158,6 +225,44 @@ void runRepl(bool useVM, bool debug) {
             } else if (line == ":debug") {
                 debug = !debug;
                 std::cout << "Debug mode " << (debug ? "enabled" : "disabled") << ".\n";
+                continue;
+            } else if (line == ":vars") {
+                std::cout << "\nDefined Variables:\n";
+                if (!useVM) {
+                    if (interp) {
+                        auto globals = interp->getGlobals();
+                        if (globals) {
+                            const auto& vars = globals->getAll();
+                            if (vars.empty()) {
+                                std::cout << "  (no variables defined)\n";
+                            } else {
+                                for (const auto& [name, value] : vars) {
+                                    std::cout << "  " << name << " = ";
+                                    printValue(value);
+                                    std::cout << "\n";
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    if (vm) {
+                        const auto& vars = vm->getGlobals();
+                        if (vars.empty()) {
+                            std::cout << "  (no variables defined)\n";
+                        } else {
+                            for (const auto& [name, value] : vars) {
+                                std::cout << "  " << name << " = ";
+                                printValue(value);
+                                std::cout << "\n";
+                            }
+                        }
+                    }
+                }
+                std::cout << "\n";
+                continue;
+            } else if (line == ":tasks") {
+                std::cout << "\nAsync Tasks:\n";
+                std::cout << "  (async/task support not yet implemented)\n\n";
                 continue;
             } else {
                 std::cout << "Unknown command: " << line << "\n";
@@ -207,12 +312,8 @@ void runRepl(bool useVM, bool debug) {
         }
 
         try {
-            // Note: Currently runCode() creates a new interpreter/VM each time,
-            // which limits state persistence in the REPL. The persistent
-            // interpreter/VM created above could be used for true state
-            // preservation, but would require refactoring runCode() to accept
-            // an existing interpreter/VM instance.
-            runCode(line, useVM, debug, true, "<repl>");
+            // Use the persistent interpreter/VM for the REPL
+            runReplLine(line, interp, vm, useVM, debug, true, "<repl>");
         } catch (const std::exception& e) {
             // Most errors are already printed by runCode
             // This catch is for unexpected std::exception types
@@ -349,6 +450,83 @@ int runTests(const CliOptions& options) {
     return (failed > 0) ? 1 : 0;
 }
 
+int runBenchmark(const CliOptions& options) {
+    bool useVM = (options.engine == CliOptions::Engine::VM);
+    int iterations = 5;  // Default iterations
+    
+    // Parse iterations from args if provided
+    for (size_t i = 0; i < options.args.size(); ++i) {
+        if (options.args[i] == "--iterations" && i + 1 < options.args.size()) {
+            try {
+                iterations = std::stoi(options.args[i + 1]);
+                if (iterations <= 0) {
+                    std::cerr << "Error: iterations must be positive\n";
+                    return 1;
+                }
+            } catch (...) {
+                std::cerr << "Error: invalid iterations value\n";
+                return 1;
+            }
+        }
+    }
+    
+    // Read benchmark file
+    std::ifstream f(options.input);
+    if (!f.is_open()) {
+        std::cerr << "Cannot open file: " << options.input << "\n";
+        return 1;
+    }
+    std::stringstream buffer;
+    buffer << f.rdbuf();
+    std::string src = buffer.str();
+    
+    std::cout << "╔════════════════════════════════════════╗\n";
+    std::cout << "║   IziLang Performance Benchmark       ║\n";
+    std::cout << "╚════════════════════════════════════════╝\n\n";
+    std::cout << "File: " << options.input << "\n";
+    std::cout << "Engine: " << (useVM ? "VM" : "Interpreter") << "\n";
+    std::cout << "Iterations: " << iterations << "\n";
+    std::cout << "Optimizations: " << (options.optimize ? "enabled" : "disabled") << "\n\n";
+    
+    std::cout << "Running benchmark";
+    std::cout.flush();
+    
+    // Measure execution time
+    auto start = std::chrono::high_resolution_clock::now();
+    
+    for (int i = 0; i < iterations; ++i) {
+        try {
+            // Redirect stdout to /dev/null during benchmark to avoid printing overhead
+            std::stringstream nullStream;
+            std::streambuf* oldCout = std::cout.rdbuf(nullStream.rdbuf());
+            
+            runCode(src, useVM, false, options.optimize, options.input);
+            
+            std::cout.rdbuf(oldCout);
+            std::cout << ".";
+            std::cout.flush();
+        } catch (...) {
+            std::cout.rdbuf(std::cout.rdbuf());
+            std::cerr << "\n\nError: Benchmark failed during execution\n";
+            return 1;
+        }
+    }
+    
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    
+    double totalMs = duration.count();
+    double avgMs = totalMs / iterations;
+    
+    std::cout << " done!\n\n";
+    std::cout << "Results:\n";
+    std::cout << "  Total time:   " << totalMs << " ms\n";
+    std::cout << "  Average time: " << avgMs << " ms\n";
+    std::cout << "  Throughput:   " << (1000.0 / avgMs) << " runs/sec\n\n";
+    
+    return 0;
+}
+
 int main(int argc, char** argv) {
     CliOptions options = CliOptions::parse(argc, argv);
 
@@ -376,6 +554,11 @@ int main(int argc, char** argv) {
     // Handle test command
     if (options.command == CliOptions::Command::Test) {
         return runTests(options);
+    }
+    
+    // Handle bench command
+    if (options.command == CliOptions::Command::Bench) {
+        return runBenchmark(options);
     }
 
     // Handle fmt command

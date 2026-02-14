@@ -18,6 +18,7 @@ struct CliOptions {
         Chunk,        // Compile to bytecode chunk (.izb)
         Test,         // Execute test files
         Repl,         // Interactive REPL mode
+        Bench,        // Run benchmark
         Fmt,          // Format code
         Version,      // Show version
         Help          // Show help
