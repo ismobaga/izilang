@@ -313,10 +313,10 @@ void runRepl(bool useVM, bool debug) {
         }
 
         try {
-            // Use the persistent interpreter/VM for the REPL
+            // Use the persistent interpreter/VM for the REPL via runReplLine()
             runReplLine(line, interp, vm, useVM, debug, true, "<repl>");
         } catch (const std::exception& e) {
-            // Most errors are already printed by runCode
+            // Most errors are already handled by runReplLine
             // This catch is for unexpected std::exception types
             if (debug) {
                 std::cerr << "[DEBUG] Caught exception: " << e.what() << "\n";
@@ -507,7 +507,6 @@ int runBenchmark(const CliOptions& options) {
             std::cout << ".";
             std::cout.flush();
         } catch (...) {
-            std::cout.rdbuf(std::cout.rdbuf());
             std::cerr << "\n\nError: Benchmark failed during execution\n";
             return 1;
         }
