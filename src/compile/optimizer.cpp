@@ -177,6 +177,29 @@ Value Optimizer::visit(GroupingExpr& expr) {
     return Nil{};
 }
 
+Value Optimizer::visit(ConditionalExpr& expr) {
+    expr.condition = optimizeExpr(std::move(expr.condition));
+    expr.thenBranch = optimizeExpr(std::move(expr.thenBranch));
+    expr.elseBranch = optimizeExpr(std::move(expr.elseBranch));
+    
+    // Constant folding: if condition is a literal, only keep the appropriate branch
+    if (auto* lit = dynamic_cast<LiteralExpr*>(expr.condition.get())) {
+        if (isTruthy(lit->value)) {
+            currentExpr = std::move(expr.thenBranch);
+        } else {
+            currentExpr = std::move(expr.elseBranch);
+        }
+        return Nil{};
+    }
+    
+    currentExpr = std::make_unique<ConditionalExpr>(
+        std::move(expr.condition),
+        std::move(expr.thenBranch),
+        std::move(expr.elseBranch)
+    );
+    return Nil{};
+}
+
 Value Optimizer::visit(ArrayExpr& expr) {
     for (auto& elem : expr.elements) {
         elem = optimizeExpr(std::move(elem));

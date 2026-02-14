@@ -61,6 +61,7 @@ public:
     Value visit(UnaryExpr& expr) override;
     Value visit(LiteralExpr& expr) override;
     Value visit(GroupingExpr& expr) override;
+    Value visit(ConditionalExpr& expr) override;
     Value visit(CallExpr& expr) override;
     Value visit(VariableExpr& expr) override;
     Value visit(AssignExpr& expr) override;

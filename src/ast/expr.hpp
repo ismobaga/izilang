@@ -71,6 +71,18 @@ struct BinaryExpr : Expr {
     Value accept(ExprVisitor& v) override { return v.visit(*this); }
 };
 
+// Conditional (ternary) expressions (e.g., a ? b : c)
+struct ConditionalExpr : Expr {
+    ExprPtr condition;
+    ExprPtr thenBranch;
+    ExprPtr elseBranch;
+
+    ConditionalExpr(ExprPtr cond, ExprPtr thenB, ExprPtr elseB)
+        : condition(std::move(cond)), thenBranch(std::move(thenB)), elseBranch(std::move(elseB)) {}
+
+    Value accept(ExprVisitor& v) override { return v.visit(*this); }
+};
+
 // Grouping expressions (e.g., (a + b))
 struct GroupingExpr : Expr {
     ExprPtr expression;

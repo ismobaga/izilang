@@ -29,6 +29,7 @@ namespace izi
         Value visit(AssignExpr& expr) override;
         Value visit(VariableExpr& expr) override;
         Value visit(GroupingExpr& expr) override;
+        Value visit(ConditionalExpr& expr) override;
         Value visit(ArrayExpr& expr) override;
         Value visit(MapExpr& expr) override;
         Value visit(SpreadExpr& expr) override;
