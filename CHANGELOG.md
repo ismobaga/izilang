@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Runtime & VM Hardening
+- **Stack Overflow Protection**: Automatic detection and prevention of stack overflow from deep recursion (max depth: 256)
+- **Memory Statistics Tracking**: New `--memory-stats` flag to display memory usage report
+- **Benchmark Command**: New `izi bench` command for performance testing with customizable iterations
+- **REPL Enhancements**:
+  - `:vars` command to show all defined variables in current session
+  - `:tasks` command (placeholder for future async support)
+  - State persistence across REPL commands
+- **Runtime Safety Limits**: Configurable call depth and stack size monitoring
+- **Memory Profiling Infrastructure**: Framework for tracking allocations by type
+
+### Documentation
+- Added comprehensive [Runtime Hardening Guide](docs/RUNTIME_HARDENING.md)
+- Updated CLI help with new commands and options
+- Documented memory statistics API
+
+### Technical Improvements
+- Separated REPL execution from one-shot execution for better state management
+- Added `getCallDepth()` and `getStackSize()` APIs for runtime introspection
+- Improved error messages for stack overflow scenarios
+
 ## [0.3.0] - 2026-02-11 (In Progress)
 
 ### Added - Gradual Typing System

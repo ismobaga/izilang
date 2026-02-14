@@ -19,6 +19,7 @@ void CliOptions::printHelp() {
     std::cout << "  chunk <file>        Compile to bytecode chunk (.izb)\n";
     std::cout << "  test [pattern]      Run test files (searches for *.iz in tests/)\n";
     std::cout << "  repl                Start interactive REPL\n";
+    std::cout << "  bench <file>        Run performance benchmark\n";
     std::cout << "  fmt <file>          Format source code (coming soon)\n";
     std::cout << "  version             Show version information\n";
     std::cout << "  help [command]      Show help for a specific command\n";
@@ -29,6 +30,7 @@ void CliOptions::printHelp() {
     std::cout << "  --debug             Enable debug/verbose output\n";
     std::cout << "  --optimize, -O      Enable optimizations (default: on)\n";
     std::cout << "  --no-optimize, -O0  Disable optimizations\n";
+    std::cout << "  --memory-stats      Show memory usage statistics (debug)\n";
     std::cout << "  --help, -h          Show this help message\n";
     std::cout << "  --version, -v       Show version information\n";
     std::cout << "\n";
@@ -182,6 +184,23 @@ void CliOptions::printCommandHelp(Command cmd) {
             std::cout << "  izi fmt --write script.iz\n";
             break;
         
+        case Command::Bench:
+            std::cout << "izi bench - Run performance benchmark\n\n";
+            std::cout << "Usage: izi bench [options] <file>\n\n";
+            std::cout << "Description:\n";
+            std::cout << "  Runs a benchmark file and measures execution time.\n";
+            std::cout << "  Useful for performance testing and optimization validation.\n";
+            std::cout << "\n";
+            std::cout << "Options:\n";
+            std::cout << "  --vm          Use bytecode VM\n";
+            std::cout << "  --interp      Use tree-walker interpreter (default)\n";
+            std::cout << "  --iterations N  Number of iterations (default: 5)\n";
+            std::cout << "\n";
+            std::cout << "Examples:\n";
+            std::cout << "  izi bench benchmarks/arithmetic.iz\n";
+            std::cout << "  izi bench --vm --iterations 10 benchmarks/loops.iz\n";
+            break;
+        
         default:
             printHelp();
             break;
@@ -235,6 +254,9 @@ CliOptions CliOptions::parse(int argc, char** argv) {
         i++;
     } else if (firstArg == "repl") {
         options.command = Command::Repl;
+        i++;
+    } else if (firstArg == "bench") {
+        options.command = Command::Bench;
         i++;
     } else if (firstArg == "fmt") {
         options.command = Command::Fmt;
@@ -301,6 +323,9 @@ CliOptions CliOptions::parse(int argc, char** argv) {
         } else if (arg == "--no-optimize" || arg == "-O0") {
             options.optimize = false;
             i++;
+        } else if (arg == "--memory-stats") {
+            options.memoryStats = true;
+            i++;
         } else if (arg == "-o" && (options.command == Command::Compile || options.command == Command::Chunk)) {
             // Output file for compile or chunk command
             if (i + 1 < argc) {
@@ -341,6 +366,7 @@ CliOptions CliOptions::parse(int argc, char** argv) {
                 options.command == Command::Check ||
                 options.command == Command::Compile ||
                 options.command == Command::Chunk ||
+                options.command == Command::Bench ||
                 options.command == Command::Fmt) {
                 // These commands expect a filename
                 if (options.input.empty()) {
@@ -367,7 +393,8 @@ CliOptions CliOptions::parse(int argc, char** argv) {
         options.command == Command::Build || 
         options.command == Command::Check ||
         options.command == Command::Compile ||
-        options.command == Command::Chunk) {
+        options.command == Command::Chunk ||
+        options.command == Command::Bench) {
         if (options.input.empty()) {
             // Map command to string for error message
             std::string cmdName;
@@ -377,6 +404,7 @@ CliOptions CliOptions::parse(int argc, char** argv) {
                 case Command::Check: cmdName = "check"; break;
                 case Command::Compile: cmdName = "compile"; break;
                 case Command::Chunk: cmdName = "chunk"; break;
+                case Command::Bench: cmdName = "bench"; break;
                 default: cmdName = ""; break;
             }
             

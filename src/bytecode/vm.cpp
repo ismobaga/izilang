@@ -48,6 +48,13 @@ Value VM::run(const Chunk& entry) {
     CallFrame mainFrame{&entry, entry.code.data(), stack.size()};
 
     frames.push_back(mainFrame);
+    
+    // Check for stack overflow
+    if (frames.size() > MAX_CALL_FRAMES) {
+        isRunning = wasRunning;
+        throw std::runtime_error("Stack overflow: Maximum call depth of " + 
+                               std::to_string(MAX_CALL_FRAMES) + " exceeded.");
+    }
 
     while (true) {
         try {

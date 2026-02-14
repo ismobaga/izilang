@@ -15,6 +15,9 @@
 
 namespace izi {
 
+// Runtime safety limits
+constexpr size_t MAX_CALL_DEPTH = 256;
+
 class RuntimeError : public std::runtime_error {
    public:
     Token token;
@@ -55,6 +58,11 @@ class Interpreter : public ExprVisitor, public StmtVisitor {
     const std::vector<std::string>& getCommandLineArgs() const {
         return commandLineArgs;
     }
+    
+    // Get global environment (for REPL :vars command)
+    std::shared_ptr<Environment> getGlobals() const {
+        return globals;
+    }
 
     // ExprVisitor
     Value visit(BinaryExpr& expr) override;
@@ -94,6 +102,9 @@ class Interpreter : public ExprVisitor, public StmtVisitor {
     void visit(ClassStmt&) override;              // v0.3
 
     void executeBlock(const std::vector<StmtPtr>& statements, std::shared_ptr<Environment> newEnv);
+    
+    // Runtime safety tracking (public so UserFunction can access it)
+    size_t callDepth = 0;
 
    private:
     std::string_view source_;
