@@ -71,6 +71,7 @@ endif
 GENERATED :=
 OBJECTS :=
 
+GENERATED += $(OBJDIR)/chunk_serializer.o
 GENERATED += $(OBJDIR)/cli.o
 GENERATED += $(OBJDIR)/compiler.o
 GENERATED += $(OBJDIR)/error_reporter.o
@@ -93,6 +94,7 @@ GENERATED += $(OBJDIR)/vm_class.o
 GENERATED += $(OBJDIR)/vm_native.o
 GENERATED += $(OBJDIR)/vm_native_modules.o
 GENERATED += $(OBJDIR)/vm_user_function.o
+OBJECTS += $(OBJDIR)/chunk_serializer.o
 OBJECTS += $(OBJDIR)/cli.o
 OBJECTS += $(OBJDIR)/compiler.o
 OBJECTS += $(OBJDIR)/error_reporter.o
@@ -179,6 +181,9 @@ endif
 # #############################################
 
 $(OBJDIR)/type.o: src/ast/type.cpp
+	@echo "$(notdir $<)"
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/chunk_serializer.o: src/bytecode/chunk_serializer.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/vm.o: src/bytecode/vm.cpp
