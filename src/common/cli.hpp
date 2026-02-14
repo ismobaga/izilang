@@ -33,6 +33,7 @@ struct CliOptions {
     Engine engine = Engine::Interpreter;
     bool debug = false;
     bool optimize = true;  // Enable optimizations by default
+    bool memoryStats = false;  // Enable memory statistics tracking
     std::string input;  // Filename or inline code
     std::string output; // Output filename for compile command
     std::vector<std::string> args;  // Additional arguments (e.g., test patterns)

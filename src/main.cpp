@@ -18,6 +18,7 @@
 #include "common/error_reporter.hpp"
 #include "common/cli.hpp"
 #include "common/semantic_analyzer.hpp"
+#include "common/memory_metrics.hpp"
 
 using namespace izi;
 namespace fs = std::filesystem;
@@ -529,6 +530,11 @@ int runBenchmark(const CliOptions& options) {
 
 int main(int argc, char** argv) {
     CliOptions options = CliOptions::parse(argc, argv);
+    
+    // Initialize memory tracking if requested
+    if (options.memoryStats) {
+        MemoryMetrics::getInstance().reset();
+    }
 
     // Handle version and help
     if (options.command == CliOptions::Command::Version) {
@@ -881,6 +887,11 @@ int main(int argc, char** argv) {
             std::cerr << "Check failed: " << e.what() << '\n';
             return 1;
         }
+    }
+    
+    // Print memory statistics if requested
+    if (options.memoryStats) {
+        MemoryMetrics::getInstance().printReport();
     }
 
     return 0;

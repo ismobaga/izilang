@@ -30,6 +30,7 @@ void CliOptions::printHelp() {
     std::cout << "  --debug             Enable debug/verbose output\n";
     std::cout << "  --optimize, -O      Enable optimizations (default: on)\n";
     std::cout << "  --no-optimize, -O0  Disable optimizations\n";
+    std::cout << "  --memory-stats      Show memory usage statistics (debug)\n";
     std::cout << "  --help, -h          Show this help message\n";
     std::cout << "  --version, -v       Show version information\n";
     std::cout << "\n";
@@ -321,6 +322,9 @@ CliOptions CliOptions::parse(int argc, char** argv) {
             i++;
         } else if (arg == "--no-optimize" || arg == "-O0") {
             options.optimize = false;
+            i++;
+        } else if (arg == "--memory-stats") {
+            options.memoryStats = true;
             i++;
         } else if (arg == "-o" && (options.command == Command::Compile || options.command == Command::Chunk)) {
             // Output file for compile or chunk command
