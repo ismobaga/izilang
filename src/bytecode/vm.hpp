@@ -10,6 +10,7 @@
 namespace izi {
 
 constexpr size_t STACK_MAX = 256;
+constexpr size_t MAX_CALL_FRAMES = 256;  // Maximum call depth for stack overflow protection
 
 struct CallFrame {
     const Chunk* chunk;
@@ -34,6 +35,10 @@ public:
     Value run(const Chunk& chunk);
     
     void setGlobal(const std::string& name, const Value& value);
+    
+    // Runtime safety limits
+    size_t getCallDepth() const { return frames.size(); }
+    size_t getStackSize() const { return stack.size(); }
     
     // void push(Value value);
     // Value pop();
