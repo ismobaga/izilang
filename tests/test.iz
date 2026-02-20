@@ -1,4 +1,4 @@
-import "mod.iz";
+import "./mod.iz";
 
 var x = 10;
 
