@@ -59,7 +59,12 @@ void printValue(const Value& v) {
     if (std::holds_alternative<Nil>(v)) {
         std::cout << "nil";
     } else if (std::holds_alternative<double>(v)) {
-        std::cout << std::get<double>(v);
+        double num = std::get<double>(v);
+        if (num == std::floor(num) && std::isfinite(num)) {
+            std::cout << static_cast<long long>(num);
+        } else {
+            std::cout << num;
+        }
     } else if (std::holds_alternative<bool>(v)) {
         std::cout << (std::get<bool>(v) ? "true" : "false");
     } else if (std::holds_alternative<std::string>(v)) {
