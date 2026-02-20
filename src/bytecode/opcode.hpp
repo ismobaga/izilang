@@ -16,6 +16,7 @@ enum class OpCode : uint8_t {
     SUBTRACT,      // Subtraction
     MULTIPLY,      // Multiplication
     DIVIDE,        // Division
+    MODULO,        // Modulo
     NEGATE,        // Unary negation
     
     // Comparison operations

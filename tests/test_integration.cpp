@@ -83,6 +83,131 @@ TEST_CASE("Integration: Simple arithmetic expressions", "[integration]") {
         
         REQUIRE(capture.getOutput() == "4\n");
     }
+    
+    SECTION("Modulo") {
+        std::string source = "print(10 % 3);";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        REQUIRE(capture.getOutput() == "1\n");
+    }
+    
+    SECTION("Modulo zero remainder") {
+        std::string source = "print(9 % 3);";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        REQUIRE(capture.getOutput() == "0\n");
+    }
+    
+    SECTION("Modulo by zero throws error") {
+        std::string source = "print(10 % 0);";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        Interpreter interp(source);
+        REQUIRE_THROWS_AS(interp.interpret(program), RuntimeError);
+    }
+}
+
+TEST_CASE("Integration: Compound assignment operators", "[integration]") {
+    SECTION("Plus-equal") {
+        std::string source = "var x = 5; x += 3; print(x);";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        REQUIRE(capture.getOutput() == "8\n");
+    }
+    
+    SECTION("Minus-equal") {
+        std::string source = "var x = 10; x -= 4; print(x);";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        REQUIRE(capture.getOutput() == "6\n");
+    }
+    
+    SECTION("Star-equal") {
+        std::string source = "var x = 3; x *= 4; print(x);";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        REQUIRE(capture.getOutput() == "12\n");
+    }
+    
+    SECTION("Slash-equal") {
+        std::string source = "var x = 20; x /= 5; print(x);";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        REQUIRE(capture.getOutput() == "4\n");
+    }
+    
+    SECTION("Percent-equal") {
+        std::string source = "var x = 10; x %= 3; print(x);";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        REQUIRE(capture.getOutput() == "1\n");
+    }
+    
+    SECTION("String concatenation with plus-equal") {
+        std::string source = "var s = \"hello\"; s += \" world\"; print(s);";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+        
+        REQUIRE(capture.getOutput() == "hello world\n");
+    }
 }
 
 TEST_CASE("Integration: Variable declaration and usage", "[integration]") {

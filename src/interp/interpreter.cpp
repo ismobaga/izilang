@@ -1,5 +1,6 @@
 #include "interpreter.hpp"
 
+#include <cmath>
 #include <iostream>
 #include <memory>
 #include <stdexcept>
@@ -106,6 +107,15 @@ Value Interpreter::visit(BinaryExpr& expr) {
 
         case TokenType::SLASH:
             return toNumber(left, expr.op) / toNumber(right, expr.op);
+
+        case TokenType::PERCENT: {
+            double l = toNumber(left, expr.op);
+            double r = toNumber(right, expr.op);
+            if (r == 0.0) {
+                throw RuntimeError(expr.op, "Division by zero in modulo operation.");
+            }
+            return std::fmod(l, r);
+        }
 
         case TokenType::GREATER:
             return toNumber(left, expr.op) > toNumber(right, expr.op);

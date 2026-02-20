@@ -40,6 +40,30 @@ TEST_CASE("Lexer tokenizes two character tokens", "[lexer]") {
         REQUIRE(tokens[4].type == TokenType::ARROW);
         REQUIRE(tokens[5].type == TokenType::END_OF_FILE);
     }
+    
+    SECTION("Tokenizes compound assignment operators") {
+        Lexer lexer("+= -= *= /= %=");
+        auto tokens = lexer.scanTokens();
+        
+        REQUIRE(tokens.size() == 6); // 5 tokens + EOF
+        REQUIRE(tokens[0].type == TokenType::PLUS_EQUAL);
+        REQUIRE(tokens[1].type == TokenType::MINUS_EQUAL);
+        REQUIRE(tokens[2].type == TokenType::STAR_EQUAL);
+        REQUIRE(tokens[3].type == TokenType::SLASH_EQUAL);
+        REQUIRE(tokens[4].type == TokenType::PERCENT_EQUAL);
+    }
+}
+
+TEST_CASE("Lexer tokenizes modulo operator", "[lexer]") {
+    SECTION("Tokenizes percent as modulo") {
+        Lexer lexer("10 % 3");
+        auto tokens = lexer.scanTokens();
+        
+        REQUIRE(tokens.size() == 4); // 10 % 3 EOF
+        REQUIRE(tokens[0].type == TokenType::NUMBER);
+        REQUIRE(tokens[1].type == TokenType::PERCENT);
+        REQUIRE(tokens[2].type == TokenType::NUMBER);
+    }
 }
 
 TEST_CASE("Lexer tokenizes numbers", "[lexer]") {

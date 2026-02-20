@@ -591,6 +591,35 @@ ExprPtr Parser::assignment() {
         throw error(equals, "Invalid assignment target");
     }
 
+    // Compound assignment operators: desugar x op= y into x = x op y
+    if (match({TokenType::PLUS_EQUAL, TokenType::MINUS_EQUAL, TokenType::STAR_EQUAL,
+               TokenType::SLASH_EQUAL, TokenType::PERCENT_EQUAL})) {
+        Token opEq = previous();
+
+        // Map compound token to the underlying binary operator token
+        TokenType binOp;
+        switch (opEq.type) {
+            case TokenType::PLUS_EQUAL:    binOp = TokenType::PLUS;    break;
+            case TokenType::MINUS_EQUAL:   binOp = TokenType::MINUS;   break;
+            case TokenType::STAR_EQUAL:    binOp = TokenType::STAR;    break;
+            case TokenType::SLASH_EQUAL:   binOp = TokenType::SLASH;   break;
+            case TokenType::PERCENT_EQUAL: binOp = TokenType::PERCENT; break;
+            default:
+                throw error(opEq, "Unknown compound assignment operator.");
+        }
+        Token op(binOp, opEq.lexeme.substr(0, opEq.lexeme.size() - 1), opEq.line, opEq.column);
+
+        ExprPtr rhs = assignment();
+
+        if (auto var = dynamic_cast<VariableExpr*>(expr.get())) {
+            auto varRead = std::make_unique<VariableExpr>(var->name, nullptr);
+            auto binary = std::make_unique<BinaryExpr>(std::move(varRead), op, std::move(rhs));
+            return std::make_unique<AssignExpr>(var->name, std::move(binary));
+        }
+
+        throw error(opEq, "Compound assignment target must be a variable.");
+    }
+
     return expr;
 }
 
@@ -671,7 +700,7 @@ ExprPtr Parser::term() {
 ExprPtr Parser::factor() {
     ExprPtr expr = unary();
 
-    while (match({TokenType::SLASH, TokenType::STAR})) {
+    while (match({TokenType::SLASH, TokenType::STAR, TokenType::PERCENT})) {
         Token op = previous();
         ExprPtr right = unary();
         expr = std::make_unique<BinaryExpr>(std::move(expr), op, std::move(right));
