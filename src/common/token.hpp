@@ -33,6 +33,12 @@ enum class TokenType {
     LESS,
     LESS_EQUAL,
     ARROW,
+    PERCENT,
+    PLUS_EQUAL,
+    MINUS_EQUAL,
+    STAR_EQUAL,
+    SLASH_EQUAL,
+    PERCENT_EQUAL,
 
     // Literals
     IDENTIFIER,
@@ -137,6 +143,18 @@ inline const char* tokenTypeToString(TokenType type) {
             return "LESS_EQUAL";
         case TokenType::ARROW:
             return "ARROW";
+        case TokenType::PERCENT:
+            return "PERCENT";
+        case TokenType::PLUS_EQUAL:
+            return "PLUS_EQUAL";
+        case TokenType::MINUS_EQUAL:
+            return "MINUS_EQUAL";
+        case TokenType::STAR_EQUAL:
+            return "STAR_EQUAL";
+        case TokenType::SLASH_EQUAL:
+            return "SLASH_EQUAL";
+        case TokenType::PERCENT_EQUAL:
+            return "PERCENT_EQUAL";
         case TokenType::IDENTIFIER:
             return "IDENTIFIER";
         case TokenType::STRING:

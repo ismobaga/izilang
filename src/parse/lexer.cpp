@@ -60,22 +60,33 @@ void Lexer::scanToken() {
             addToken(TokenType::QUESTION);
             break;
         case '+':
-            addToken(TokenType::PLUS);
+            addToken(match('=') ? TokenType::PLUS_EQUAL : TokenType::PLUS);
             break;
         case '*':
-            addToken(TokenType::STAR);
+            addToken(match('=') ? TokenType::STAR_EQUAL : TokenType::STAR);
+            break;
+        case '%':
+            addToken(match('=') ? TokenType::PERCENT_EQUAL : TokenType::PERCENT);
             break;
         case '/':
             if (match('/')) {
                 skipLineComment();
             } else if (match('*')) {
                 skipBlockComment();
+            } else if (match('=')) {
+                addToken(TokenType::SLASH_EQUAL);
             } else {
                 addToken(TokenType::SLASH);
             }
             break;
         case '-':
-            addToken(match('>') ? TokenType::ARROW : TokenType::MINUS);
+            if (match('>')) {
+                addToken(TokenType::ARROW);
+            } else if (match('=')) {
+                addToken(TokenType::MINUS_EQUAL);
+            } else {
+                addToken(TokenType::MINUS);
+            }
             break;
         case '!':
             addToken(match('=') ? TokenType::BANG_EQUAL : TokenType::BANG);

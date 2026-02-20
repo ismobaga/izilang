@@ -95,6 +95,9 @@ Value BytecodeCompiler::visit(BinaryExpr& expr) {
         case TokenType::SLASH:
             emitOp(OpCode::DIVIDE);
             break;
+        case TokenType::PERCENT:
+            emitOp(OpCode::MODULO);
+            break;
         case TokenType::GREATER:
             emitOp(OpCode::GREATER);
             break;

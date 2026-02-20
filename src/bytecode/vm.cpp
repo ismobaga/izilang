@@ -113,6 +113,14 @@ Value VM::run(const Chunk& entry) {
                 case OpCode::DIVIDE:
                     binaryNumeric([](double a, double b) { return a / b; });
                     break;
+                case OpCode::MODULO:
+                    binaryNumeric([](double a, double b) {
+                        if (b == 0.0) {
+                            throw std::runtime_error("Division by zero in modulo operation.");
+                        }
+                        return std::fmod(a, b);
+                    });
+                    break;
                 case OpCode::NEGATE: {
                     Value value = pop();
                     push(-asNumber(value));
