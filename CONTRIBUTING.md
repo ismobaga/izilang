@@ -1,17 +1,16 @@
-# Contributing to v0.3 - Quick Start Guide
+# Contributing to IziLang
 
 ## 🎯 Goal
 
-Help implement the remaining 65% of the v0.3 milestone. This guide shows you how to contribute effectively.
+Help implement and improve IziLang. This guide shows you how to contribute effectively.
 
 ---
 
 ## 📋 Prerequisites
 
 1. **Read the Foundation**
-   - [V03_SUMMARY.md](V03_SUMMARY.md) - What's done
    - [V03_SPECIFICATION.md](docs/V03_SPECIFICATION.md) - Language spec
-   - [V03_IMPLEMENTATION_STATUS.md](V03_IMPLEMENTATION_STATUS.md) - Detailed tasks
+   - [README.md](README.md) - Project overview
 
 2. **Setup Development Environment**
    ```bash
@@ -223,7 +222,7 @@ git push origin feature/parse-type-annotations
 ### 7. Create Pull Request
 - Include tests
 - Update documentation if needed
-- Reference the v0.3 milestone issue
+- Reference the relevant issue or milestone
 
 ---
 
@@ -302,7 +301,7 @@ echo 'var x: Number = 10;' | ./bin/Debug/izi/izi --debug-tokens
 
 ### Ask for Help
 - Open a GitHub Discussion
-- Comment on the v0.3 milestone issue
+- Comment on the relevant milestone issue
 - Tag maintainers in your PR
 
 ---
@@ -321,7 +320,7 @@ echo 'var x: Number = 10;' | ./bin/Debug/izi/izi --debug-tokens
 
 ## 🏆 Recognition
 
-Contributors to v0.3 will be:
+Contributors will be:
 - Listed in CHANGELOG.md
 - Mentioned in release notes
 - Added to CONTRIBUTORS.md
@@ -405,10 +404,9 @@ A: Finish one first, then pick another. Keeps PRs focused.
 
 **Happy Coding!** 🚀
 
-Let's build v0.3 together!
+Let's build IziLang together!
 
 ---
 
 **Last Updated**: 2026-02-11  
-**Status**: v0.3 Foundation Complete  
-**Next Task**: Parser Updates
+**Status**: Active Development

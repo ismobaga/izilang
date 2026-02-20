@@ -128,6 +128,10 @@ izi hello.iz
 
 - **[Getting Started](docs/GETTING_STARTED.md)** - Installation, basics, examples
 - **[CLI Reference](docs/CLI_REFERENCE.md)** - Complete command-line guide
+- **[Standard Library](docs/STANDARD_LIBRARY.md)** - Built-in modules and functions
+- **[Module System](docs/MODULE_SYSTEM.md)** - Import/export and module organisation
+- **[Error System](docs/ERROR_SYSTEM.md)** - Error types and handling
+- **[Testing](docs/TESTING.md)** - How to run and write tests
 - **[Editor Setup](docs/EDITOR_SETUP.md)** - VS Code, Vim, Emacs integration
 - **[Troubleshooting](docs/ERRORS_TROUBLESHOOTING.md)** - Common errors and solutions
 - **[Roadmap](docs/ROADMAP.md)** - Development plans and milestones
