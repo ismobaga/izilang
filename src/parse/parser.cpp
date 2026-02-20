@@ -569,7 +569,7 @@ ExprPtr Parser::expression() {
 }
 
 ExprPtr Parser::assignment() {
-    ExprPtr expr = logicalOr();
+    ExprPtr expr = conditional();
 
     if (match({TokenType::EQUAL})) {
         const Token& equals = previous();
@@ -589,6 +589,19 @@ ExprPtr Parser::assignment() {
         }
 
         throw error(equals, "Invalid assignment target");
+    }
+
+    return expr;
+}
+
+ExprPtr Parser::conditional() {
+    ExprPtr expr = logicalOr();
+
+    if (match({TokenType::QUESTION})) {
+        ExprPtr thenBranch = expression();
+        consume(TokenType::COLON, "Expect ':' after then branch of conditional expression.");
+        ExprPtr elseBranch = conditional();  // Right-associative
+        expr = std::make_unique<ConditionalExpr>(std::move(expr), std::move(thenBranch), std::move(elseBranch));
     }
 
     return expr;

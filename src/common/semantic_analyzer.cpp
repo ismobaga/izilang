@@ -147,6 +147,19 @@ Value SemanticAnalyzer::visit(GroupingExpr& expr) {
     return Nil{};
 }
 
+Value SemanticAnalyzer::visit(ConditionalExpr& expr) {
+    // Analyze condition
+    expr.condition->accept(*this);
+    
+    // Analyze both branches
+    expr.thenBranch->accept(*this);
+    expr.elseBranch->accept(*this);
+    
+    // Note: In a full type system, we would check that both branches
+    // return compatible types. For now, we just ensure both are analyzed.
+    return Nil{};
+}
+
 Value SemanticAnalyzer::visit(CallExpr& expr) {
     expr.callee->accept(*this);
     

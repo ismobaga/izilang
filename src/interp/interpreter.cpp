@@ -179,6 +179,15 @@ Value Interpreter::visit(GroupingExpr& expr) {
     return evaluate(*expr.expression);
 }
 
+Value Interpreter::visit(ConditionalExpr& expr) {
+    Value condition = evaluate(*expr.condition);
+    if (isTruthy(condition)) {
+        return evaluate(*expr.thenBranch);
+    } else {
+        return evaluate(*expr.elseBranch);
+    }
+}
+
 Value Interpreter::visit(VariableExpr& expr) {
     return env->get(expr.name);
 }

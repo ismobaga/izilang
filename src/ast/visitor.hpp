@@ -10,6 +10,7 @@ struct VariableExpr;
 struct AssignExpr;
 struct LiteralExpr;
 struct GroupingExpr;
+struct ConditionalExpr;
 struct ArrayExpr;
 struct MapExpr;
 struct SpreadExpr;
@@ -49,6 +50,7 @@ class ExprVisitor {
     virtual Value visit(AssignExpr&) = 0;
     virtual Value visit(VariableExpr&) = 0;
     virtual Value visit(GroupingExpr&) = 0;
+    virtual Value visit(ConditionalExpr&) = 0;
     virtual Value visit(ArrayExpr&) = 0;
     virtual Value visit(MapExpr&) = 0;
     virtual Value visit(SpreadExpr&) = 0;

@@ -185,6 +185,33 @@ Value BytecodeCompiler::visit(GroupingExpr& expr) {
     return Nil{};
 }
 
+Value BytecodeCompiler::visit(ConditionalExpr& expr) {
+    // Compile condition
+    emitExpression(*expr.condition);
+    
+    // Jump to else branch if condition is false
+    size_t elseJump = emitJump(OpCode::JUMP_IF_FALSE);
+    emitOp(OpCode::POP);  // Pop condition if true
+    
+    // Compile then branch
+    emitExpression(*expr.thenBranch);
+    
+    // Jump over else branch
+    size_t endJump = emitJump(OpCode::JUMP);
+    
+    // Patch else jump to here
+    patchJump(elseJump);
+    emitOp(OpCode::POP);  // Pop condition if false
+    
+    // Compile else branch
+    emitExpression(*expr.elseBranch);
+    
+    // Patch end jump to here
+    patchJump(endJump);
+    
+    return Nil{};
+}
+
 Value BytecodeCompiler::visit(IndexExpr& expr) {
     emitExpression(*expr.collection);
     emitExpression(*expr.index);
