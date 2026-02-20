@@ -7,7 +7,7 @@
 namespace izi {
 
 // Version constant
-constexpr const char* IZILANG_VERSION = "IziLang 0.2.0";
+constexpr const char* IZILANG_VERSION = "IziLang 0.3.0";
 
 struct CliOptions {
     enum class Command {

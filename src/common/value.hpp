@@ -87,8 +87,8 @@ inline void printMap(const Map& map) {
 inline void printSet(const Set& set) {
     std::cout << "Set{";
     size_t count = 0;
-    for (const auto& [key, _] : set.values) {
-        std::cout << key;
+    for (const auto& [key, value] : set.values) {
+        printValue(value);
         if (count < set.values.size() - 1) {
             std::cout << ", ";
         }
