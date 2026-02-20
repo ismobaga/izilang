@@ -36,7 +36,7 @@ StmtPtr Parser::varDeclaration() {
     if (check(TokenType::LEFT_BRACKET)) {
         // Array destructuring: var [a, b] = [1, 2];
         advance();  // consume '['
-        
+
         std::vector<PatternPtr> elements;
         if (!check(TokenType::RIGHT_BRACKET)) {
             do {
@@ -45,22 +45,22 @@ StmtPtr Parser::varDeclaration() {
             } while (match({TokenType::COMMA}));
         }
         consume(TokenType::RIGHT_BRACKET, "Expect ']' after array pattern.");
-        
+
         ExprPtr initializer = nullptr;
         if (match({TokenType::EQUAL})) {
             initializer = expression();
         } else {
             throw error(peek(), "Array destructuring requires an initializer.");
         }
-        
+
         consumeSemicolonIfNeeded();
         return std::make_unique<VarStmt>(std::make_unique<ArrayPattern>(std::move(elements)), std::move(initializer));
     }
-    
+
     if (check(TokenType::LEFT_BRACE)) {
         // Map destructuring: var {name, age} = person;
         advance();  // consume '{'
-        
+
         std::vector<std::string> keys;
         if (!check(TokenType::RIGHT_BRACE)) {
             do {
@@ -69,18 +69,18 @@ StmtPtr Parser::varDeclaration() {
             } while (match({TokenType::COMMA}));
         }
         consume(TokenType::RIGHT_BRACE, "Expect '}' after map pattern.");
-        
+
         ExprPtr initializer = nullptr;
         if (match({TokenType::EQUAL})) {
             initializer = expression();
         } else {
             throw error(peek(), "Map destructuring requires an initializer.");
         }
-        
+
         consumeSemicolonIfNeeded();
         return std::make_unique<VarStmt>(std::make_unique<MapPattern>(std::move(keys)), std::move(initializer));
     }
-    
+
     // Simple variable declaration
     Token name = consume(TokenType::IDENTIFIER, "Expect variable name.");
 
@@ -109,7 +109,7 @@ StmtPtr Parser::functionDeclaration() {
         do {
             Token param = consume(TokenType::IDENTIFIER, "Expect parameter name.");
             params.push_back(std::string(param.lexeme));
-            
+
             // Parse optional parameter type annotation
             TypePtr paramType = nullptr;
             if (match({TokenType::COLON})) {
@@ -136,12 +136,8 @@ StmtPtr Parser::functionDeclaration() {
         bodyStmts = std::move(blockPtr->statements);
     }
 
-    return std::make_unique<FunctionStmt>(
-        std::string(name.lexeme),
-        std::move(params),
-        std::move(bodyStmts),
-        std::move(paramTypes),
-        std::move(returnType));
+    return std::make_unique<FunctionStmt>(std::string(name.lexeme), std::move(params), std::move(bodyStmts),
+                                          std::move(paramTypes), std::move(returnType));
 }
 
 StmtPtr Parser::importStatement() {
@@ -149,7 +145,7 @@ StmtPtr Parser::importStatement() {
     // 1. import "module.iz";  (simple import - backward compatible)
     // 2. import { name1, name2 } from "module.iz";  (named imports)
     // 3. import * as alias from "module.iz";  (wildcard import)
-    
+
     // Check for wildcard import: import *
     if (match({TokenType::STAR})) {
         consume(TokenType::AS, "Expect 'as' after '*' in import statement.");
@@ -157,16 +153,16 @@ StmtPtr Parser::importStatement() {
         consume(TokenType::FROM, "Expect 'from' after alias in import statement.");
         Token moduleToken = consume(TokenType::STRING, "Expect module name as string.");
         consumeSemicolonIfNeeded();
-        
+
         // Remove quotes from string literal
         std::string moduleName = std::string(moduleToken.lexeme);
         if (moduleName.size() >= 2 && moduleName.front() == '"' && moduleName.back() == '"') {
             moduleName = moduleName.substr(1, moduleName.size() - 2);
         }
-        
+
         return std::make_unique<ImportStmt>(std::move(moduleName), std::string(alias.lexeme), true);
     }
-    
+
     // Check for named imports: import {
     if (match({TokenType::LEFT_BRACE})) {
         std::vector<std::string> namedImports;
@@ -174,31 +170,31 @@ StmtPtr Parser::importStatement() {
             Token name = consume(TokenType::IDENTIFIER, "Expect identifier in import list.");
             namedImports.push_back(std::string(name.lexeme));
         } while (match({TokenType::COMMA}));
-        
+
         consume(TokenType::RIGHT_BRACE, "Expect '}' after import list.");
         consume(TokenType::FROM, "Expect 'from' after import list.");
         Token moduleToken = consume(TokenType::STRING, "Expect module name as string.");
         consumeSemicolonIfNeeded();
-        
+
         // Remove quotes from string literal
         std::string moduleName = std::string(moduleToken.lexeme);
         if (moduleName.size() >= 2 && moduleName.front() == '"' && moduleName.back() == '"') {
             moduleName = moduleName.substr(1, moduleName.size() - 2);
         }
-        
+
         return std::make_unique<ImportStmt>(std::move(moduleName), std::move(namedImports));
     }
-    
+
     // Simple import: import "module.iz";
     Token moduleToken = consume(TokenType::STRING, "Expect module name as string.");
     consumeSemicolonIfNeeded();
-    
+
     // Remove quotes from string literal
     std::string moduleName = std::string(moduleToken.lexeme);
     if (moduleName.size() >= 2 && moduleName.front() == '"' && moduleName.back() == '"') {
         moduleName = moduleName.substr(1, moduleName.size() - 2);
     }
-    
+
     return std::make_unique<ImportStmt>(std::move(moduleName));
 }
 
@@ -206,17 +202,17 @@ StmtPtr Parser::exportStatement() {
     // Export must be followed by either 'fn' or 'var'
     // export fn name() { ... }
     // export var name = value;
-    
+
     if (match({TokenType::FN})) {
         auto funcDecl = functionDeclaration();
         return std::make_unique<ExportStmt>(std::move(funcDecl));
     }
-    
+
     if (match({TokenType::VAR})) {
         auto varDecl = varDeclaration();
         return std::make_unique<ExportStmt>(std::move(varDecl));
     }
-    
+
     throw error(peek(), "Expect 'fn' or 'var' after 'export'.");
 }
 
@@ -268,10 +264,7 @@ StmtPtr Parser::ifStatement() {
         elseBranch = statement();
     }
 
-    return std::make_unique<IfStmt>(
-        std::move(condition),
-        std::move(thenBranch),
-        std::move(elseBranch));
+    return std::make_unique<IfStmt>(std::move(condition), std::move(thenBranch), std::move(elseBranch));
 }
 
 StmtPtr Parser::whileStatement() {
@@ -361,7 +354,7 @@ StmtPtr Parser::tryStatement() {
     // Parse try block
     consume(TokenType::LEFT_BRACE, "Expect '{' after 'try'.");
     StmtPtr tryBlock = blockStatement();
-    
+
     // Parse optional catch block
     StmtPtr catchBlock = nullptr;
     std::string catchVariable;
@@ -373,24 +366,21 @@ StmtPtr Parser::tryStatement() {
         consume(TokenType::LEFT_BRACE, "Expect '{' after catch clause.");
         catchBlock = blockStatement();
     }
-    
+
     // Parse optional finally block
     StmtPtr finallyBlock = nullptr;
     if (match({TokenType::FINALLY})) {
         consume(TokenType::LEFT_BRACE, "Expect '{' after 'finally'.");
         finallyBlock = blockStatement();
     }
-    
+
     // Must have at least catch or finally
     if (catchBlock == nullptr && finallyBlock == nullptr) {
         throw error(previous(), "Expected 'catch' or 'finally' after 'try' block.");
     }
-    
-    return std::make_unique<TryStmt>(
-        std::move(tryBlock),
-        std::move(catchVariable),
-        std::move(catchBlock),
-        std::move(finallyBlock));
+
+    return std::make_unique<TryStmt>(std::move(tryBlock), std::move(catchVariable), std::move(catchBlock),
+                                     std::move(finallyBlock));
 }
 
 StmtPtr Parser::throwStatement() {
@@ -402,55 +392,52 @@ StmtPtr Parser::throwStatement() {
 
 StmtPtr Parser::classDeclaration() {
     Token name = consume(TokenType::IDENTIFIER, "Expect class name.");
-    
+
     // Check for extends clause
     std::string superclass;
     if (match({TokenType::EXTENDS})) {
         Token superName = consume(TokenType::IDENTIFIER, "Expect superclass name.");
         superclass = std::string(superName.lexeme);
     }
-    
+
     consume(TokenType::LEFT_BRACE, "Expect '{' after class name.");
-    
+
     std::vector<std::unique_ptr<VarStmt>> fields;
     std::vector<std::unique_ptr<FunctionStmt>> methods;
-    
+
     // Parse class body (fields and methods)
     while (!check(TokenType::RIGHT_BRACE) && !isAtEnd()) {
         if (match({TokenType::VAR})) {
             // Parse field declaration
             Token fieldName = consume(TokenType::IDENTIFIER, "Expect field name.");
-            
+
             // Parse optional type annotation
             TypePtr typeAnnotation = nullptr;
             if (match({TokenType::COLON})) {
                 typeAnnotation = parseTypeAnnotation();
             }
-            
+
             // Optional initializer
             ExprPtr initializer = nullptr;
             if (match({TokenType::EQUAL})) {
                 initializer = expression();
             }
-            
+
             consumeSemicolonIfNeeded();
-            fields.push_back(std::make_unique<VarStmt>(
-                std::string(fieldName.lexeme), 
-                std::move(initializer), 
-                std::move(typeAnnotation)
-            ));
+            fields.push_back(std::make_unique<VarStmt>(std::string(fieldName.lexeme), std::move(initializer),
+                                                       std::move(typeAnnotation)));
         } else if (match({TokenType::FN})) {
             // Parse method declaration
             Token methodName = consume(TokenType::IDENTIFIER, "Expect method name.");
             consume(TokenType::LEFT_PAREN, "Expect '(' after method name.");
-            
+
             std::vector<std::string> params;
             std::vector<TypePtr> paramTypes;
             if (!check(TokenType::RIGHT_PAREN)) {
                 do {
                     Token param = consume(TokenType::IDENTIFIER, "Expect parameter name.");
                     params.push_back(std::string(param.lexeme));
-                    
+
                     // Parse optional parameter type annotation
                     TypePtr paramType = nullptr;
                     if (match({TokenType::COLON})) {
@@ -460,42 +447,34 @@ StmtPtr Parser::classDeclaration() {
                 } while (match({TokenType::COMMA}));
             }
             consume(TokenType::RIGHT_PAREN, "Expect ')' after parameters.");
-            
+
             // Parse optional return type annotation
             TypePtr returnType = nullptr;
             if (match({TokenType::COLON})) {
                 returnType = parseTypeAnnotation();
             }
-            
+
             consume(TokenType::LEFT_BRACE, "Expect '{' before method body.");
             auto body = blockStatement();
-            
+
             // Extract statements from BlockStmt
             auto* blockPtr = dynamic_cast<BlockStmt*>(body.get());
             std::vector<StmtPtr> bodyStmts;
             if (blockPtr) {
                 bodyStmts = std::move(blockPtr->statements);
             }
-            
-            methods.push_back(std::make_unique<FunctionStmt>(
-                std::string(methodName.lexeme),
-                std::move(params),
-                std::move(bodyStmts),
-                std::move(paramTypes),
-                std::move(returnType)
-            ));
+
+            methods.push_back(std::make_unique<FunctionStmt>(std::string(methodName.lexeme), std::move(params),
+                                                             std::move(bodyStmts), std::move(paramTypes),
+                                                             std::move(returnType)));
         } else {
             throw error(peek(), "Expect 'var' or 'fn' in class body.");
         }
     }
-    
+
     consume(TokenType::RIGHT_BRACE, "Expect '}' after class body.");
-    return std::make_unique<ClassStmt>(
-        std::string(name.lexeme),
-        std::move(superclass),
-        std::move(fields),
-        std::move(methods)
-    );
+    return std::make_unique<ClassStmt>(std::string(name.lexeme), std::move(superclass), std::move(fields),
+                                       std::move(methods));
 }
 
 // Type annotation parsing (v0.3)
@@ -503,7 +482,7 @@ TypePtr Parser::parseTypeAnnotation() {
     // Check for basic types
     if (match({TokenType::IDENTIFIER})) {
         std::string typeName = std::string(previous().lexeme);
-        
+
         // Check for generic types (Array<T>, Map<K,V>)
         if (match({TokenType::LESS})) {
             if (typeName == "Array") {
@@ -520,7 +499,7 @@ TypePtr Parser::parseTypeAnnotation() {
                 throw error(previous(), "Unknown generic type '" + typeName + "'.");
             }
         }
-        
+
         // Simple types
         if (typeName == "Number") {
             return TypeAnnotation::simple(TypeAnnotation::Kind::Number);
@@ -538,11 +517,11 @@ TypePtr Parser::parseTypeAnnotation() {
             throw error(previous(), "Unknown type '" + typeName + "'.");
         }
     }
-    
+
     // Check for function types: fn(T1, T2, ...) -> R
     if (match({TokenType::FN})) {
         consume(TokenType::LEFT_PAREN, "Expect '(' after 'fn' in function type.");
-        
+
         std::vector<TypePtr> paramTypes;
         if (!check(TokenType::RIGHT_PAREN)) {
             do {
@@ -550,16 +529,16 @@ TypePtr Parser::parseTypeAnnotation() {
             } while (match({TokenType::COMMA}));
         }
         consume(TokenType::RIGHT_PAREN, "Expect ')' after function parameter types.");
-        
+
         // Parse return type
         TypePtr returnType = TypeAnnotation::simple(TypeAnnotation::Kind::Void);
         if (match({TokenType::ARROW})) {
             returnType = parseTypeAnnotation();
         }
-        
+
         return TypeAnnotation::function(std::move(paramTypes), std::move(returnType));
     }
-    
+
     throw error(peek(), "Expect type annotation.");
 }
 
@@ -581,7 +560,8 @@ ExprPtr Parser::assignment() {
         }
         // Index assignment: arr[i] = value
         if (auto indexExpr = dynamic_cast<IndexExpr*>(expr.get())) {
-            return std::make_unique<SetIndexExpr>(std::move(indexExpr->collection), std::move(indexExpr->index), std::move(value));
+            return std::make_unique<SetIndexExpr>(std::move(indexExpr->collection), std::move(indexExpr->index),
+                                                  std::move(value));
         }
         // Property assignment: obj.prop = value (v0.3)
         if (auto propExpr = dynamic_cast<PropertyExpr*>(expr.get())) {
@@ -592,18 +572,28 @@ ExprPtr Parser::assignment() {
     }
 
     // Compound assignment operators: desugar x op= y into x = x op y
-    if (match({TokenType::PLUS_EQUAL, TokenType::MINUS_EQUAL, TokenType::STAR_EQUAL,
-               TokenType::SLASH_EQUAL, TokenType::PERCENT_EQUAL})) {
+    if (match({TokenType::PLUS_EQUAL, TokenType::MINUS_EQUAL, TokenType::STAR_EQUAL, TokenType::SLASH_EQUAL,
+               TokenType::PERCENT_EQUAL})) {
         Token opEq = previous();
 
         // Map compound token to the underlying binary operator token
         TokenType binOp;
         switch (opEq.type) {
-            case TokenType::PLUS_EQUAL:    binOp = TokenType::PLUS;    break;
-            case TokenType::MINUS_EQUAL:   binOp = TokenType::MINUS;   break;
-            case TokenType::STAR_EQUAL:    binOp = TokenType::STAR;    break;
-            case TokenType::SLASH_EQUAL:   binOp = TokenType::SLASH;   break;
-            case TokenType::PERCENT_EQUAL: binOp = TokenType::PERCENT; break;
+            case TokenType::PLUS_EQUAL:
+                binOp = TokenType::PLUS;
+                break;
+            case TokenType::MINUS_EQUAL:
+                binOp = TokenType::MINUS;
+                break;
+            case TokenType::STAR_EQUAL:
+                binOp = TokenType::STAR;
+                break;
+            case TokenType::SLASH_EQUAL:
+                binOp = TokenType::SLASH;
+                break;
+            case TokenType::PERCENT_EQUAL:
+                binOp = TokenType::PERCENT;
+                break;
             default:
                 throw error(opEq, "Unknown compound assignment operator.");
         }
@@ -675,8 +665,7 @@ ExprPtr Parser::equality() {
 ExprPtr Parser::comparison() {
     ExprPtr expr = term();
 
-    while (match({TokenType::GREATER, TokenType::GREATER_EQUAL,
-                  TokenType::LESS, TokenType::LESS_EQUAL})) {
+    while (match({TokenType::GREATER, TokenType::GREATER_EQUAL, TokenType::LESS, TokenType::LESS_EQUAL})) {
         Token op = previous();
         ExprPtr right = term();
         expr = std::make_unique<BinaryExpr>(std::move(expr), op, std::move(right));
@@ -752,7 +741,7 @@ ExprPtr Parser::primary() {
     if (match({TokenType::TRUE})) return std::make_unique<LiteralExpr>(true);
     if (match({TokenType::NIL})) return std::make_unique<LiteralExpr>(Nil{});
     if (match({TokenType::THIS})) return std::make_unique<ThisExpr>();  // v0.3
-    
+
     // Super expression: super.method
     if (match({TokenType::SUPER})) {
         consume(TokenType::DOT, "Expect '.' after 'super'.");
@@ -777,7 +766,7 @@ ExprPtr Parser::primary() {
     // Function expression: fn(params) { body }
     if (match({TokenType::FN})) {
         consume(TokenType::LEFT_PAREN, "Expect '(' after 'fn' in function expression.");
-        
+
         std::vector<std::string> params;
         if (!check(TokenType::RIGHT_PAREN)) {
             do {
@@ -786,17 +775,17 @@ ExprPtr Parser::primary() {
             } while (match({TokenType::COMMA}));
         }
         consume(TokenType::RIGHT_PAREN, "Expect ')' after parameters.");
-        
+
         consume(TokenType::LEFT_BRACE, "Expect '{' before function body.");
         auto body = blockStatement();
-        
+
         // Extract statements from BlockStmt
         auto* blockPtr = dynamic_cast<BlockStmt*>(body.get());
         std::vector<StmtPtr> bodyStmts;
         if (blockPtr) {
             bodyStmts = std::move(blockPtr->statements);
         }
-        
+
         return std::make_unique<FunctionExpr>(std::move(params), std::move(bodyStmts));
     }
 
@@ -804,34 +793,34 @@ ExprPtr Parser::primary() {
     if (match({TokenType::MATCH})) {
         ExprPtr value = expression();
         consume(TokenType::LEFT_BRACE, "Expect '{' after match value.");
-        
+
         std::vector<MatchCase> cases;
-        
+
         // Parse match cases
         while (!check(TokenType::RIGHT_BRACE) && !isAtEnd()) {
             // Parse pattern
             PatternPtr pattern = parsePattern();
-            
+
             // Parse optional guard: if condition
             ExprPtr guard = nullptr;
             if (match({TokenType::IF})) {
                 guard = expression();
             }
-            
+
             // Expect => arrow
             consume(TokenType::ARROW, "Expect '=>' after match pattern.");
-            
+
             // Parse result expression
             ExprPtr result = expression();
-            
+
             cases.emplace_back(std::move(pattern), std::move(guard), std::move(result));
-            
+
             // Consume comma if present (allows trailing comma and optional commas)
             if (!check(TokenType::RIGHT_BRACE)) {
                 match({TokenType::COMMA});  // Comma is optional
             }
         }
-        
+
         consume(TokenType::RIGHT_BRACE, "Expect '}' after match cases.");
         return std::make_unique<MatchExpr>(std::move(value), std::move(cases));
     }
@@ -839,7 +828,6 @@ ExprPtr Parser::primary() {
     if (match({TokenType::IDENTIFIER})) {
         Token name = previous();
         return std::make_unique<VariableExpr>(std::string(name.lexeme), nullptr);
-
     }
     if (match({TokenType::LEFT_BRACKET})) {
         // Array literal with potential spread elements
@@ -859,7 +847,7 @@ ExprPtr Parser::primary() {
         return std::make_unique<ArrayExpr>(std::move(elements));
     }
 
-    if(match({TokenType::LEFT_BRACE})){
+    if (match({TokenType::LEFT_BRACE})) {
         // Map literal with potential spread elements
         std::vector<std::pair<std::string, ExprPtr>> entries;
         if (!check(TokenType::RIGHT_BRACE)) {
@@ -901,13 +889,13 @@ PatternPtr Parser::parsePattern() {
     if (match({TokenType::UNDERSCORE})) {
         return std::make_unique<WildcardPattern>();
     }
-    
+
     // Literal patterns: numbers, strings, booleans, nil
     if (match({TokenType::NUMBER})) {
         double value = std::stod(std::string(previous().lexeme));
         return std::make_unique<LiteralPattern>(value);
     }
-    
+
     if (match({TokenType::STRING})) {
         std::string value(previous().lexeme);
         // Remove surrounding quotes
@@ -916,25 +904,25 @@ PatternPtr Parser::parsePattern() {
         }
         return std::make_unique<LiteralPattern>(value);
     }
-    
+
     if (match({TokenType::TRUE})) {
         return std::make_unique<LiteralPattern>(true);
     }
-    
+
     if (match({TokenType::FALSE})) {
         return std::make_unique<LiteralPattern>(false);
     }
-    
+
     if (match({TokenType::NIL})) {
         return std::make_unique<LiteralPattern>(Nil{});
     }
-    
+
     // Variable pattern: identifier
     if (match({TokenType::IDENTIFIER})) {
         Token name = previous();
         return std::make_unique<VariablePattern>(std::string(name.lexeme));
     }
-    
+
     throw error(peek(), "Expect pattern in match expression.");
 }
 
@@ -982,22 +970,22 @@ void Parser::consumeSemicolonIfNeeded() {
         advance();
         return;
     }
-    
+
     // Semicolons are optional at end of line (newline) or end of file
     // They are required when multiple statements are on the same line
     if (isAtEnd()) {
         return;  // End of file - semicolon not needed
     }
-    
+
     // Check if the next token is on a different line
     Token prev = previous();
     Token next = peek();
-    
+
     // If next token is on a different line, semicolon is optional
     if (next.line > prev.line) {
         return;
     }
-    
+
     // Multiple statements on same line without semicolon - error
     // Check if next token starts a new statement
     switch (next.type) {

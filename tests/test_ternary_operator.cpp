@@ -9,21 +9,17 @@ using namespace izi;
 
 // Helper function to capture stdout
 class OutputCapture {
-public:
+   public:
     OutputCapture() {
         oldBuf = std::cout.rdbuf();
         std::cout.rdbuf(buffer.rdbuf());
     }
-    
-    ~OutputCapture() {
-        std::cout.rdbuf(oldBuf);
-    }
-    
-    std::string getOutput() {
-        return buffer.str();
-    }
-    
-private:
+
+    ~OutputCapture() { std::cout.rdbuf(oldBuf); }
+
+    std::string getOutput() { return buffer.str(); }
+
+   private:
     std::stringstream buffer;
     std::streambuf* oldBuf;
 };
@@ -35,53 +31,53 @@ TEST_CASE("Ternary operator: Basic syntax", "[ternary]") {
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         OutputCapture capture;
         Interpreter interp(source);
         interp.interpret(program);
-        
+
         REQUIRE(capture.getOutput() == "1\n");
     }
-    
+
     SECTION("Simple false condition") {
         std::string source = "print(false ? 1 : 2);";
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         OutputCapture capture;
         Interpreter interp(source);
         interp.interpret(program);
-        
+
         REQUIRE(capture.getOutput() == "2\n");
     }
-    
+
     SECTION("Comparison in condition") {
         std::string source = "print(5 > 3 ? \"yes\" : \"no\");";
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         OutputCapture capture;
         Interpreter interp(source);
         interp.interpret(program);
-        
+
         REQUIRE(capture.getOutput() == "yes\n");
     }
-    
+
     SECTION("Comparison with less than") {
         std::string source = "print(2 < 1 ? \"less\" : \"greater\");";
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         OutputCapture capture;
         Interpreter interp(source);
         interp.interpret(program);
-        
+
         REQUIRE(capture.getOutput() == "greater\n");
     }
 }
@@ -96,14 +92,14 @@ TEST_CASE("Ternary operator: With variables", "[ternary]") {
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         OutputCapture capture;
         Interpreter interp(source);
         interp.interpret(program);
-        
+
         REQUIRE(capture.getOutput() == "big\n");
     }
-    
+
     SECTION("Variables in branches") {
         std::string source = R"(
             var a = 100;
@@ -115,14 +111,14 @@ TEST_CASE("Ternary operator: With variables", "[ternary]") {
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         OutputCapture capture;
         Interpreter interp(source);
         interp.interpret(program);
-        
+
         REQUIRE(capture.getOutput() == "100\n");
     }
-    
+
     SECTION("Assignment with ternary") {
         std::string source = R"(
             var score = 85;
@@ -133,11 +129,11 @@ TEST_CASE("Ternary operator: With variables", "[ternary]") {
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         OutputCapture capture;
         Interpreter interp(source);
         interp.interpret(program);
-        
+
         REQUIRE(capture.getOutput() == "B\n");
     }
 }
@@ -149,28 +145,28 @@ TEST_CASE("Ternary operator: Nested ternary", "[ternary]") {
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         OutputCapture capture;
         Interpreter interp(source);
         interp.interpret(program);
-        
+
         REQUIRE(capture.getOutput() == "1\n");
     }
-    
+
     SECTION("Nested in else branch") {
         std::string source = "print(false ? 1 : (true ? 2 : 3));";
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         OutputCapture capture;
         Interpreter interp(source);
         interp.interpret(program);
-        
+
         REQUIRE(capture.getOutput() == "2\n");
     }
-    
+
     SECTION("Right-associative chaining") {
         std::string source = R"(
             var x = 15;
@@ -180,11 +176,11 @@ TEST_CASE("Ternary operator: Nested ternary", "[ternary]") {
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         OutputCapture capture;
         Interpreter interp(source);
         interp.interpret(program);
-        
+
         REQUIRE(capture.getOutput() == "medium\n");
     }
 }
@@ -196,28 +192,28 @@ TEST_CASE("Ternary operator: Complex expressions", "[ternary]") {
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         OutputCapture capture;
         Interpreter interp(source);
         interp.interpret(program);
-        
+
         REQUIRE(capture.getOutput() == "5\n");
     }
-    
+
     SECTION("Complex condition") {
         std::string source = "print((5 > 3 and 10 < 20) ? \"both true\" : \"not both\");";
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         OutputCapture capture;
         Interpreter interp(source);
         interp.interpret(program);
-        
+
         REQUIRE(capture.getOutput() == "both true\n");
     }
-    
+
     SECTION("Ternary with function call") {
         std::string source = R"(
             fn max(a, b) {
@@ -230,11 +226,11 @@ TEST_CASE("Ternary operator: Complex expressions", "[ternary]") {
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         OutputCapture capture;
         Interpreter interp(source);
         interp.interpret(program);
-        
+
         REQUIRE(capture.getOutput() == "20\n30\n");
     }
 }
@@ -246,25 +242,25 @@ TEST_CASE("Ternary operator: Type consistency", "[ternary]") {
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         OutputCapture capture;
         Interpreter interp(source);
         interp.interpret(program);
-        
+
         REQUIRE(capture.getOutput() == "42\n");
     }
-    
+
     SECTION("Nil in branches") {
         std::string source = "print(false ? nil : \"not nil\");";
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         OutputCapture capture;
         Interpreter interp(source);
         interp.interpret(program);
-        
+
         REQUIRE(capture.getOutput() == "not nil\n");
     }
 }
@@ -276,53 +272,53 @@ TEST_CASE("Ternary operator: Truthiness", "[ternary]") {
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         OutputCapture capture;
         Interpreter interp(source);
         interp.interpret(program);
-        
+
         REQUIRE(capture.getOutput() == "truthy\n");
     }
-    
+
     SECTION("Falsy zero") {
         std::string source = "print(0 ? \"truthy\" : \"falsy\");";
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         OutputCapture capture;
         Interpreter interp(source);
         interp.interpret(program);
-        
+
         REQUIRE(capture.getOutput() == "falsy\n");
     }
-    
+
     SECTION("Falsy nil") {
         std::string source = "print(nil ? \"truthy\" : \"falsy\");";
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         OutputCapture capture;
         Interpreter interp(source);
         interp.interpret(program);
-        
+
         REQUIRE(capture.getOutput() == "falsy\n");
     }
-    
+
     SECTION("Truthy string") {
         std::string source = "print(\"hello\" ? \"truthy\" : \"falsy\");";
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         OutputCapture capture;
         Interpreter interp(source);
         interp.interpret(program);
-        
+
         REQUIRE(capture.getOutput() == "truthy\n");
     }
 }
@@ -337,25 +333,25 @@ TEST_CASE("Ternary operator: Precedence", "[ternary]") {
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         OutputCapture capture;
         Interpreter interp(source);
         interp.interpret(program);
-        
+
         REQUIRE(capture.getOutput() == "10\n");
     }
-    
+
     SECTION("Ternary with logical or") {
         std::string source = "print((false or true) ? \"yes\" : \"no\");";
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         OutputCapture capture;
         Interpreter interp(source);
         interp.interpret(program);
-        
+
         REQUIRE(capture.getOutput() == "yes\n");
     }
 }
@@ -376,14 +372,14 @@ TEST_CASE("Ternary operator: Short-circuit evaluation", "[ternary]") {
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         OutputCapture capture;
         Interpreter interp(source);
         interp.interpret(program);
-        
+
         REQUIRE(capture.getOutput() == "0\n1\n");
     }
-    
+
     SECTION("Only evaluate else branch when false") {
         std::string source = R"(
             var executed = 0;
@@ -399,11 +395,11 @@ TEST_CASE("Ternary operator: Short-circuit evaluation", "[ternary]") {
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         OutputCapture capture;
         Interpreter interp(source);
         interp.interpret(program);
-        
+
         REQUIRE(capture.getOutput() == "0\n2\n");
     }
 }
@@ -415,11 +411,11 @@ TEST_CASE("Ternary operator: Parser structure", "[ternary][parser]") {
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         REQUIRE(program.size() == 1);
         auto* exprStmt = dynamic_cast<ExprStmt*>(program[0].get());
         REQUIRE(exprStmt != nullptr);
-        
+
         auto* condExpr = dynamic_cast<ConditionalExpr*>(exprStmt->expr.get());
         REQUIRE(condExpr != nullptr);
         REQUIRE(condExpr->condition != nullptr);

@@ -12,7 +12,7 @@ SemanticAnalyzer analyzeCode(const std::string& code) {
     auto tokens = lexer.scanTokens();
     Parser parser(std::move(tokens), code);
     auto program = parser.parse();
-    
+
     SemanticAnalyzer analyzer;
     analyzer.analyze(program);
     return analyzer;
@@ -42,8 +42,7 @@ int countErrors(const SemanticAnalyzer& analyzer) {
 // Helper to check if error message contains substring
 bool hasErrorContaining(const SemanticAnalyzer& analyzer, const std::string& substring) {
     for (const auto& diag : analyzer.getDiagnostics()) {
-        if (diag.severity == SemanticDiagnostic::Severity::Error && 
-            diag.message.find(substring) != std::string::npos) {
+        if (diag.severity == SemanticDiagnostic::Severity::Error && diag.message.find(substring) != std::string::npos) {
             return true;
         }
     }
@@ -55,45 +54,45 @@ TEST_CASE("Semantic Analysis: Type Checking - Variables", "[semantic][types]") {
         std::string code = R"(
             var x: Number = "string";
         )";
-        
+
         auto analyzer = analyzeCode(code);
         REQUIRE(hasErrors(analyzer));
         REQUIRE(hasErrorContaining(analyzer, "Type mismatch"));
         REQUIRE(hasErrorContaining(analyzer, "Number"));
         REQUIRE(hasErrorContaining(analyzer, "String"));
     }
-    
+
     SECTION("Type mismatch: String vs Number") {
         std::string code = R"(
             var name: String = 42;
         )";
-        
+
         auto analyzer = analyzeCode(code);
         REQUIRE(hasErrors(analyzer));
         REQUIRE(hasErrorContaining(analyzer, "Type mismatch"));
     }
-    
+
     SECTION("Type mismatch: Bool vs Number") {
         std::string code = R"(
             var flag: Bool = 100;
         )";
-        
+
         auto analyzer = analyzeCode(code);
         REQUIRE(hasErrors(analyzer));
         REQUIRE(hasErrorContaining(analyzer, "Type mismatch"));
     }
-    
+
     SECTION("Correct type annotation") {
         std::string code = R"(
             var x: Number = 42;
             var y: String = "hello";
             var z: Bool = true;
         )";
-        
+
         auto analyzer = analyzeCode(code);
         REQUIRE_FALSE(hasErrors(analyzer));
     }
-    
+
     SECTION("Unannotated variables should not cause errors") {
         std::string code = R"(
             var x = "string";
@@ -101,18 +100,18 @@ TEST_CASE("Semantic Analysis: Type Checking - Variables", "[semantic][types]") {
             var z = true;
             var w = x;
         )";
-        
+
         auto analyzer = analyzeCode(code);
         REQUIRE_FALSE(hasErrors(analyzer));
     }
-    
+
     SECTION("Mixed annotated and unannotated") {
         std::string code = R"(
             var x = "test";
             var y: Number = 10;
             var z = y;
         )";
-        
+
         auto analyzer = analyzeCode(code);
         REQUIRE_FALSE(hasErrors(analyzer));
     }
@@ -127,13 +126,13 @@ TEST_CASE("Semantic Analysis: Class Validation - Duplicate Fields", "[semantic][
                 var x: String;
             }
         )";
-        
+
         auto analyzer = analyzeCode(code);
         REQUIRE(hasErrors(analyzer));
         REQUIRE(hasErrorContaining(analyzer, "Duplicate field"));
         REQUIRE(hasErrorContaining(analyzer, "x"));
     }
-    
+
     SECTION("No duplicate fields") {
         std::string code = R"(
             class Point {
@@ -142,11 +141,11 @@ TEST_CASE("Semantic Analysis: Class Validation - Duplicate Fields", "[semantic][
                 var z: Number;
             }
         )";
-        
+
         auto analyzer = analyzeCode(code);
         REQUIRE_FALSE(hasErrors(analyzer));
     }
-    
+
     SECTION("Multiple classes with same field names (should be OK)") {
         std::string code = R"(
             class Point {
@@ -159,7 +158,7 @@ TEST_CASE("Semantic Analysis: Class Validation - Duplicate Fields", "[semantic][
                 var y: Number;
             }
         )";
-        
+
         auto analyzer = analyzeCode(code);
         REQUIRE_FALSE(hasErrors(analyzer));
     }
@@ -178,13 +177,13 @@ TEST_CASE("Semantic Analysis: Class Validation - Duplicate Methods", "[semantic]
                 }
             }
         )";
-        
+
         auto analyzer = analyzeCode(code);
         REQUIRE(hasErrors(analyzer));
         REQUIRE(hasErrorContaining(analyzer, "Duplicate method"));
         REQUIRE(hasErrorContaining(analyzer, "add"));
     }
-    
+
     SECTION("No duplicate methods") {
         std::string code = R"(
             class Calculator {
@@ -197,7 +196,7 @@ TEST_CASE("Semantic Analysis: Class Validation - Duplicate Methods", "[semantic]
                 }
             }
         )";
-        
+
         auto analyzer = analyzeCode(code);
         REQUIRE_FALSE(hasErrors(analyzer));
     }
@@ -208,25 +207,25 @@ TEST_CASE("Semantic Analysis: Class Validation - This Usage", "[semantic][classe
         std::string code = R"(
             var x = this;
         )";
-        
+
         auto analyzer = analyzeCode(code);
         REQUIRE(hasErrors(analyzer));
         REQUIRE(hasErrorContaining(analyzer, "this"));
         REQUIRE(hasErrorContaining(analyzer, "inside class methods"));
     }
-    
+
     SECTION("This used in function (not method)") {
         std::string code = R"(
             fn test() {
                 return this;
             }
         )";
-        
+
         auto analyzer = analyzeCode(code);
         REQUIRE(hasErrors(analyzer));
         REQUIRE(hasErrorContaining(analyzer, "this"));
     }
-    
+
     SECTION("This used correctly in method") {
         std::string code = R"(
             class Point {
@@ -237,7 +236,7 @@ TEST_CASE("Semantic Analysis: Class Validation - This Usage", "[semantic][classe
                 }
             }
         )";
-        
+
         auto analyzer = analyzeCode(code);
         REQUIRE_FALSE(hasErrors(analyzer));
     }
@@ -254,13 +253,13 @@ TEST_CASE("Semantic Analysis: Class Validation - Constructor Naming", "[semantic
                 }
             }
         )";
-        
+
         auto analyzer = analyzeCode(code);
         REQUIRE(hasErrors(analyzer));
         REQUIRE(hasErrorContaining(analyzer, "Constructor"));
         REQUIRE(hasErrorContaining(analyzer, "should be named 'constructor'"));
     }
-    
+
     SECTION("Constructor named correctly") {
         std::string code = R"(
             class Point {
@@ -271,18 +270,18 @@ TEST_CASE("Semantic Analysis: Class Validation - Constructor Naming", "[semantic
                 }
             }
         )";
-        
+
         auto analyzer = analyzeCode(code);
         REQUIRE_FALSE(hasErrors(analyzer));
     }
-    
+
     SECTION("Class without constructor") {
         std::string code = R"(
             class Empty {
                 var value: Number;
             }
         )";
-        
+
         auto analyzer = analyzeCode(code);
         REQUIRE_FALSE(hasErrors(analyzer));
     }
@@ -293,19 +292,19 @@ TEST_CASE("Semantic Analysis: Control Flow - Return Outside Function", "[semanti
         std::string code = R"(
             return 42;
         )";
-        
+
         auto analyzer = analyzeCode(code);
         REQUIRE(hasErrors(analyzer));
         REQUIRE(hasErrorContaining(analyzer, "Return statement outside"));
     }
-    
+
     SECTION("Return in function") {
         std::string code = R"(
             fn test() {
                 return 42;
             }
         )";
-        
+
         auto analyzer = analyzeCode(code);
         REQUIRE_FALSE(hasErrors(analyzer));
     }
@@ -316,40 +315,40 @@ TEST_CASE("Semantic Analysis: Control Flow - Break/Continue", "[semantic][contro
         std::string code = R"(
             break;
         )";
-        
+
         auto analyzer = analyzeCode(code);
         REQUIRE(hasErrors(analyzer));
         REQUIRE(hasErrorContaining(analyzer, "Break statement outside"));
     }
-    
+
     SECTION("Continue outside loop") {
         std::string code = R"(
             continue;
         )";
-        
+
         auto analyzer = analyzeCode(code);
         REQUIRE(hasErrors(analyzer));
         REQUIRE(hasErrorContaining(analyzer, "Continue statement outside"));
     }
-    
+
     SECTION("Break in while loop") {
         std::string code = R"(
             while (true) {
                 break;
             }
         )";
-        
+
         auto analyzer = analyzeCode(code);
         REQUIRE_FALSE(hasErrors(analyzer));
     }
-    
+
     SECTION("Continue in while loop") {
         std::string code = R"(
             while (true) {
                 continue;
             }
         )";
-        
+
         auto analyzer = analyzeCode(code);
         REQUIRE_FALSE(hasErrors(analyzer));
     }
@@ -377,11 +376,11 @@ TEST_CASE("Semantic Analysis: Complex Scenarios", "[semantic][integration]") {
                 }
             }
         )";
-        
+
         auto analyzer = analyzeCode(code);
         REQUIRE_FALSE(hasErrors(analyzer));
     }
-    
+
     SECTION("Multiple errors in one class") {
         std::string code = R"(
             class BadClass {
@@ -401,19 +400,19 @@ TEST_CASE("Semantic Analysis: Complex Scenarios", "[semantic][integration]") {
                 }
             }
         )";
-        
+
         auto analyzer = analyzeCode(code);
         REQUIRE(hasErrors(analyzer));
-        REQUIRE(countErrors(analyzer) >= 3); // At least duplicate field, wrong constructor name, duplicate method
+        REQUIRE(countErrors(analyzer) >= 3);  // At least duplicate field, wrong constructor name, duplicate method
     }
-    
+
     SECTION("Function with type annotations") {
         std::string code = R"(
             fn add(a: Number, b: Number): Number {
                 return a + b;
             }
         )";
-        
+
         auto analyzer = analyzeCode(code);
         REQUIRE_FALSE(hasErrors(analyzer));
     }
@@ -427,11 +426,11 @@ TEST_CASE("Semantic Analysis: Function Call Validation", "[semantic][functions]"
             }
             var result = add(10, 20);
         )";
-        
+
         auto analyzer = analyzeCode(code);
         REQUIRE_FALSE(hasErrors(analyzer));
     }
-    
+
     SECTION("Function called with wrong argument count") {
         std::string code = R"(
             fn add(a: Number, b: Number): Number {
@@ -439,12 +438,12 @@ TEST_CASE("Semantic Analysis: Function Call Validation", "[semantic][functions]"
             }
             var result = add(10);
         )";
-        
+
         auto analyzer = analyzeCode(code);
         REQUIRE(hasErrors(analyzer));
         REQUIRE(hasErrorContaining(analyzer, "expects 2 arguments"));
     }
-    
+
     SECTION("Function called with wrong type") {
         std::string code = R"(
             fn greet(name: String): String {
@@ -452,14 +451,14 @@ TEST_CASE("Semantic Analysis: Function Call Validation", "[semantic][functions]"
             }
             var result = greet(42);
         )";
-        
+
         auto analyzer = analyzeCode(code);
         REQUIRE(hasErrors(analyzer));
         REQUIRE(hasErrorContaining(analyzer, "parameter"));
         REQUIRE(hasErrorContaining(analyzer, "String"));
         REQUIRE(hasErrorContaining(analyzer, "Number"));
     }
-    
+
     SECTION("Untyped function calls should not error") {
         std::string code = R"(
             fn flexible(x) {
@@ -468,7 +467,7 @@ TEST_CASE("Semantic Analysis: Function Call Validation", "[semantic][functions]"
             var a = flexible(10);
             var b = flexible("test");
         )";
-        
+
         auto analyzer = analyzeCode(code);
         REQUIRE_FALSE(hasErrors(analyzer));
     }
@@ -479,11 +478,11 @@ TEST_CASE("Semantic Analysis: Advanced Type Checking", "[semantic][types][edge-c
         std::string code = R"(
             var x: Nil = nil;
         )";
-        
+
         auto analyzer = analyzeCode(code);
         REQUIRE_FALSE(hasErrors(analyzer));
     }
-    
+
     SECTION("Any type accepts any value") {
         std::string code = R"(
             var a: Any = 42;
@@ -491,36 +490,36 @@ TEST_CASE("Semantic Analysis: Advanced Type Checking", "[semantic][types][edge-c
             var c: Any = true;
             var d: Any = nil;
         )";
-        
+
         auto analyzer = analyzeCode(code);
         REQUIRE_FALSE(hasErrors(analyzer));
     }
-    
+
     SECTION("Void return type validation") {
         std::string code = R"(
             fn doNothing(): Void {
                 var x = 10;
             }
         )";
-        
+
         auto analyzer = analyzeCode(code);
         REQUIRE_FALSE(hasErrors(analyzer));
     }
-    
+
     SECTION("Array element type compatibility") {
         std::string code = R"(
             var nums: Array<Number> = [1, 2, 3];
         )";
-        
+
         auto analyzer = analyzeCode(code);
         REQUIRE_FALSE(hasErrors(analyzer));
     }
-    
+
     SECTION("Map key-value type compatibility") {
         std::string code = R"(
             var data: Map<String,Number> = {"a": 1, "b": 2};
         )";
-        
+
         auto analyzer = analyzeCode(code);
         REQUIRE_FALSE(hasErrors(analyzer));
     }
@@ -539,11 +538,11 @@ TEST_CASE("Semantic Analysis: Class Instance Scenarios", "[semantic][classes][ed
             p1.x = 10;
             p2.x = 20;
         )";
-        
+
         auto analyzer = analyzeCode(code);
         REQUIRE_FALSE(hasErrors(analyzer));
     }
-    
+
     SECTION("Class instance passed to function") {
         std::string code = R"(
             class Point {
@@ -557,11 +556,11 @@ TEST_CASE("Semantic Analysis: Class Instance Scenarios", "[semantic][classes][ed
             var point = Point();
             usePoint(point);
         )";
-        
+
         auto analyzer = analyzeCode(code);
         REQUIRE_FALSE(hasErrors(analyzer));
     }
-    
+
     SECTION("Nested property access") {
         std::string code = R"(
             class Inner {
@@ -576,7 +575,7 @@ TEST_CASE("Semantic Analysis: Class Instance Scenarios", "[semantic][classes][ed
             var inner = Inner();
             obj.inner = inner;
         )";
-        
+
         auto analyzer = analyzeCode(code);
         REQUIRE_FALSE(hasErrors(analyzer));
     }
@@ -587,27 +586,27 @@ TEST_CASE("Semantic Analysis: Type Misuse Detection", "[semantic][types][errors]
         std::string code = R"(
             var nums: Array<Number> = "not an array";
         )";
-        
+
         auto analyzer = analyzeCode(code);
         REQUIRE(hasErrors(analyzer));
         REQUIRE(hasErrorContaining(analyzer, "Type mismatch"));
     }
-    
+
     SECTION("Map type mismatch") {
         std::string code = R"(
             var data: Map<String,Number> = 42;
         )";
-        
+
         auto analyzer = analyzeCode(code);
         REQUIRE(hasErrors(analyzer));
         REQUIRE(hasErrorContaining(analyzer, "Type mismatch"));
     }
-    
+
     SECTION("Function type mismatch") {
         std::string code = R"(
             var callback: fn(Number) -> Number = "not a function";
         )";
-        
+
         auto analyzer = analyzeCode(code);
         REQUIRE(hasErrors(analyzer));
         REQUIRE(hasErrorContaining(analyzer, "Type mismatch"));

@@ -1,0 +1,18 @@
+---
+BasedOnStyle: Google
+IndentWidth: 4
+ColumnLimit: 120
+PointerAlignment: Left
+DerivePointerAlignment: false
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortIfStatementsOnASingleLine: WithoutElse
+AllowShortLoopsOnASingleLine: true
+BraceWrapping:
+  AfterFunction: false
+BreakBeforeBraces: Attach
+AlignTrailingComments: false
+SpacesBeforeTrailingComments: 2
+CommentPragmas: '^ IWYU pragma:'
+IncludeBlocks: Preserve
+SortIncludes: false
+...

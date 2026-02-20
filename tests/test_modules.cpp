@@ -12,46 +12,46 @@ TEST_CASE("Native module system - math module", "[modules][math]") {
             import "math";
             var result = math.pi;
         )";
-        
+
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto program = parser.parse();
-        
+
         Interpreter interp(source);
         REQUIRE_NOTHROW(interp.interpret(program));
     }
-    
+
     SECTION("Named imports work") {
         std::string source = R"(
             import { sqrt, pi } from "math";
             var result = sqrt(16);
         )";
-        
+
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto program = parser.parse();
-        
+
         Interpreter interp(source);
         REQUIRE_NOTHROW(interp.interpret(program));
     }
-    
+
     SECTION("Wildcard import works") {
         std::string source = R"(
             import * as m from "math";
             var result = m.sqrt(16);
         )";
-        
+
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto program = parser.parse();
-        
+
         Interpreter interp(source);
         REQUIRE_NOTHROW(interp.interpret(program));
     }
-    
+
     SECTION("Math functions work through module") {
         std::string source = R"(
             import "math";
@@ -59,16 +59,16 @@ TEST_CASE("Native module system - math module", "[modules][math]") {
             var sqrt_val = math.sqrt(16);
             var pow_val = math.pow(2, 3);
         )";
-        
+
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto program = parser.parse();
-        
+
         Interpreter interp(source);
         REQUIRE_NOTHROW(interp.interpret(program));
     }
-    
+
     SECTION("clamp() function works correctly") {
         std::string source = R"(
             import * as math from "math";
@@ -86,16 +86,16 @@ TEST_CASE("Native module system - math module", "[modules][math]") {
             var result4 = math.clamp(7.5, 3.2, 8.9);
             assert.eq(result4, 7.5);
         )";
-        
+
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto program = parser.parse();
-        
+
         Interpreter interp(source);
         REQUIRE_NOTHROW(interp.interpret(program));
     }
-    
+
     SECTION("sign() function returns correct values") {
         std::string source = R"(
             import { sign } from "math";
@@ -116,16 +116,16 @@ TEST_CASE("Native module system - math module", "[modules][math]") {
             var negSmall = sign(-0.001);
             assert.eq(negSmall, -1);
         )";
-        
+
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto program = parser.parse();
-        
+
         Interpreter interp(source);
         REQUIRE_NOTHROW(interp.interpret(program));
     }
-    
+
     SECTION("isFinite() function works correctly") {
         std::string source = R"(
             import "math";
@@ -153,16 +153,16 @@ TEST_CASE("Native module system - math module", "[modules][math]") {
             var notFinite3 = math.isFinite(nan);
             assert.eq(notFinite3, false);
         )";
-        
+
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto program = parser.parse();
-        
+
         Interpreter interp(source);
         REQUIRE_NOTHROW(interp.interpret(program));
     }
-    
+
     SECTION("isNaN() function works correctly") {
         std::string source = R"(
             import "math";
@@ -190,12 +190,12 @@ TEST_CASE("Native module system - math module", "[modules][math]") {
             var isNaN1 = math.isNaN(nan);
             assert.eq(isNaN1, true);
         )";
-        
+
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto program = parser.parse();
-        
+
         Interpreter interp(source);
         REQUIRE_NOTHROW(interp.interpret(program));
     }
@@ -208,12 +208,12 @@ TEST_CASE("Native module system - string module", "[modules][string]") {
             var upper = string.toUpper("hello");
             var parts = string.split("a,b,c", ",");
         )";
-        
+
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto program = parser.parse();
-        
+
         Interpreter interp(source);
         REQUIRE_NOTHROW(interp.interpret(program));
     }
@@ -227,12 +227,12 @@ TEST_CASE("Native module system - array module", "[modules][array]") {
             fn double(x) { return x * 2; }
             var doubled = map(nums, double);
         )";
-        
+
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto program = parser.parse();
-        
+
         Interpreter interp(source);
         REQUIRE_NOTHROW(interp.interpret(program));
     }
@@ -245,12 +245,12 @@ TEST_CASE("Native module system - io module", "[modules][io]") {
             io.writeFile("/tmp/test_modules.txt", "test");
             var exists = io.exists("/tmp/test_modules.txt");
         )";
-        
+
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto program = parser.parse();
-        
+
         Interpreter interp(source);
         REQUIRE_NOTHROW(interp.interpret(program));
     }
@@ -262,31 +262,31 @@ TEST_CASE("Native module system - assert module", "[modules][assert]") {
             import "assert";
             assert.ok(true);
         )";
-        
+
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto program = parser.parse();
-        
+
         Interpreter interp(source);
         REQUIRE_NOTHROW(interp.interpret(program));
     }
-    
+
     SECTION("Wildcard import as std.assert works") {
         std::string source = R"(
             import * as assert from "std.assert";
             assert.ok(1 + 1 == 2);
         )";
-        
+
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto program = parser.parse();
-        
+
         Interpreter interp(source);
         REQUIRE_NOTHROW(interp.interpret(program));
     }
-    
+
     SECTION("assert.ok passes with truthy values") {
         std::string source = R"(
             import * as assert from "std.assert";
@@ -295,46 +295,46 @@ TEST_CASE("Native module system - assert module", "[modules][assert]") {
             assert.ok("hello");
             assert.ok([1, 2, 3]);
         )";
-        
+
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto program = parser.parse();
-        
+
         Interpreter interp(source);
         REQUIRE_NOTHROW(interp.interpret(program));
     }
-    
+
     SECTION("assert.ok fails with falsy values") {
         std::string source = R"(
             import * as assert from "std.assert";
             assert.ok(false);
         )";
-        
+
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto program = parser.parse();
-        
+
         Interpreter interp(source);
         REQUIRE_THROWS(interp.interpret(program));
     }
-    
+
     SECTION("assert.ok with custom message") {
         std::string source = R"(
             import * as assert from "std.assert";
             assert.ok(5 > 3, "5 should be greater than 3");
         )";
-        
+
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto program = parser.parse();
-        
+
         Interpreter interp(source);
         REQUIRE_NOTHROW(interp.interpret(program));
     }
-    
+
     SECTION("assert.eq passes with equal values") {
         std::string source = R"(
             import * as assert from "std.assert";
@@ -342,31 +342,31 @@ TEST_CASE("Native module system - assert module", "[modules][assert]") {
             assert.eq("hello", "hello");
             assert.eq(true, true);
         )";
-        
+
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto program = parser.parse();
-        
+
         Interpreter interp(source);
         REQUIRE_NOTHROW(interp.interpret(program));
     }
-    
+
     SECTION("assert.eq fails with different values") {
         std::string source = R"(
             import * as assert from "std.assert";
             assert.eq(1, 2);
         )";
-        
+
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto program = parser.parse();
-        
+
         Interpreter interp(source);
         REQUIRE_THROWS(interp.interpret(program));
     }
-    
+
     SECTION("assert.ne passes with different values") {
         std::string source = R"(
             import * as assert from "std.assert";
@@ -374,32 +374,31 @@ TEST_CASE("Native module system - assert module", "[modules][assert]") {
             assert.ne("hello", "world");
             assert.ne(true, false);
         )";
-        
+
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto program = parser.parse();
-        
+
         Interpreter interp(source);
         REQUIRE_NOTHROW(interp.interpret(program));
     }
-    
+
     SECTION("assert.ne fails with equal values") {
         std::string source = R"(
             import * as assert from "std.assert";
             assert.ne(5, 5);
         )";
-        
+
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto program = parser.parse();
-        
+
         Interpreter interp(source);
         REQUIRE_THROWS(interp.interpret(program));
     }
 }
-
 
 TEST_CASE("Native module system - module deduplication", "[modules]") {
     SECTION("Importing same module twice works") {
@@ -409,12 +408,12 @@ TEST_CASE("Native module system - module deduplication", "[modules]") {
             var result1 = math.sqrt(16);
             var result2 = sqrt(25);
         )";
-        
+
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto program = parser.parse();
-        
+
         Interpreter interp(source);
         REQUIRE_NOTHROW(interp.interpret(program));
     }
@@ -425,12 +424,12 @@ TEST_CASE("Native module system - backward compatibility", "[modules]") {
         std::string source = R"(
             var result = sqrt(16);
         )";
-        
+
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto program = parser.parse();
-        
+
         Interpreter interp(source);
         REQUIRE_NOTHROW(interp.interpret(program));
     }
@@ -442,31 +441,31 @@ TEST_CASE("Native module system - log module", "[modules][log]") {
             import "log";
             log.info("Test message");
         )";
-        
+
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto program = parser.parse();
-        
+
         Interpreter interp(source);
         REQUIRE_NOTHROW(interp.interpret(program));
     }
-    
+
     SECTION("std.log import syntax works") {
         std::string source = R"(
             import * as log from "std.log";
             log.info("Test message");
         )";
-        
+
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto program = parser.parse();
-        
+
         Interpreter interp(source);
         REQUIRE_NOTHROW(interp.interpret(program));
     }
-    
+
     SECTION("Named imports work") {
         std::string source = R"(
             import { info, warn, error, debug } from "log";
@@ -475,16 +474,16 @@ TEST_CASE("Native module system - log module", "[modules][log]") {
             error("Error message");
             debug("Debug message");
         )";
-        
+
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto program = parser.parse();
-        
+
         Interpreter interp(source);
         REQUIRE_NOTHROW(interp.interpret(program));
     }
-    
+
     SECTION("Named imports work with std.log") {
         std::string source = R"(
             import { info, warn, error, debug } from "std.log";
@@ -493,16 +492,16 @@ TEST_CASE("Native module system - log module", "[modules][log]") {
             error("Error message");
             debug("Debug message");
         )";
-        
+
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto program = parser.parse();
-        
+
         Interpreter interp(source);
         REQUIRE_NOTHROW(interp.interpret(program));
     }
-    
+
     SECTION("Wildcard import works") {
         std::string source = R"(
             import * as log from "log";
@@ -511,16 +510,16 @@ TEST_CASE("Native module system - log module", "[modules][log]") {
             log.error("Failed to connect");
             log.debug("x = 42");
         )";
-        
+
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto program = parser.parse();
-        
+
         Interpreter interp(source);
         REQUIRE_NOTHROW(interp.interpret(program));
     }
-    
+
     SECTION("Wildcard import works with std.log") {
         std::string source = R"(
             import * as log from "std.log";
@@ -529,12 +528,12 @@ TEST_CASE("Native module system - log module", "[modules][log]") {
             log.error("Failed to connect");
             log.debug("x = 42");
         )";
-        
+
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto program = parser.parse();
-        
+
         Interpreter interp(source);
         REQUIRE_NOTHROW(interp.interpret(program));
     }
@@ -546,31 +545,31 @@ TEST_CASE("Native module system - path module", "[modules][path]") {
             import "path";
             var result = path.join("a", "b");
         )";
-        
+
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto program = parser.parse();
-        
+
         Interpreter interp(source);
         REQUIRE_NOTHROW(interp.interpret(program));
     }
-    
+
     SECTION("std.path import syntax works") {
         std::string source = R"(
             import * as path from "std.path";
             var result = path.join("a", "b");
         )";
-        
+
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto program = parser.parse();
-        
+
         Interpreter interp(source);
         REQUIRE_NOTHROW(interp.interpret(program));
     }
-    
+
     SECTION("path.join() works with multiple parts") {
         std::string source = R"(
             import * as path from "std.path";
@@ -585,16 +584,16 @@ TEST_CASE("Native module system - path module", "[modules][path]") {
             var result3 = path.join("", "a", "", "b");
             assert.eq(result3, "a/b");
         )";
-        
+
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto program = parser.parse();
-        
+
         Interpreter interp(source);
         REQUIRE_NOTHROW(interp.interpret(program));
     }
-    
+
     SECTION("path.basename() extracts filename") {
         std::string source = R"(
             import * as path from "std.path";
@@ -612,16 +611,16 @@ TEST_CASE("Native module system - path module", "[modules][path]") {
             var result4 = path.basename("/tmp/");
             assert.eq(result4, "tmp");
         )";
-        
+
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto program = parser.parse();
-        
+
         Interpreter interp(source);
         REQUIRE_NOTHROW(interp.interpret(program));
     }
-    
+
     SECTION("path.dirname() extracts directory") {
         std::string source = R"(
             import * as path from "std.path";
@@ -639,16 +638,16 @@ TEST_CASE("Native module system - path module", "[modules][path]") {
             var result4 = path.dirname("/file.txt");
             assert.eq(result4, "/");
         )";
-        
+
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto program = parser.parse();
-        
+
         Interpreter interp(source);
         REQUIRE_NOTHROW(interp.interpret(program));
     }
-    
+
     SECTION("path.extname() extracts extension") {
         std::string source = R"(
             import * as path from "std.path";
@@ -669,16 +668,16 @@ TEST_CASE("Native module system - path module", "[modules][path]") {
             var result5 = path.extname("file.tar.gz");
             assert.eq(result5, ".gz");
         )";
-        
+
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto program = parser.parse();
-        
+
         Interpreter interp(source);
         REQUIRE_NOTHROW(interp.interpret(program));
     }
-    
+
     SECTION("path.normalize() resolves . and ..") {
         std::string source = R"(
             import * as path from "std.path";
@@ -699,16 +698,16 @@ TEST_CASE("Native module system - path module", "[modules][path]") {
             var result5 = path.normalize("/a/b/../../c");
             assert.eq(result5, "/c");
         )";
-        
+
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto program = parser.parse();
-        
+
         Interpreter interp(source);
         REQUIRE_NOTHROW(interp.interpret(program));
     }
-    
+
     SECTION("Named imports work") {
         std::string source = R"(
             import { join, basename, dirname } from "std.path";
@@ -723,12 +722,12 @@ TEST_CASE("Native module system - path module", "[modules][path]") {
             var dir = dirname("/tmp/file.txt");
             assert.eq(dir, "/tmp");
         )";
-        
+
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto program = parser.parse();
-        
+
         Interpreter interp(source);
         REQUIRE_NOTHROW(interp.interpret(program));
     }

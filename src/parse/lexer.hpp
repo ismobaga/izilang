@@ -10,10 +10,10 @@
 namespace izi {
 
 class LexerError : public std::runtime_error {
-public:
+   public:
     int line;
     int column;
-    
+
     LexerError(int line, int column, const std::string& message)
         : std::runtime_error(message), line(line), column(column) {}
 };
@@ -55,7 +55,7 @@ class Lexer {
     int current = 0;
     int line = 1;
     int column = 1;
-    int startLine = 1;    // Line where current token starts
+    int startLine = 1;  // Line where current token starts
     int startColumn = 1;  // Column where current token starts
 };
 

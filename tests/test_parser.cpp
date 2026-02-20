@@ -12,7 +12,7 @@ TEST_CASE("Parser handles type annotations on variables", "[parser]") {
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto stmts = parser.parse();
-        
+
         REQUIRE(stmts.size() == 1);
         auto* varStmt = dynamic_cast<VarStmt*>(stmts[0].get());
         REQUIRE(varStmt != nullptr);
@@ -20,13 +20,13 @@ TEST_CASE("Parser handles type annotations on variables", "[parser]") {
         REQUIRE(varStmt->typeAnnotation != nullptr);
         REQUIRE(varStmt->typeAnnotation->kind == TypeAnnotation::Kind::Number);
     }
-    
+
     SECTION("Parse variable with String type") {
         Lexer lexer("var name: String = \"test\";");
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto stmts = parser.parse();
-        
+
         REQUIRE(stmts.size() == 1);
         auto* varStmt = dynamic_cast<VarStmt*>(stmts[0].get());
         REQUIRE(varStmt != nullptr);
@@ -34,13 +34,13 @@ TEST_CASE("Parser handles type annotations on variables", "[parser]") {
         REQUIRE(varStmt->typeAnnotation != nullptr);
         REQUIRE(varStmt->typeAnnotation->kind == TypeAnnotation::Kind::String);
     }
-    
+
     SECTION("Parse variable with Bool type") {
         Lexer lexer("var flag: Bool = true;");
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto stmts = parser.parse();
-        
+
         REQUIRE(stmts.size() == 1);
         auto* varStmt = dynamic_cast<VarStmt*>(stmts[0].get());
         REQUIRE(varStmt != nullptr);
@@ -48,13 +48,13 @@ TEST_CASE("Parser handles type annotations on variables", "[parser]") {
         REQUIRE(varStmt->typeAnnotation != nullptr);
         REQUIRE(varStmt->typeAnnotation->kind == TypeAnnotation::Kind::Bool);
     }
-    
+
     SECTION("Parse variable with Array<Number> type") {
         Lexer lexer("var nums: Array<Number> = [1, 2, 3];");
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto stmts = parser.parse();
-        
+
         REQUIRE(stmts.size() == 1);
         auto* varStmt = dynamic_cast<VarStmt*>(stmts[0].get());
         REQUIRE(varStmt != nullptr);
@@ -64,13 +64,13 @@ TEST_CASE("Parser handles type annotations on variables", "[parser]") {
         REQUIRE(varStmt->typeAnnotation->elementType != nullptr);
         REQUIRE(varStmt->typeAnnotation->elementType->kind == TypeAnnotation::Kind::Number);
     }
-    
+
     SECTION("Parse variable with Map<String,Number> type") {
         Lexer lexer("var data: Map<String,Number> = {\"a\": 1};");
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto stmts = parser.parse();
-        
+
         REQUIRE(stmts.size() == 1);
         auto* varStmt = dynamic_cast<VarStmt*>(stmts[0].get());
         REQUIRE(varStmt != nullptr);
@@ -90,7 +90,7 @@ TEST_CASE("Parser handles type annotations on functions", "[parser]") {
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto stmts = parser.parse();
-        
+
         REQUIRE(stmts.size() == 1);
         auto* funcStmt = dynamic_cast<FunctionStmt*>(stmts[0].get());
         REQUIRE(funcStmt != nullptr);
@@ -102,13 +102,13 @@ TEST_CASE("Parser handles type annotations on functions", "[parser]") {
         REQUIRE(funcStmt->paramTypes[1] != nullptr);
         REQUIRE(funcStmt->paramTypes[1]->kind == TypeAnnotation::Kind::Number);
     }
-    
+
     SECTION("Parse function with return type") {
         Lexer lexer("fn getNumber(): Number { return 42; }");
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto stmts = parser.parse();
-        
+
         REQUIRE(stmts.size() == 1);
         auto* funcStmt = dynamic_cast<FunctionStmt*>(stmts[0].get());
         REQUIRE(funcStmt != nullptr);
@@ -116,13 +116,13 @@ TEST_CASE("Parser handles type annotations on functions", "[parser]") {
         REQUIRE(funcStmt->returnType != nullptr);
         REQUIRE(funcStmt->returnType->kind == TypeAnnotation::Kind::Number);
     }
-    
+
     SECTION("Parse function with both parameter and return types") {
         Lexer lexer("fn multiply(x: Number, y: Number): Number { return x * y; }");
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto stmts = parser.parse();
-        
+
         REQUIRE(stmts.size() == 1);
         auto* funcStmt = dynamic_cast<FunctionStmt*>(stmts[0].get());
         REQUIRE(funcStmt != nullptr);
@@ -134,13 +134,13 @@ TEST_CASE("Parser handles type annotations on functions", "[parser]") {
         REQUIRE(funcStmt->returnType != nullptr);
         REQUIRE(funcStmt->returnType->kind == TypeAnnotation::Kind::Number);
     }
-    
+
     SECTION("Parse function with Void return type") {
         Lexer lexer("fn log(msg: String): Void { print msg; }");
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto stmts = parser.parse();
-        
+
         REQUIRE(stmts.size() == 1);
         auto* funcStmt = dynamic_cast<FunctionStmt*>(stmts[0].get());
         REQUIRE(funcStmt != nullptr);
@@ -155,7 +155,7 @@ TEST_CASE("Parser handles class declarations", "[parser]") {
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto stmts = parser.parse();
-        
+
         REQUIRE(stmts.size() == 1);
         auto* classStmt = dynamic_cast<ClassStmt*>(stmts[0].get());
         REQUIRE(classStmt != nullptr);
@@ -163,13 +163,13 @@ TEST_CASE("Parser handles class declarations", "[parser]") {
         REQUIRE(classStmt->fields.size() == 0);
         REQUIRE(classStmt->methods.size() == 0);
     }
-    
+
     SECTION("Parse class with fields") {
         Lexer lexer("class Point { var x: Number; var y: Number; }");
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto stmts = parser.parse();
-        
+
         REQUIRE(stmts.size() == 1);
         auto* classStmt = dynamic_cast<ClassStmt*>(stmts[0].get());
         REQUIRE(classStmt != nullptr);
@@ -182,13 +182,13 @@ TEST_CASE("Parser handles class declarations", "[parser]") {
         REQUIRE(classStmt->fields[1]->typeAnnotation != nullptr);
         REQUIRE(classStmt->fields[1]->typeAnnotation->kind == TypeAnnotation::Kind::Number);
     }
-    
+
     SECTION("Parse class with methods") {
         Lexer lexer("class Point { fn getX(): Number { return this.x; } }");
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto stmts = parser.parse();
-        
+
         REQUIRE(stmts.size() == 1);
         auto* classStmt = dynamic_cast<ClassStmt*>(stmts[0].get());
         REQUIRE(classStmt != nullptr);
@@ -198,7 +198,7 @@ TEST_CASE("Parser handles class declarations", "[parser]") {
         REQUIRE(classStmt->methods[0]->returnType != nullptr);
         REQUIRE(classStmt->methods[0]->returnType->kind == TypeAnnotation::Kind::Number);
     }
-    
+
     SECTION("Parse class with fields and methods") {
         Lexer lexer(R"(
             class Point {
@@ -213,7 +213,7 @@ TEST_CASE("Parser handles class declarations", "[parser]") {
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto stmts = parser.parse();
-        
+
         REQUIRE(stmts.size() == 1);
         auto* classStmt = dynamic_cast<ClassStmt*>(stmts[0].get());
         REQUIRE(classStmt != nullptr);
@@ -224,7 +224,7 @@ TEST_CASE("Parser handles class declarations", "[parser]") {
         REQUIRE(classStmt->methods[0]->params.size() == 2);
         REQUIRE(classStmt->methods[0]->paramTypes.size() == 2);
     }
-    
+
     SECTION("Parse class with constructor") {
         Lexer lexer(R"(
             class Point {
@@ -239,7 +239,7 @@ TEST_CASE("Parser handles class declarations", "[parser]") {
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto stmts = parser.parse();
-        
+
         REQUIRE(stmts.size() == 1);
         auto* classStmt = dynamic_cast<ClassStmt*>(stmts[0].get());
         REQUIRE(classStmt != nullptr);
@@ -256,7 +256,7 @@ TEST_CASE("Parser handles property access and this keyword", "[parser]") {
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto stmts = parser.parse();
-        
+
         REQUIRE(stmts.size() == 1);
         auto* varStmt = dynamic_cast<VarStmt*>(stmts[0].get());
         REQUIRE(varStmt != nullptr);
@@ -265,13 +265,13 @@ TEST_CASE("Parser handles property access and this keyword", "[parser]") {
         REQUIRE(propExpr != nullptr);
         REQUIRE(propExpr->property == "property");
     }
-    
+
     SECTION("Parse property assignment") {
         Lexer lexer("obj.property = 42;");
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto stmts = parser.parse();
-        
+
         REQUIRE(stmts.size() == 1);
         auto* exprStmt = dynamic_cast<ExprStmt*>(stmts[0].get());
         REQUIRE(exprStmt != nullptr);
@@ -279,13 +279,13 @@ TEST_CASE("Parser handles property access and this keyword", "[parser]") {
         REQUIRE(setPropExpr != nullptr);
         REQUIRE(setPropExpr->property == "property");
     }
-    
+
     SECTION("Parse this keyword") {
         Lexer lexer("var self = this;");
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto stmts = parser.parse();
-        
+
         REQUIRE(stmts.size() == 1);
         auto* varStmt = dynamic_cast<VarStmt*>(stmts[0].get());
         REQUIRE(varStmt != nullptr);
@@ -293,13 +293,13 @@ TEST_CASE("Parser handles property access and this keyword", "[parser]") {
         auto* thisExpr = dynamic_cast<ThisExpr*>(varStmt->initializer.get());
         REQUIRE(thisExpr != nullptr);
     }
-    
+
     SECTION("Parse this.property access") {
         Lexer lexer("var value = this.x;");
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto stmts = parser.parse();
-        
+
         REQUIRE(stmts.size() == 1);
         auto* varStmt = dynamic_cast<VarStmt*>(stmts[0].get());
         REQUIRE(varStmt != nullptr);
@@ -310,13 +310,13 @@ TEST_CASE("Parser handles property access and this keyword", "[parser]") {
         auto* thisExpr = dynamic_cast<ThisExpr*>(propExpr->object.get());
         REQUIRE(thisExpr != nullptr);
     }
-    
+
     SECTION("Parse this.property assignment") {
         Lexer lexer("this.x = 10;");
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto stmts = parser.parse();
-        
+
         REQUIRE(stmts.size() == 1);
         auto* exprStmt = dynamic_cast<ExprStmt*>(stmts[0].get());
         REQUIRE(exprStmt != nullptr);
@@ -326,13 +326,13 @@ TEST_CASE("Parser handles property access and this keyword", "[parser]") {
         auto* thisExpr = dynamic_cast<ThisExpr*>(setPropExpr->object.get());
         REQUIRE(thisExpr != nullptr);
     }
-    
+
     SECTION("Parse chained property access") {
         Lexer lexer("var value = obj.prop1.prop2;");
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto stmts = parser.parse();
-        
+
         REQUIRE(stmts.size() == 1);
         auto* varStmt = dynamic_cast<VarStmt*>(stmts[0].get());
         REQUIRE(varStmt != nullptr);
@@ -352,7 +352,7 @@ TEST_CASE("Parser handles function type annotations", "[parser]") {
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto stmts = parser.parse();
-        
+
         REQUIRE(stmts.size() == 1);
         auto* varStmt = dynamic_cast<VarStmt*>(stmts[0].get());
         REQUIRE(varStmt != nullptr);
@@ -362,13 +362,13 @@ TEST_CASE("Parser handles function type annotations", "[parser]") {
         REQUIRE(varStmt->typeAnnotation->valueType != nullptr);
         REQUIRE(varStmt->typeAnnotation->valueType->kind == TypeAnnotation::Kind::Number);
     }
-    
+
     SECTION("Parse function type with params") {
         Lexer lexer("var op: fn(Number, Number) -> Number;");
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto stmts = parser.parse();
-        
+
         REQUIRE(stmts.size() == 1);
         auto* varStmt = dynamic_cast<VarStmt*>(stmts[0].get());
         REQUIRE(varStmt != nullptr);
@@ -379,13 +379,13 @@ TEST_CASE("Parser handles function type annotations", "[parser]") {
         REQUIRE(varStmt->typeAnnotation->paramTypes[1]->kind == TypeAnnotation::Kind::Number);
         REQUIRE(varStmt->typeAnnotation->valueType->kind == TypeAnnotation::Kind::Number);
     }
-    
+
     SECTION("Parse function type with initializer") {
         Lexer lexer("var callback: fn(Number) -> Number = fn(x) { return x * 2; };");
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto stmts = parser.parse();
-        
+
         REQUIRE(stmts.size() == 1);
         auto* varStmt = dynamic_cast<VarStmt*>(stmts[0].get());
         REQUIRE(varStmt != nullptr);
@@ -406,33 +406,33 @@ TEST_CASE("Parser handles edge case type annotations", "[parser][types]") {
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto stmts = parser.parse();
-        
+
         REQUIRE(stmts.size() == 1);
         auto* varStmt = dynamic_cast<VarStmt*>(stmts[0].get());
         REQUIRE(varStmt != nullptr);
         REQUIRE(varStmt->typeAnnotation != nullptr);
         REQUIRE(varStmt->typeAnnotation->kind == TypeAnnotation::Kind::Nil);
     }
-    
+
     SECTION("Parse variable with Any type") {
         Lexer lexer("var dynamic: Any = 42;");
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto stmts = parser.parse();
-        
+
         REQUIRE(stmts.size() == 1);
         auto* varStmt = dynamic_cast<VarStmt*>(stmts[0].get());
         REQUIRE(varStmt != nullptr);
         REQUIRE(varStmt->typeAnnotation != nullptr);
         REQUIRE(varStmt->typeAnnotation->kind == TypeAnnotation::Kind::Any);
     }
-    
+
     SECTION("Parse nested complex type") {
         Lexer lexer("var data: Array<Map<String,Number>> = [];");
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto stmts = parser.parse();
-        
+
         REQUIRE(stmts.size() == 1);
         auto* varStmt = dynamic_cast<VarStmt*>(stmts[0].get());
         REQUIRE(varStmt != nullptr);
@@ -443,13 +443,13 @@ TEST_CASE("Parser handles edge case type annotations", "[parser][types]") {
         REQUIRE(varStmt->typeAnnotation->elementType->keyType->kind == TypeAnnotation::Kind::String);
         REQUIRE(varStmt->typeAnnotation->elementType->valueType->kind == TypeAnnotation::Kind::Number);
     }
-    
+
     SECTION("Parse function with Void return and no parameters") {
         Lexer lexer("fn doSomething(): Void { print(42); }");
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens));
         auto stmts = parser.parse();
-        
+
         REQUIRE(stmts.size() == 1);
         auto* funcStmt = dynamic_cast<FunctionStmt*>(stmts[0].get());
         REQUIRE(funcStmt != nullptr);

@@ -10,17 +10,12 @@ using namespace izi;
 
 // Helper to capture stdout
 class OutputCapture {
-public:
-    OutputCapture() : old_buf(std::cout.rdbuf()) {
-        std::cout.rdbuf(buffer.rdbuf());
-    }
-    ~OutputCapture() {
-        std::cout.rdbuf(old_buf);
-    }
-    std::string getOutput() {
-        return buffer.str();
-    }
-private:
+   public:
+    OutputCapture() : old_buf(std::cout.rdbuf()) { std::cout.rdbuf(buffer.rdbuf()); }
+    ~OutputCapture() { std::cout.rdbuf(old_buf); }
+    std::string getOutput() { return buffer.str(); }
+
+   private:
     std::stringstream buffer;
     std::streambuf* old_buf;
 };
@@ -32,13 +27,13 @@ TEST_CASE("VM Try-Catch Simple", "[vm-exception-simple]") {
     auto tokens = lexer.scanTokens();
     Parser parser(std::move(tokens), source);
     auto program = parser.parse();
-    
+
     BytecodeCompiler compiler;
     Chunk chunk = compiler.compile(program);
-    
+
     VM vm;
     vm.run(chunk);
-    
+
     // Test passes if execution completes without hanging
     // The 'executed' variable should be 1 (catch block ran), not 999 (code after throw)
     REQUIRE(true);
@@ -51,21 +46,21 @@ TEST_CASE("VM Classes: Basic instantiation", "[vm-classes]") {
             var e = Empty();
             print(e);
         )";
-        
+
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         BytecodeCompiler compiler;
         Chunk chunk = compiler.compile(program);
-        
+
         VM vm;
         registerVmNatives(vm);
         OutputCapture capture;
-        
+
         REQUIRE_NOTHROW(vm.run(chunk));
-        
+
         std::string output = capture.getOutput();
         REQUIRE(output.find("<Empty instance>") != std::string::npos);
     }
@@ -83,21 +78,21 @@ TEST_CASE("VM Classes: Property access", "[vm-classes]") {
             c.count = c.count + 1;
             print(c.count);
         )";
-        
+
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         BytecodeCompiler compiler;
         Chunk chunk = compiler.compile(program);
-        
+
         VM vm;
         registerVmNatives(vm);
         OutputCapture capture;
-        
+
         REQUIRE_NOTHROW(vm.run(chunk));
-        
+
         std::string output = capture.getOutput();
         REQUIRE(output.find("5") != std::string::npos);
         REQUIRE(output.find("6") != std::string::npos);
@@ -130,21 +125,21 @@ TEST_CASE("VM Classes: Methods", "[vm-classes]") {
             print(result);
             print(calc.getValue());
         )";
-        
+
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         BytecodeCompiler compiler;
         Chunk chunk = compiler.compile(program);
-        
+
         VM vm;
         registerVmNatives(vm);
         OutputCapture capture;
-        
+
         REQUIRE_NOTHROW(vm.run(chunk));
-        
+
         std::string output = capture.getOutput();
         // Should print: 10, 15, 15
         size_t first_10 = output.find("10");
@@ -181,21 +176,21 @@ TEST_CASE("VM Classes: Multiple instances", "[vm-classes][vm-instances]") {
             print(c1.count);
             print(c2.count);
         )";
-        
+
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         BytecodeCompiler compiler;
         Chunk chunk = compiler.compile(program);
-        
+
         VM vm;
         registerVmNatives(vm);
         OutputCapture capture;
-        
+
         REQUIRE_NOTHROW(vm.run(chunk));
-        
+
         std::string output = capture.getOutput();
         REQUIRE(output.find("2") != std::string::npos);
         REQUIRE(output.find("101") != std::string::npos);
@@ -220,21 +215,21 @@ TEST_CASE("VM Classes: Instance storage", "[vm-classes][vm-storage]") {
             print(p.x);
             print(p.y);
         )";
-        
+
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         BytecodeCompiler compiler;
         Chunk chunk = compiler.compile(program);
-        
+
         VM vm;
         registerVmNatives(vm);
         OutputCapture capture;
-        
+
         REQUIRE_NOTHROW(vm.run(chunk));
-        
+
         std::string output = capture.getOutput();
         REQUIRE(output.find("5") != std::string::npos);
         REQUIRE(output.find("10") != std::string::npos);
@@ -248,35 +243,34 @@ TEST_CASE("VM Classes: Error handling", "[vm-classes][vm-errors]") {
             var e = Empty();
             print(e.nonexistent);
         )";
-        
+
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         BytecodeCompiler compiler;
         Chunk chunk = compiler.compile(program);
-        
+
         VM vm;
         registerVmNatives(vm);
-        
+
         // VM may print error message but should handle it gracefully
         // The test verifies that accessing undefined properties doesn't crash
         bool test_passed = false;
         try {
             vm.run(chunk);
-            test_passed = true; // VM handled error gracefully
+            test_passed = true;  // VM handled error gracefully
         } catch (const std::exception& e) {
             // Exception is expected for runtime errors
             std::string error_msg = e.what();
             // Verify error message mentions the undefined property
-            if (error_msg.find("property") != std::string::npos || 
-                error_msg.find("nonexistent") != std::string::npos ||
+            if (error_msg.find("property") != std::string::npos || error_msg.find("nonexistent") != std::string::npos ||
                 error_msg.find("Undefined") != std::string::npos) {
                 test_passed = true;
             }
         }
-        
+
         // Test passes if either VM handled it gracefully or threw appropriate error
         REQUIRE(test_passed);
     }

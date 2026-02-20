@@ -63,10 +63,8 @@ bool TypeAnnotation::isCompatibleWith(const TypeAnnotation& other) const {
 
     // For Map, check key and value types
     if (kind == Kind::Map) {
-        bool keyCompatible = !keyType || !other.keyType || 
-                            keyType->isCompatibleWith(*other.keyType);
-        bool valueCompatible = !valueType || !other.valueType || 
-                              valueType->isCompatibleWith(*other.valueType);
+        bool keyCompatible = !keyType || !other.keyType || keyType->isCompatibleWith(*other.keyType);
+        bool valueCompatible = !valueType || !other.valueType || valueType->isCompatibleWith(*other.valueType);
         return keyCompatible && valueCompatible;
     }
 
@@ -90,4 +88,4 @@ bool TypeAnnotation::isCompatibleWith(const TypeAnnotation& other) const {
     return true;
 }
 
-} // namespace izi
+}  // namespace izi

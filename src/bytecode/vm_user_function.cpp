@@ -8,9 +8,9 @@ Value VmUserFunction::call(VM& vm, const std::vector<Value>& arguments) {
     for (size_t i = 0; i < params_.size(); ++i) {
         vm.setGlobal(params_[i], arguments[i]);
     }
-    
+
     // Execute the function's bytecode
     return vm.run(*chunk_);
 }
 
-} // namespace izi
+}  // namespace izi

@@ -19,9 +19,7 @@ class NativeFunction : public Callable {
     std::string name() const { return name_; }
     int arity() const override { return arity_; }
 
-    Value call(Interpreter& interp, const std::vector<Value>& arguments) override {
-        return fn_(interp, arguments);
-    }
+    Value call(Interpreter& interp, const std::vector<Value>& arguments) override { return fn_(interp, arguments); }
 
    private:
     std::string name_;

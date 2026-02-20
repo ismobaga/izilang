@@ -19,53 +19,53 @@ TEST_CASE("Optimizer: Constant folding for binary expressions", "[optimizer][con
         auto program = parseCode("var x = 2 + 3;");
         Optimizer optimizer;
         auto optimized = optimizer.optimize(std::move(program));
-        
+
         REQUIRE(optimized.size() == 1);
         auto* varStmt = dynamic_cast<VarStmt*>(optimized[0].get());
         REQUIRE(varStmt != nullptr);
         REQUIRE(varStmt->name == "x");
-        
+
         auto* literal = dynamic_cast<LiteralExpr*>(varStmt->initializer.get());
         REQUIRE(literal != nullptr);
         REQUIRE(std::holds_alternative<double>(literal->value));
         REQUIRE(std::get<double>(literal->value) == 5.0);
     }
-    
+
     SECTION("Subtraction") {
         auto program = parseCode("var x = 10 - 4;");
         Optimizer optimizer;
         auto optimized = optimizer.optimize(std::move(program));
-        
+
         auto* varStmt = dynamic_cast<VarStmt*>(optimized[0].get());
         auto* literal = dynamic_cast<LiteralExpr*>(varStmt->initializer.get());
         REQUIRE(std::get<double>(literal->value) == 6.0);
     }
-    
+
     SECTION("Multiplication") {
         auto program = parseCode("var x = 5 * 6;");
         Optimizer optimizer;
         auto optimized = optimizer.optimize(std::move(program));
-        
+
         auto* varStmt = dynamic_cast<VarStmt*>(optimized[0].get());
         auto* literal = dynamic_cast<LiteralExpr*>(varStmt->initializer.get());
         REQUIRE(std::get<double>(literal->value) == 30.0);
     }
-    
+
     SECTION("Division") {
         auto program = parseCode("var x = 20 / 4;");
         Optimizer optimizer;
         auto optimized = optimizer.optimize(std::move(program));
-        
+
         auto* varStmt = dynamic_cast<VarStmt*>(optimized[0].get());
         auto* literal = dynamic_cast<LiteralExpr*>(varStmt->initializer.get());
         REQUIRE(std::get<double>(literal->value) == 5.0);
     }
-    
+
     SECTION("Comparison operators") {
         auto program = parseCode("var x = 5 > 3;");
         Optimizer optimizer;
         auto optimized = optimizer.optimize(std::move(program));
-        
+
         auto* varStmt = dynamic_cast<VarStmt*>(optimized[0].get());
         auto* literal = dynamic_cast<LiteralExpr*>(varStmt->initializer.get());
         REQUIRE(std::holds_alternative<bool>(literal->value));
@@ -78,17 +78,17 @@ TEST_CASE("Optimizer: Constant folding for unary expressions", "[optimizer][cons
         auto program = parseCode("var x = -5;");
         Optimizer optimizer;
         auto optimized = optimizer.optimize(std::move(program));
-        
+
         auto* varStmt = dynamic_cast<VarStmt*>(optimized[0].get());
         auto* literal = dynamic_cast<LiteralExpr*>(varStmt->initializer.get());
         REQUIRE(std::get<double>(literal->value) == -5.0);
     }
-    
+
     SECTION("Logical NOT") {
         auto program = parseCode("var x = !false;");
         Optimizer optimizer;
         auto optimized = optimizer.optimize(std::move(program));
-        
+
         auto* varStmt = dynamic_cast<VarStmt*>(optimized[0].get());
         auto* literal = dynamic_cast<LiteralExpr*>(varStmt->initializer.get());
         REQUIRE(std::holds_alternative<bool>(literal->value));
@@ -104,14 +104,14 @@ TEST_CASE("Optimizer: Dead code elimination after return", "[optimizer][dead-cod
             print("after");
         }
     )");
-    
+
     Optimizer optimizer;
     auto optimized = optimizer.optimize(std::move(program));
-    
+
     REQUIRE(optimized.size() == 1);
     auto* funcStmt = dynamic_cast<FunctionStmt*>(optimized[0].get());
     REQUIRE(funcStmt != nullptr);
-    
+
     // The function body should have 2 statements, not 3
     // (print and return, but not the unreachable print)
     REQUIRE(funcStmt->body.size() == 2);
@@ -126,16 +126,16 @@ TEST_CASE("Optimizer: Dead code elimination in if statements", "[optimizer][dead
                 print("else");
             }
         )");
-        
+
         Optimizer optimizer;
         auto optimized = optimizer.optimize(std::move(program));
-        
+
         REQUIRE(optimized.size() == 1);
         // The if statement should be replaced with just the then branch
         auto* blockStmt = dynamic_cast<BlockStmt*>(optimized[0].get());
         REQUIRE(blockStmt != nullptr);
     }
-    
+
     SECTION("Constant false condition") {
         auto program = parseCode(R"(
             if (false) {
@@ -144,10 +144,10 @@ TEST_CASE("Optimizer: Dead code elimination in if statements", "[optimizer][dead
                 print("else");
             }
         )");
-        
+
         Optimizer optimizer;
         auto optimized = optimizer.optimize(std::move(program));
-        
+
         REQUIRE(optimized.size() == 1);
         // The if statement should be replaced with the else branch
         auto* blockStmt = dynamic_cast<BlockStmt*>(optimized[0].get());
@@ -161,10 +161,10 @@ TEST_CASE("Optimizer: Dead code elimination in while loops", "[optimizer][dead-c
             print("never");
         }
     )");
-    
+
     Optimizer optimizer;
     auto optimized = optimizer.optimize(std::move(program));
-    
+
     // The while loop with a constant false condition should be eliminated
     REQUIRE(optimized.size() == 0);
 }
@@ -173,10 +173,10 @@ TEST_CASE("Optimizer: Non-constant expressions are not folded", "[optimizer]") {
     auto program = parseCode("var x = a + b;");
     Optimizer optimizer;
     auto optimized = optimizer.optimize(std::move(program));
-    
+
     auto* varStmt = dynamic_cast<VarStmt*>(optimized[0].get());
     REQUIRE(varStmt != nullptr);
-    
+
     // Should still be a binary expression, not a literal
     auto* binaryExpr = dynamic_cast<BinaryExpr*>(varStmt->initializer.get());
     REQUIRE(binaryExpr != nullptr);
