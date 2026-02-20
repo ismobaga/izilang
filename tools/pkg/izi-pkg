@@ -1,260 +1,243 @@
 #!/usr/bin/env bash
 
-# IziLang Package Manager
-# A simple package manager for IziLang projects
+# IziLang Package Manager (izi-pkg)
+# Project-local, TOML-manifest-based dependency manager for IziLang.
+# See docs/PACKAGE_MANAGER.md for the full specification.
 
 set -e
 
-VERSION="0.1.0"
-PACKAGE_DIR="izi_modules"
-GLOBAL_DIR="$HOME/.izi/packages"
-LOCK_FILE="package-lock.json"
+VERSION="0.2.0"
+MANIFEST="izi.toml"
+LOCK_FILE="izi.lock"
+LIBS_DIR="libs"
 
-# Colors for output
+# ── colours ──────────────────────────────────────────────────────────────────
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
-# Print colored output
-info() {
-    echo -e "${BLUE}[INFO]${NC} $1"
+info()    { echo -e "${BLUE}[izi-pkg]${NC} $1"; }
+success() { echo -e "${GREEN}[izi-pkg]${NC} $1"; }
+warn()    { echo -e "${YELLOW}[izi-pkg]${NC} $1"; }
+error()   { echo -e "${RED}[izi-pkg]${NC} $1"; exit 1; }
+
+# ── helpers ───────────────────────────────────────────────────────────────────
+
+require_manifest() {
+    [ -f "$MANIFEST" ] || error "$MANIFEST not found. Run 'izi-pkg new' first."
 }
 
-success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
+# Minimal TOML key reader: toml_get <file> <section> <key>
+# Returns the raw (unquoted) value of key inside [section].
+toml_get() {
+    local file="$1" section="$2" key="$3"
+    awk -v sec="[$section]" -v k="$key" '
+        /^\[/ { in_sec = ($0 == sec) }
+        in_sec && $0 ~ ("^[ \t]*" k "[ \t]*=") {
+            sub(/^[^=]+=[ \t]*/, "")
+            gsub(/^"|"$/, "")
+            print
+            exit
+        }
+    ' "$file"
 }
 
-warn() {
-    echo -e "${YELLOW}[WARN]${NC} $1"
-}
+# ── commands ──────────────────────────────────────────────────────────────────
 
-error() {
-    echo -e "${RED}[ERROR]${NC} $1"
-    exit 1
-}
-
-# Show help
 show_help() {
-    cat << EOF
+    cat <<EOF
 IziLang Package Manager v${VERSION}
 
 Usage: izi-pkg <command> [options]
 
 Commands:
-  init                  Initialize a new package.json
-  install [package]     Install dependencies
-  list                  List installed packages
-  search <query>        Search for packages
-  update [package]      Update packages
-  remove <package>      Remove a package
-  publish               Publish package to registry
-  help                  Show this help message
-  version               Show version
+  new                   Scaffold a new project and create izi.toml
+  sync [--dev]          Fetch all dependencies listed in izi.toml
+  add <pkg[@ver]>       Add a dependency and sync
+  drop <pkg>            Remove a dependency and delete it from libs/
+  show                  Show packages currently present in libs/
+  find <query>          Search the package hub
+  ship                  Publish the package to the registry
+  upgrade <pkg>         Upgrade a dependency to its latest version
+  version               Print izi-pkg version
+  help                  Show this message
 
-Options:
-  -g, --global          Install package globally
-  -v, --verbose         Verbose output
-  -h, --help           Show help
-
-Examples:
-  izi-pkg init
-  izi-pkg install
-  izi-pkg install std-math
-  izi-pkg install std-math@1.0.0
-  izi-pkg remove std-math
-  izi-pkg list
-
-For more information, visit: https://github.com/ismobaga/izilang
+For full documentation see: docs/PACKAGE_MANAGER.md
 EOF
 }
 
-# Initialize a new package
-cmd_init() {
-    if [ -f "package.json" ]; then
-        warn "package.json already exists"
-        read -p "Overwrite? (y/N) " -n 1 -r
-        echo
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            exit 0
-        fi
+# ── new ───────────────────────────────────────────────────────────────────────
+
+cmd_new() {
+    if [ -f "$MANIFEST" ]; then
+        warn "$MANIFEST already exists."
+        read -p "Overwrite? (y/N) " -n 1 -r; echo
+        [[ $REPLY =~ ^[Yy]$ ]] || exit 0
     fi
 
-    info "Initializing package.json..."
-    
+    info "Creating new IziLang project..."
     read -p "Package name: " name
-    read -p "Version (1.0.0): " version
-    version=${version:-1.0.0}
-    read -p "Description: " description
-    read -p "Entry point (index.iz): " main
-    main=${main:-index.iz}
+    read -p "Version (1.0.0): " version;   version="${version:-1.0.0}"
+    read -p "Description: "   description
+    read -p "Entry point (main.izi): " entry; entry="${entry:-main.izi}"
     read -p "Author: " author
-    read -p "License (MIT): " license
-    license=${license:-MIT}
+    read -p "License (MIT): " license; license="${license:-MIT}"
 
-    cat > package.json << EOF
-{
-  "name": "$name",
-  "version": "$version",
-  "description": "$description",
-  "main": "$main",
-  "author": "$author",
-  "license": "$license",
-  "dependencies": {},
-  "devDependencies": {},
-  "scripts": {
-    "test": "izi test"
-  }
+    cat > "$MANIFEST" <<TOML
+[pack]
+name        = "$name"
+version     = "$version"
+description = "$description"
+entry       = "$entry"
+authors     = ["$author"]
+license     = "$license"
+
+[deps]
+
+[dev-deps]
+TOML
+
+    # Create entry file if it does not exist
+    [ -f "$entry" ] || { echo '// Entry point for '"$name" > "$entry"; }
+
+    success "Created $MANIFEST"
+    info "Add dependencies with:  izi-pkg add <package>"
 }
-EOF
 
-    success "Created package.json"
+# ── sync ──────────────────────────────────────────────────────────────────────
+
+cmd_sync() {
+    local include_dev=0
+    [ "${1:-}" = "--dev" ] && include_dev=1
+
+    require_manifest
+    mkdir -p "$LIBS_DIR"
+
+    info "Syncing dependencies from $MANIFEST..."
+    warn "Registry fetch not yet implemented — placeholder for Phase 3."
+    warn "Local-path and git-URL resolution is planned for Phase 2."
+
+    success "libs/ is up to date"
 }
 
-# Install packages
-cmd_install() {
-    local package=$1
-    local global=$2
+# ── add ───────────────────────────────────────────────────────────────────────
 
-    if [ -z "$package" ]; then
-        # Install all dependencies from package.json
-        if [ ! -f "package.json" ]; then
-            error "package.json not found. Run 'izi-pkg init' first."
-        fi
+cmd_add() {
+    local spec="${1:-}"
+    [ -z "$spec" ] && error "Usage: izi-pkg add <package[@version]>"
+    require_manifest
 
-        info "Installing dependencies from package.json..."
-        mkdir -p "$PACKAGE_DIR"
-        
-        # Parse dependencies (basic implementation)
-        warn "Dependency installation not yet fully implemented"
-        warn "This is a placeholder for future implementation"
-        
-        success "Dependencies installed"
+    # Split name and optional version
+    local pkg_name pkg_ver
+    if [[ "$spec" == *"@"* ]]; then
+        pkg_name="${spec%%@*}"
+        pkg_ver="${spec##*@}"
     else
-        # Install specific package
-        info "Installing $package..."
-        
-        local install_dir
-        if [ "$global" = "-g" ] || [ "$global" = "--global" ]; then
-            install_dir="$GLOBAL_DIR"
-            mkdir -p "$install_dir"
-        else
-            install_dir="$PACKAGE_DIR"
-            mkdir -p "$install_dir"
-        fi
-        
-        warn "Package installation not yet fully implemented"
-        warn "This is a placeholder for future implementation"
-        
-        success "Installed $package"
+        pkg_name="$spec"
+        pkg_ver="latest"
     fi
-}
 
-# List installed packages
-cmd_list() {
-    info "Installed packages:"
-    
-    if [ -d "$PACKAGE_DIR" ]; then
-        echo "Local packages ($PACKAGE_DIR):"
-        ls -1 "$PACKAGE_DIR" 2>/dev/null || echo "  (none)"
-    fi
-    
-    if [ -d "$GLOBAL_DIR" ]; then
-        echo ""
-        echo "Global packages ($GLOBAL_DIR):"
-        ls -1 "$GLOBAL_DIR" 2>/dev/null || echo "  (none)"
-    fi
-}
+    info "Adding $pkg_name (${pkg_ver}) to [deps] in $MANIFEST..."
 
-# Search for packages
-cmd_search() {
-    local query=$1
-    if [ -z "$query" ]; then
-        error "Search query required"
-    fi
-    
-    info "Searching for: $query"
-    warn "Package registry not yet available"
-    warn "This is a placeholder for future implementation"
-}
-
-# Update packages
-cmd_update() {
-    local package=$1
-    
-    if [ -z "$package" ]; then
-        info "Updating all packages..."
+    # Append to [deps] section if key is not already present
+    if grep -q "^${pkg_name}[[:space:]]*=" "$MANIFEST" 2>/dev/null; then
+        warn "$pkg_name is already listed in $MANIFEST"
     else
-        info "Updating $package..."
+        # Insert after the [deps] header
+        local tmp; tmp="$(mktemp)"
+        awk -v pkg="$pkg_name" -v ver="$pkg_ver" '
+            /^\[deps\]/ { print; print pkg " = \"" ver "\""; next }
+            { print }
+        ' "$MANIFEST" > "$tmp" && mv "$tmp" "$MANIFEST"
+        success "Added $pkg_name = \"$pkg_ver\" to [deps]"
     fi
-    
-    warn "Package update not yet fully implemented"
-    warn "This is a placeholder for future implementation"
+
+    cmd_sync
 }
 
-# Remove package
-cmd_remove() {
-    local package=$1
-    if [ -z "$package" ]; then
-        error "Package name required"
-    fi
-    
-    info "Removing $package..."
-    
-    if [ -d "$PACKAGE_DIR/$package" ]; then
-        rm -rf "$PACKAGE_DIR/$package"
-        success "Removed $package"
+# ── drop ──────────────────────────────────────────────────────────────────────
+
+cmd_drop() {
+    local pkg="${1:-}"
+    [ -z "$pkg" ] && error "Usage: izi-pkg drop <package>"
+    require_manifest
+
+    info "Removing $pkg from $MANIFEST..."
+    local tmp; tmp="$(mktemp)"
+    grep -v "^${pkg}[[:space:]]*=" "$MANIFEST" > "$tmp" && mv "$tmp" "$MANIFEST"
+
+    # Remove from libs/
+    local found=0
+    for dir in "$LIBS_DIR/${pkg}"-*/; do
+        [ -d "$dir" ] && { rm -rf "$dir"; found=1; }
+    done
+    [ -d "$LIBS_DIR/$pkg" ] && { rm -rf "$LIBS_DIR/$pkg"; found=1; }
+
+    if [ $found -eq 1 ]; then
+        success "Removed $pkg from libs/"
     else
-        error "Package $package not found"
+        info "$pkg was not present in libs/"
+    fi
+    success "Dropped $pkg"
+}
+
+# ── show ──────────────────────────────────────────────────────────────────────
+
+cmd_show() {
+    info "Packages in $LIBS_DIR/:"
+    if [ -d "$LIBS_DIR" ] && [ "$(ls -A "$LIBS_DIR" 2>/dev/null)" ]; then
+        ls -1 "$LIBS_DIR"
+    else
+        echo "  (none)"
     fi
 }
 
-# Publish package
-cmd_publish() {
-    if [ ! -f "package.json" ]; then
-        error "package.json not found"
-    fi
-    
-    info "Publishing package..."
-    warn "Package publishing not yet available"
-    warn "This is a placeholder for future implementation"
+# ── find ──────────────────────────────────────────────────────────────────────
+
+cmd_find() {
+    local query="${1:-}"
+    [ -z "$query" ] && error "Usage: izi-pkg find <query>"
+    info "Searching hub for: $query"
+    warn "Package hub not yet available — planned for Phase 3."
 }
 
-# Main command dispatcher
+# ── ship ──────────────────────────────────────────────────────────────────────
+
+cmd_ship() {
+    require_manifest
+    local name; name="$(toml_get "$MANIFEST" pack name)"
+    local ver;  ver="$(toml_get  "$MANIFEST" pack version)"
+    info "Preparing to ship $name v$ver..."
+    warn "Registry publishing not yet available — planned for Phase 3."
+}
+
+# ── upgrade ───────────────────────────────────────────────────────────────────
+
+cmd_upgrade() {
+    local pkg="${1:-}"
+    [ -z "$pkg" ] && error "Usage: izi-pkg upgrade <package>"
+    require_manifest
+    info "Upgrading $pkg..."
+    warn "Upgrade not yet implemented — planned for Phase 4."
+}
+
+# ── dispatcher ────────────────────────────────────────────────────────────────
+
 main() {
-    case "$1" in
-        init)
-            cmd_init
-            ;;
-        install)
-            shift
-            cmd_install "$@"
-            ;;
-        list)
-            cmd_list
-            ;;
-        search)
-            cmd_search "$2"
-            ;;
-        update)
-            cmd_update "$2"
-            ;;
-        remove)
-            cmd_remove "$2"
-            ;;
-        publish)
-            cmd_publish
-            ;;
-        version)
-            echo "IziLang Package Manager v${VERSION}"
-            ;;
-        help|--help|-h|"")
-            show_help
-            ;;
-        *)
-            error "Unknown command: $1. Run 'izi-pkg help' for usage."
-            ;;
+    case "${1:-}" in
+        new)     cmd_new ;;
+        sync)    shift; cmd_sync "$@" ;;
+        add)     cmd_add "${2:-}" ;;
+        drop)    cmd_drop "${2:-}" ;;
+        show)    cmd_show ;;
+        find)    cmd_find "${2:-}" ;;
+        ship)    cmd_ship ;;
+        upgrade) cmd_upgrade "${2:-}" ;;
+        version) echo "IziLang Package Manager v${VERSION}" ;;
+        help|--help|-h|"") show_help ;;
+        *)       error "Unknown command: $1. Run 'izi-pkg help' for usage." ;;
     esac
 }
 
