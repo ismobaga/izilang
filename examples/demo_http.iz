@@ -1,0 +1,54 @@
+// demo_http.iz - HTTP client demonstration
+// This example shows how to use the std.http module for making HTTP requests.
+//
+// NOTE: The examples below that make actual network calls require internet
+// connectivity and an available httpbin.org service. They are commented out
+// by default. For local testing, replace the URLs with a server running on
+// localhost (e.g., http://localhost:8080/).
+
+import * as http from "http";
+
+// Example 1: Simple GET request
+// Uncomment and replace with a real URL to test:
+//
+// var response = http.get("http://httpbin.org/get");
+// print("Status:", response.status);
+// print("OK:", response.ok);
+// print("Body:", response.body);
+
+// Example 2: POST request with a body
+//
+// var response = http.post(
+//     "http://httpbin.org/post",
+//     "name=IziLang&version=0.3",
+//     "application/x-www-form-urlencoded"
+// );
+// print("Status:", response.status);
+// print("Body:", response.body);
+
+// Example 3: Generic request using http.request()
+//
+// var response = http.request({
+//     "method": "GET",
+//     "url": "http://httpbin.org/json"
+// });
+// print("Status:", response.status);
+// print("OK:", response.ok);
+// print("Body:", response.body);
+
+// Example 4: Error handling for HTTP requests
+//
+// try {
+//     var response = http.get("http://httpbin.org/status/404");
+//     if (!response.ok) {
+//         print("Request failed with status:", response.status);
+//     }
+// } catch (e) {
+//     print("Network error:", e);
+// }
+
+// Verify the module loaded successfully
+print("http module loaded successfully.");
+print("Available functions: get, post, request");
+print("Supported methods: GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS");
+print("Note: HTTPS is not supported in this version.");

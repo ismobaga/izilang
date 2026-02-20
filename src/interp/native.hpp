@@ -142,6 +142,11 @@ auto nativeRegexMatch(Interpreter& interp, const std::vector<Value>& arguments) 
 auto nativeRegexReplace(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 auto nativeRegexTest(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 
+// std.http functions
+auto nativeHttpGet(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeHttpPost(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeHttpRequest(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+
 void registerNativeFunctions(Interpreter& interpreter);
 
 }  // namespace izi

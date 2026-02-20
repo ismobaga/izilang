@@ -566,15 +566,97 @@ print(reformatted);  // "Date: 12/02/2026"
 - `replace()` replaces **all** matches, not just the first one
 - `match()` is currently disabled due to a segmentation fault bug and will throw an error if called
 
-## http - HTTP Client (Placeholder)
+## http - HTTP Client
 
-Basic HTTP client functionality. *Coming soon.*
+Synchronous HTTP client for making HTTP/1.1 requests. Supports GET, POST, and generic requests via a plain TCP socket connection. HTTPS is not supported in this version.
 
 ### Module Import
 
 ```izilang
 import "http";
+var response = http.get("http://example.com/api/data");
 ```
+
+Or use the namespaced version:
+
+```izilang
+import * as http from "std.http";
+var response = http.get("http://example.com/");
+```
+
+Or import specific functions:
+```izilang
+import { get, post, request } from "http";
+```
+
+### Functions
+
+**Request Functions:**
+- `get(url: String): Map` - Make an HTTP GET request to the given URL.
+- `post(url: String, body: String, contentType?: String): Map` - Make an HTTP POST request. `contentType` defaults to `"application/x-www-form-urlencoded"`.
+- `request(options: Map): Map` - Make a generic HTTP request. The `options` map must contain a `"url"` string key and may contain `"method"` (default `"GET"`), `"body"`, and `"contentType"`.
+
+### Response Map
+
+All three functions return a response map with the following fields:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `status` | Number | HTTP status code (e.g., `200`, `404`) |
+| `statusText` | String | HTTP status text (e.g., `"OK"`, `"Not Found"`) |
+| `ok` | Bool | `true` if status code is in the 200–299 range |
+| `body` | String | Response body as a string |
+| `headers` | Map | Response headers (key → value) |
+
+### Example
+
+```izilang
+import * as http from "http";
+
+// Simple GET request
+var response = http.get("http://httpbin.org/get");
+if (response.ok) {
+    print("Status:", response.status);
+    print("Body:", response.body);
+} else {
+    print("Request failed:", response.status, response.statusText);
+}
+
+// POST request with a body
+var postResponse = http.post(
+    "http://httpbin.org/post",
+    "name=IziLang&version=0.3",
+    "application/x-www-form-urlencoded"
+);
+print("POST status:", postResponse.status);
+
+// Generic request
+var putResponse = http.request({
+    "method": "PUT",
+    "url": "http://httpbin.org/put",
+    "body": "{\"key\": \"value\"}",
+    "contentType": "application/json"
+});
+print("PUT status:", putResponse.status);
+
+// Error handling
+try {
+    var res = http.get("http://httpbin.org/status/500");
+    if (!res.ok) {
+        print("Server error:", res.status);
+    }
+} catch (e) {
+    print("Network error:", e);
+}
+```
+
+### Notes
+
+- Only plain **HTTP** is supported. HTTPS connections will throw an error.
+- Requests are **synchronous** (blocking) — the program waits for the response before continuing.
+- All unsupported URL schemes (e.g., `ftp://`, `https://`) throw a runtime error.
+- DNS resolution failures or connection refused errors also throw a runtime error.
+- The `Connection: close` header is sent automatically; persistent connections are not supported.
 
 ## Additional Built-in Functions
 
@@ -602,7 +684,7 @@ These functions are available globally without imports:
 ## Known Limitations
 
 - The `fileExists()` function uses `<sys/stat.h>` which is POSIX-specific and may not work on all platforms
-- HTTP module is a placeholder for future implementation
+- HTTP module supports plain HTTP only; HTTPS requires SSL/TLS and is not yet supported
 - `regex.match()` is temporarily disabled due to a segmentation fault issue; use `regex.test()` and `regex.replace()` instead
 
 ## Module System Examples
