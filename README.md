@@ -2,7 +2,7 @@
 
 # IziLang
 
-**Version 0.2.0** - A modern, expressive programming language with excellent tooling and developer experience.
+**Version 0.3.0** - A modern, expressive programming language with excellent tooling and developer experience.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/ismobaga/izilang/actions)
@@ -43,7 +43,7 @@ Cannot add number and string. Operands must be two numbers or two strings.
 Powerful REPL with multi-line input, special commands, and error recovery:
 
 ```
-IziLang 0.2.0 REPL
+IziLang 0.3.0 REPL
 > fn add(x, y) {
 ... return x + y;
 ... }
@@ -62,6 +62,9 @@ IziLang 0.2.0 REPL
 - **Exception Handling** - try/catch/finally blocks
 - **Module System** - Import/export for code organization
 - **String Interpolation** - Template literals with expressions
+- **Classes & OOP** - Classes with inheritance, constructors, `this` binding
+- **Gradual Typing** - Optional type annotations on variables and functions
+- **Semantic Analysis** - Static checks via `izi check` (unused vars, dead code)
 
 ### 📦 Dual Execution Modes
 
@@ -272,18 +275,22 @@ Areas where help is needed:
 
 ## Roadmap
 
-**v0.2** (Current) - Tooling & Developer Experience ✅
-- ✅ CLI expansion (run, build, check, test, repl)
-- ✅ Enhanced error messages with file context
-- ✅ Interactive REPL with special commands
+**v0.3** (Current) - Language Power & Performance ✅
+- ✅ Gradual typing with optional type annotations
+- ✅ Classes and OOP with inheritance
+- ✅ Mark-and-Sweep garbage collection
+- ✅ Semantic analysis and static checks
+- ✅ Enhanced stack traces and error reporting
+- ✅ VM import system and benchmark command (`izi bench`)
+- ✅ Stack overflow protection and memory statistics
 - 🚧 Code formatter (`izi fmt`)
 - 🚧 LSP server MVP
 
-**v0.3** (Planned) - Language Power & Performance
-- Static/gradual typing
-- Advanced OOP features
-- Performance optimizations
-- Concurrency primitives
+**v0.4** (Planned) - Concurrency & Ecosystem
+- Async/await concurrency primitives
+- Performance optimizations (JIT, inline caching)
+- Package manager
+- Debugger protocol (DAP)
 
 **[→ Full Roadmap](docs/ROADMAP.md)**
 
