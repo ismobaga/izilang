@@ -156,6 +156,18 @@ Value createFsModule(Interpreter& interp) {
     return Value{module};
 }
 
+Value createHttpModule(Interpreter& interp) {
+    auto module = std::make_shared<Map>();
+    
+    // HTTP client functions
+    module->entries["get"] = Value{std::make_shared<NativeFunction>("get", 1, nativeHttpGet)};
+    // post accepts 2 required args (url, body) and 1 optional arg (contentType)
+    module->entries["post"] = Value{std::make_shared<NativeFunction>("post", -1, nativeHttpPost)};
+    module->entries["request"] = Value{std::make_shared<NativeFunction>("request", 1, nativeHttpRequest)};
+    
+    return Value{module};
+}
+
 Value createTimeModule(Interpreter& interp) {
     auto module = std::make_shared<Map>();
     
@@ -191,7 +203,7 @@ Value createRegexModule(Interpreter& interp) {
 bool isNativeModule(const std::string& path) {
     return path == "math" || path == "string" || path == "array" || 
            path == "io" || path == "json" || path == "std.json" ||
-           path == "http" || 
+           path == "http" || path == "std.http" ||
            path == "log" || path == "std.log" || 
            path == "assert" || path == "std.assert" ||
            path == "env" || path == "std.env" ||
@@ -229,10 +241,8 @@ Value getNativeModule(const std::string& name, Interpreter& interp) {
         return createJsonModule(interp);
     } else if (name == "regex" || name == "std.regex") {
         return createRegexModule(interp);
-    } else if (name == "http") {
-        // Placeholder for future implementation
-        auto module = std::make_shared<Map>();
-        return Value{module};
+    } else if (name == "http" || name == "std.http") {
+        return createHttpModule(interp);
     }
     
     throw std::runtime_error("Unknown native module: " + name);

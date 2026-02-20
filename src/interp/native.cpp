@@ -12,6 +12,10 @@
 #include <thread>
 #include <regex>
 #include <ctime>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <arpa/inet.h>
+#include <unistd.h>
 
 namespace izi {
 auto nativePrint(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
@@ -1874,6 +1878,239 @@ auto nativeRegexTest(Interpreter& interp, const std::vector<Value>& arguments) -
     } catch (const std::regex_error& e) {
         throw std::runtime_error(std::string("Regex error: ") + e.what());
     }
+}
+
+// std.http helpers
+
+struct HttpParsedUrl {
+    std::string scheme;
+    std::string host;
+    int port;
+    std::string path;
+};
+
+static HttpParsedUrl httpParseUrl(const std::string& url) {
+    HttpParsedUrl result;
+    size_t schemeEnd = url.find("://");
+    if (schemeEnd == std::string::npos) {
+        throw std::runtime_error("http: invalid URL, missing scheme: " + url);
+    }
+    result.scheme = url.substr(0, schemeEnd);
+    std::string rest = url.substr(schemeEnd + 3);
+
+    size_t pathStart = rest.find('/');
+    std::string hostPort;
+    if (pathStart == std::string::npos) {
+        hostPort = rest;
+        result.path = "/";
+    } else {
+        hostPort = rest.substr(0, pathStart);
+        result.path = rest.substr(pathStart);
+    }
+
+    size_t colonPos = hostPort.find(':');
+    if (colonPos != std::string::npos) {
+        result.host = hostPort.substr(0, colonPos);
+        result.port = std::stoi(hostPort.substr(colonPos + 1));
+    } else {
+        result.host = hostPort;
+        result.port = (result.scheme == "https") ? 443 : 80;
+    }
+
+    if (result.host.empty()) {
+        throw std::runtime_error("http: invalid URL, empty host: " + url);
+    }
+    return result;
+}
+
+static std::string httpSendRequest(const std::string& method, const std::string& url,
+                                   const std::string& body,
+                                   const std::string& contentType) {
+    HttpParsedUrl parsed = httpParseUrl(url);
+
+    if (parsed.scheme == "https") {
+        throw std::runtime_error("http: HTTPS is not supported in this version. Use HTTP.");
+    }
+    if (parsed.scheme != "http") {
+        throw std::runtime_error("http: unsupported scheme '" + parsed.scheme + "'. Only HTTP is supported.");
+    }
+
+    struct addrinfo hints{}, *res = nullptr;
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    std::string portStr = std::to_string(parsed.port);
+    int rc = getaddrinfo(parsed.host.c_str(), portStr.c_str(), &hints, &res);
+    if (rc != 0) {
+        throw std::runtime_error("http: failed to resolve host '" + parsed.host + "': " +
+                                 std::string(gai_strerror(rc)));
+    }
+
+    int sock = -1;
+    for (struct addrinfo* rp = res; rp != nullptr; rp = rp->ai_next) {
+        sock = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+        if (sock < 0) continue;
+        if (connect(sock, rp->ai_addr, rp->ai_addrlen) == 0) break;
+        close(sock);
+        sock = -1;
+    }
+    freeaddrinfo(res);
+    if (sock < 0) {
+        throw std::runtime_error("http: failed to connect to '" + parsed.host + ":" + portStr + "'");
+    }
+
+    std::ostringstream req;
+    req << method << " " << parsed.path << " HTTP/1.1\r\n";
+    req << "Host: " << parsed.host << "\r\n";
+    req << "User-Agent: IziLang/0.3\r\n";
+    req << "Accept: */*\r\n";
+    req << "Connection: close\r\n";
+    if (!body.empty()) {
+        req << "Content-Type: " << contentType << "\r\n";
+        req << "Content-Length: " << body.size() << "\r\n";
+    }
+    req << "\r\n";
+    if (!body.empty()) {
+        req << body;
+    }
+
+    std::string reqStr = req.str();
+    size_t sent = 0;
+    while (sent < reqStr.size()) {
+        ssize_t n = send(sock, reqStr.c_str() + sent, reqStr.size() - sent, 0);
+        if (n < 0) {
+            close(sock);
+            throw std::runtime_error("http: error sending request");
+        }
+        sent += static_cast<size_t>(n);
+    }
+
+    std::string response;
+    char buffer[4096];
+    ssize_t n;
+    while ((n = recv(sock, buffer, sizeof(buffer), 0)) > 0) {
+        response.append(buffer, static_cast<size_t>(n));
+    }
+    close(sock);
+    return response;
+}
+
+static Value httpParseResponse(const std::string& response) {
+    auto result = std::make_shared<Map>();
+
+    size_t headerEnd = response.find("\r\n\r\n");
+    std::string headerSection;
+    std::string body;
+    if (headerEnd != std::string::npos) {
+        headerSection = response.substr(0, headerEnd);
+        body = response.substr(headerEnd + 4);
+    } else {
+        headerSection = response;
+    }
+
+    size_t firstLineEnd = headerSection.find("\r\n");
+    std::string statusLine = headerSection.substr(0, firstLineEnd);
+    int statusCode = 0;
+    std::string statusText;
+    size_t sp1 = statusLine.find(' ');
+    if (sp1 != std::string::npos) {
+        size_t sp2 = statusLine.find(' ', sp1 + 1);
+        std::string codeStr = (sp2 != std::string::npos)
+            ? statusLine.substr(sp1 + 1, sp2 - sp1 - 1)
+            : statusLine.substr(sp1 + 1);
+        try {
+            statusCode = std::stoi(codeStr);
+        } catch (const std::exception&) {
+            // Malformed status line; statusCode remains 0 (unknown)
+        }
+        if (sp2 != std::string::npos) {
+            statusText = statusLine.substr(sp2 + 1);
+        }
+    }
+
+    auto headersMap = std::make_shared<Map>();
+    size_t pos = (firstLineEnd != std::string::npos) ? firstLineEnd + 2 : headerSection.size();
+    while (pos < headerSection.size()) {
+        size_t lineEnd = headerSection.find("\r\n", pos);
+        if (lineEnd == std::string::npos) lineEnd = headerSection.size();
+        std::string line = headerSection.substr(pos, lineEnd - pos);
+        size_t colonPos = line.find(':');
+        if (colonPos != std::string::npos) {
+            std::string key = line.substr(0, colonPos);
+            std::string val = line.substr(colonPos + 1);
+            size_t valStart = val.find_first_not_of(' ');
+            if (valStart != std::string::npos) val = val.substr(valStart);
+            headersMap->entries[key] = val;
+        }
+        pos = lineEnd + 2;
+    }
+
+    result->entries["status"] = static_cast<double>(statusCode);
+    result->entries["statusText"] = statusText;
+    result->entries["body"] = body;
+    result->entries["headers"] = Value{headersMap};
+    result->entries["ok"] = static_cast<bool>(statusCode >= 200 && statusCode < 300);
+    return Value{result};
+}
+
+// std.http functions
+auto nativeHttpGet(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() < 1 || !std::holds_alternative<std::string>(arguments[0])) {
+        throw std::runtime_error("http.get() requires a URL string argument.");
+    }
+    const std::string& url = std::get<std::string>(arguments[0]);
+    std::string response = httpSendRequest("GET", url, "", "");
+    return httpParseResponse(response);
+}
+
+auto nativeHttpPost(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() < 2 || !std::holds_alternative<std::string>(arguments[0])) {
+        throw std::runtime_error("http.post() requires a URL string and body argument.");
+    }
+    const std::string& url = std::get<std::string>(arguments[0]);
+    std::string body = valueToString(arguments[1]);
+    std::string contentType = "application/x-www-form-urlencoded";
+    if (arguments.size() >= 3 && std::holds_alternative<std::string>(arguments[2])) {
+        contentType = std::get<std::string>(arguments[2]);
+    }
+    std::string response = httpSendRequest("POST", url, body, contentType);
+    return httpParseResponse(response);
+}
+
+auto nativeHttpRequest(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() < 1 || !std::holds_alternative<std::shared_ptr<Map>>(arguments[0])) {
+        throw std::runtime_error("http.request() requires an options map argument.");
+    }
+    auto options = std::get<std::shared_ptr<Map>>(arguments[0]);
+
+    std::string method = "GET";
+    std::string url;
+    std::string body;
+    std::string contentType = "application/x-www-form-urlencoded";
+
+    auto it = options->entries.find("method");
+    if (it != options->entries.end()) {
+        method = valueToString(it->second);
+        std::transform(method.begin(), method.end(), method.begin(), ::toupper);
+    }
+
+    it = options->entries.find("url");
+    if (it == options->entries.end() || !std::holds_alternative<std::string>(it->second)) {
+        throw std::runtime_error("http.request() options map must contain a 'url' string.");
+    }
+    url = std::get<std::string>(it->second);
+
+    it = options->entries.find("body");
+    if (it != options->entries.end()) {
+        body = valueToString(it->second);
+    }
+
+    it = options->entries.find("contentType");
+    if (it != options->entries.end()) {
+        contentType = valueToString(it->second);
+    }
+
+    std::string response = httpSendRequest(method, url, body, contentType);
+    return httpParseResponse(response);
 }
 
 void registerNativeFunctions(Interpreter& interp) {
