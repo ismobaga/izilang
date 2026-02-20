@@ -7,7 +7,7 @@
 namespace izi {
 
 class VmNativeFunction : public VmCallable {
-public:
+   public:
     using NativeFn = std::function<Value(VM&, const std::vector<Value>&)>;
 
     VmNativeFunction(std::string name, int arity, NativeFn fn)
@@ -16,11 +16,9 @@ public:
     std::string name() const override { return name_; }
     int arity() const override { return arity_; }
 
-    Value call(VM& vm, const std::vector<Value>& arguments) override {
-        return fn_(vm, arguments);
-    }
+    Value call(VM& vm, const std::vector<Value>& arguments) override { return fn_(vm, arguments); }
 
-private:
+   private:
     std::string name_;
     int arity_;
     NativeFn fn_;
@@ -109,4 +107,4 @@ Value vmNativeRegexTest(VM& vm, const std::vector<Value>& arguments);
 
 void registerVmNatives(VM& vm);
 
-} // namespace izi
+}  // namespace izi

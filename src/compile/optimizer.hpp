@@ -15,12 +15,12 @@ namespace izi {
  * - Dead code elimination: Remove unreachable code
  */
 class Optimizer : public ExprVisitor, public StmtVisitor {
-public:
+   public:
     Optimizer() = default;
-    
+
     // Optimize a program (vector of statements)
     std::vector<StmtPtr> optimize(std::vector<StmtPtr> program);
-    
+
     // Expression visitors - return optimized expression wrapped in Value
     Value visit(BinaryExpr& expr) override;
     Value visit(UnaryExpr& expr) override;
@@ -41,7 +41,7 @@ public:
     Value visit(SetPropertyExpr& expr) override;
     Value visit(ThisExpr& expr) override;
     Value visit(SuperExpr& expr) override;
-    
+
     // Statement visitors
     void visit(ExprStmt& stmt) override;
     void visit(ReturnStmt& stmt) override;
@@ -58,30 +58,30 @@ public:
     void visit(ThrowStmt& stmt) override;
     void visit(ClassStmt& stmt) override;
 
-private:
+   private:
     // Current optimized expression (used during expression optimization)
     ExprPtr currentExpr;
-    
+
     // Current optimized statement (used during statement optimization)
     StmtPtr currentStmt;
-    
+
     // Current optimized statements (used during block optimization)
     std::vector<StmtPtr> currentStmts;
-    
+
     // Helper: Optimize an expression and return the optimized version
     ExprPtr optimizeExpr(ExprPtr expr);
-    
+
     // Helper: Optimize a statement and return the optimized version
     StmtPtr optimizeStmt(StmtPtr stmt);
-    
+
     // Helper: Check if an expression is a constant literal
     bool isConstant(const Expr& expr) const;
-    
+
     // Helper: Evaluate a constant binary expression
     Value evaluateConstantBinary(const Value& left, TokenType op, const Value& right);
-    
+
     // Helper: Evaluate a constant unary expression
     Value evaluateConstantUnary(TokenType op, const Value& right);
 };
 
-} // namespace izi
+}  // namespace izi

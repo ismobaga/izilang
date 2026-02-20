@@ -11,11 +11,10 @@
 namespace izi {
 
 class ParserError : public std::runtime_error {
-public:
+   public:
     Token token;
-    
-    ParserError(const Token& token, const std::string& message)
-        : std::runtime_error(message), token(token) {}
+
+    ParserError(const Token& token, const std::string& message) : std::runtime_error(message), token(token) {}
 };
 
 class Parser {
@@ -37,7 +36,7 @@ class Parser {
     ExprPtr term();
     ExprPtr factor();
     ExprPtr unary();
-    ExprPtr call() ;
+    ExprPtr call();
 
     ExprPtr primary();
 

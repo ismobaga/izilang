@@ -17,20 +17,20 @@ TEST_CASE("VM Stack Management", "[vm-stack]") {
             var d = 4;
             var e = 5;
         )";
-        
+
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         BytecodeCompiler compiler;
         Chunk chunk = compiler.compile(program);
-        
+
         VM vm;
         // Should not crash or have stack issues
         REQUIRE_NOTHROW(vm.run(chunk));
     }
-    
+
     SECTION("Assignment expressions return their value") {
         // Assignment expressions (unlike statements) should leave value on stack
         // This allows expressions like: var y = (x = 42);
@@ -39,22 +39,22 @@ TEST_CASE("VM Stack Management", "[vm-stack]") {
             var y = (x = 42);
             var z = x + y;
         )";
-        
+
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         BytecodeCompiler compiler;
         Chunk chunk = compiler.compile(program);
-        
+
         VM vm;
         Value result = vm.run(chunk);
         // Both x and y should be 42, so z should be 84
         // This validates that assignment expressions properly propagate values
         REQUIRE_NOTHROW(vm.run(chunk));
     }
-    
+
     SECTION("Function declarations don't leak stack values") {
         // Bug: FunctionStmt was leaving function values on stack after SET_GLOBAL
         std::string source = R"(
@@ -62,20 +62,20 @@ TEST_CASE("VM Stack Management", "[vm-stack]") {
             fn func2() { return 2; }
             fn func3() { return 3; }
         )";
-        
+
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         BytecodeCompiler compiler;
         Chunk chunk = compiler.compile(program);
-        
+
         VM vm;
         // Should not crash or have stack issues
         REQUIRE_NOTHROW(vm.run(chunk));
     }
-    
+
     SECTION("Mixed declarations and statements") {
         // Comprehensive test of stack management
         // If stack management is wrong, this will cause issues when calling the function
@@ -85,15 +85,15 @@ TEST_CASE("VM Stack Management", "[vm-stack]") {
             var b = 2;
             var c = double(a + b);
         )";
-        
+
         Lexer lexer(source);
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         BytecodeCompiler compiler;
         Chunk chunk = compiler.compile(program);
-        
+
         VM vm;
         // This tests stack integrity: function call requires correct stack state
         REQUIRE_NOTHROW(vm.run(chunk));

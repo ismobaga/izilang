@@ -5,13 +5,11 @@
 #include "interp/izi_class.hpp"
 #include <cmath>
 
-
-
 namespace izi {
 
 VM::VM() : stack(), frames() {
     stack.reserve(STACK_MAX);
-    frames.reserve(64); // Arbitrary limit on call frames
+    frames.reserve(64);  // Arbitrary limit on call frames
 }
 
 void VM::setGlobal(const std::string& name, const Value& value) {
@@ -19,7 +17,7 @@ void VM::setGlobal(const std::string& name, const Value& value) {
 }
 
 CallFrame* VM::currentFrame() {
-    return &frames.back();  
+    return &frames.back();
 }
 
 uint8_t VM::readByte() {
@@ -32,13 +30,12 @@ uint16_t VM::readShort() {
     uint16_t high = *frame->ip++;
     uint16_t low = *frame->ip++;
     return (high << 8) | low;
-
 }
 
 Value VM::run(const Chunk& entry) {
     bool wasRunning = isRunning;
     isRunning = true;
-    
+
     if (!wasRunning) {
         stack.clear();
         frames.clear();
@@ -48,17 +45,17 @@ Value VM::run(const Chunk& entry) {
     CallFrame mainFrame{&entry, entry.code.data(), stack.size()};
 
     frames.push_back(mainFrame);
-    
+
     // Check for stack overflow
     if (frames.size() > MAX_CALL_FRAMES) {
         isRunning = wasRunning;
-        throw std::runtime_error("Stack overflow: Maximum call depth of " + 
-                               std::to_string(MAX_CALL_FRAMES) + " exceeded.");
+        throw std::runtime_error("Stack overflow: Maximum call depth of " + std::to_string(MAX_CALL_FRAMES) +
+                                 " exceeded.");
     }
 
     while (true) {
         try {
-            OpCode op = static_cast<OpCode>( readByte());
+            OpCode op = static_cast<OpCode>(readByte());
             switch (static_cast<OpCode>(op)) {
                 case OpCode::CONSTANT: {
                     uint8_t index = readByte();
@@ -91,7 +88,7 @@ Value VM::run(const Chunk& entry) {
                 case OpCode::SET_GLOBAL: {
                     uint8_t nameIndex = readByte();
                     const std::string& name = currentFrame()->chunk->names[nameIndex];
-                    Value value = stack.back(); // Peek at the value
+                    Value value = stack.back();  // Peek at the value
                     globals[name] = value;
                     break;
                 }
@@ -143,11 +140,11 @@ Value VM::run(const Chunk& entry) {
                     uint16_t offset = readShort();
                     currentFrame()->ip -= offset;
                     break;
-                }  
+                }
                 case OpCode::CALL: {
                     uint8_t argCount = readByte();
                     Value callee = stack[stack.size() - 1 - argCount];
-                    
+
                     std::shared_ptr<VmCallable> function;
                     if (std::holds_alternative<std::shared_ptr<VmCallable>>(callee)) {
                         function = std::get<std::shared_ptr<VmCallable>>(callee);
@@ -156,7 +153,7 @@ Value VM::run(const Chunk& entry) {
                     } else {
                         throw std::runtime_error("Can only call VM functions and classes.");
                     }
-                    
+
                     int ar = function->arity();
                     if (ar >= 0 && argCount != ar) {
                         throw std::runtime_error("Expected " + std::to_string(function->arity()) +
@@ -180,16 +177,16 @@ Value VM::run(const Chunk& entry) {
                     Value result = pop();
                     CallFrame finished = frames.back();
                     frames.pop_back();
-                    
+
                     // Check if we've returned from the frame we pushed in this run() call
                     if (frames.size() == startingFrameCount) {
                         isRunning = wasRunning;
                         return result;
                     }
-                    
+
                     if (frames.empty()) {
                         isRunning = wasRunning;
-                        return result; // Exit the VM
+                        return result;  // Exit the VM
                     }
                     // Clean up the stack
                     stack.resize(finished.stackBase);
@@ -238,7 +235,7 @@ Value VM::run(const Chunk& entry) {
                 case OpCode::INDEX: {
                     Value index = pop();
                     Value collection = pop();
-                    
+
                     if (std::holds_alternative<std::shared_ptr<Array>>(collection)) {
                         auto arr = std::get<std::shared_ptr<Array>>(collection);
                         if (!std::holds_alternative<double>(index)) {
@@ -270,7 +267,7 @@ Value VM::run(const Chunk& entry) {
                     Value value = pop();
                     Value index = pop();
                     Value collection = pop();
-                    
+
                     if (std::holds_alternative<std::shared_ptr<Array>>(collection)) {
                         auto arr = std::get<std::shared_ptr<Array>>(collection);
                         if (!std::holds_alternative<double>(index)) {
@@ -303,11 +300,11 @@ Value VM::run(const Chunk& entry) {
                     uint16_t catchOffset = readShort();
                     uint16_t finallyOffset = readShort();
                     uint8_t catchVarIndex = readByte();
-                    
+
                     ExceptionHandler handler;
                     handler.frameIndex = frames.size() - 1;
                     handler.stackSize = stack.size();
-                    
+
                     // Calculate absolute instruction pointers
                     if (catchOffset > 0) {
                         handler.catchIp = currentFrame()->ip + catchOffset;
@@ -316,13 +313,13 @@ Value VM::run(const Chunk& entry) {
                         handler.catchIp = nullptr;
                         handler.catchVariable = "";
                     }
-                    
+
                     if (finallyOffset > 0) {
                         handler.finallyIp = currentFrame()->ip + finallyOffset;
                     } else {
                         handler.finallyIp = nullptr;
                     }
-                    
+
                     exceptionHandlers.push_back(handler);
                     break;
                 }
@@ -346,20 +343,20 @@ Value VM::run(const Chunk& entry) {
                     uint8_t nameIndex = readByte();
                     const std::string& propertyName = currentFrame()->chunk->names[nameIndex];
                     Value object = pop();
-                    
+
                     if (!std::holds_alternative<std::shared_ptr<Instance>>(object)) {
                         throw std::runtime_error("Only instances have properties.");
                     }
-                    
+
                     auto instance = std::get<std::shared_ptr<Instance>>(object);
-                    
+
                     // Check if it's a field
                     auto fieldIt = instance->fields.find(propertyName);
                     if (fieldIt != instance->fields.end()) {
                         push(fieldIt->second);
                         break;
                     }
-                    
+
                     // Check if it's a method
                     if (std::holds_alternative<std::shared_ptr<VmClass>>(instance->klass)) {
                         auto klass = std::get<std::shared_ptr<VmClass>>(instance->klass);
@@ -369,7 +366,7 @@ Value VM::run(const Chunk& entry) {
                             break;
                         }
                     }
-                    
+
                     throw std::runtime_error("Undefined property '" + propertyName + "'.");
                 }
                 case OpCode::SET_PROPERTY: {
@@ -377,14 +374,14 @@ Value VM::run(const Chunk& entry) {
                     const std::string& propertyName = currentFrame()->chunk->names[nameIndex];
                     Value value = pop();
                     Value object = pop();
-                    
+
                     if (!std::holds_alternative<std::shared_ptr<Instance>>(object)) {
                         throw std::runtime_error("Only instances have properties.");
                     }
-                    
+
                     auto instance = std::get<std::shared_ptr<Instance>>(object);
                     instance->fields[propertyName] = value;
-                    push(value); // Assignment expression returns the value
+                    push(value);  // Assignment expression returns the value
                     break;
                 }
                 // ... handle other opcodes ...
@@ -394,7 +391,7 @@ Value VM::run(const Chunk& entry) {
         } catch (const std::runtime_error& e) {
             // Convert C++ exception to IziLang exception and try to handle it
             Value exception = std::string(e.what());
-            
+
             // Try to handle the exception through the exception handler stack
             if (handleException(exception)) {
                 // Exception was handled, continue execution from catch/finally block
@@ -408,7 +405,6 @@ Value VM::run(const Chunk& entry) {
             }
         }
     }
-
 }
 
 void VM::push(Value v) {
@@ -463,34 +459,34 @@ bool VM::handleException(const Value& exception) {
     // Search for an exception handler in the current call frame
     while (!exceptionHandlers.empty()) {
         ExceptionHandler& handler = exceptionHandlers.back();
-        
+
         // Check if handler is in current frame
         if (handler.frameIndex != frames.size() - 1) {
             // Handler is in a different frame, pop it
             exceptionHandlers.pop_back();
             continue;
         }
-        
+
         // Restore stack to the state when try block was entered
         stack.resize(handler.stackSize);
-        
+
         // If there's a catch block, jump to it
         if (handler.catchIp != nullptr) {
             // Push exception value to stack
             push(exception);
-            
+
             // Set the catch variable as a global
             // NOTE: This is a simplification - ideally catch variables should be local to the catch block
             // However, the current VM implementation uses globals for all variables accessed by name
             globals[handler.catchVariable] = exception;
-            
+
             // Jump to catch block
             currentFrame()->ip = handler.catchIp;
-            
+
             // The END_TRY opcode will clean up the handler
             return true;
         }
-        
+
         // If there's only a finally block (no catch), jump to it
         // NOTE: In a full implementation, the exception should be re-thrown after finally executes
         // For this initial implementation, we execute the finally block and consider the exception handled
@@ -499,14 +495,13 @@ bool VM::handleException(const Value& exception) {
             currentFrame()->ip = handler.finallyIp;
             return true;
         }
-        
+
         // No catch or finally, pop handler and continue searching
         exceptionHandlers.pop_back();
     }
-    
+
     // No handler found
     return false;
 }
 
-
-} // namespace izi
+}  // namespace izi

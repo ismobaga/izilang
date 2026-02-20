@@ -9,7 +9,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <algorithm>
-#include <unistd.h> // for getpid()
+#include <unistd.h>  // for getpid()
 
 namespace fs = std::filesystem;
 
@@ -17,19 +17,31 @@ namespace izi {
 
 std::string NativeCompiler::escapeString(const std::string& str) {
     std::string escaped;
-    escaped.reserve(str.size() * 1.2); // Reserve some extra space
-    
+    escaped.reserve(str.size() * 1.2);  // Reserve some extra space
+
     for (char c : str) {
         switch (c) {
-            case '\\': escaped += "\\\\"; break;
-            case '"':  escaped += "\\\""; break;
-            case '\n': escaped += "\\n"; break;
-            case '\r': escaped += "\\r"; break;
-            case '\t': escaped += "\\t"; break;
-            default:   escaped += c; break;
+            case '\\':
+                escaped += "\\\\";
+                break;
+            case '"':
+                escaped += "\\\"";
+                break;
+            case '\n':
+                escaped += "\\n";
+                break;
+            case '\r':
+                escaped += "\\r";
+                break;
+            case '\t':
+                escaped += "\\t";
+                break;
+            default:
+                escaped += c;
+                break;
         }
     }
-    
+
     return escaped;
 }
 
@@ -114,38 +126,36 @@ std::string NativeCompiler::getCompilerCommand() {
     } else if (std::system("which c++ > /dev/null 2>&1") == 0) {
         return "c++";
     }
-    
+
     // Default to g++ and let compilation fail with a clear error
     return "g++";
 }
 
 std::vector<std::string> NativeCompiler::getSourceFiles() {
     // Get the source directory path relative to where the izi binary is
-    std::vector<std::string> sources = {
-        "src/parse/lexer.cpp",
-        "src/parse/parser.cpp",
-        "src/interp/interpreter.cpp",
-        "src/interp/native.cpp",
-        "src/interp/user_function.cpp",
-        "src/interp/izi_class.cpp",
-        "src/interp/native_modules.cpp",
-        "src/compile/compiler.cpp",
-        "src/bytecode/vm.cpp",
-        "src/bytecode/vm_native.cpp",
-        "src/bytecode/vm_user_function.cpp",
-        "src/bytecode/vm_class.cpp",
-        "src/common/error_reporter.cpp",
-        "src/common/value.cpp",
-        "src/common/semantic_analyzer.cpp",
-        "src/ast/type.cpp"
-    };
-    
+    std::vector<std::string> sources = {"src/parse/lexer.cpp",
+                                        "src/parse/parser.cpp",
+                                        "src/interp/interpreter.cpp",
+                                        "src/interp/native.cpp",
+                                        "src/interp/user_function.cpp",
+                                        "src/interp/izi_class.cpp",
+                                        "src/interp/native_modules.cpp",
+                                        "src/compile/compiler.cpp",
+                                        "src/bytecode/vm.cpp",
+                                        "src/bytecode/vm_native.cpp",
+                                        "src/bytecode/vm_user_function.cpp",
+                                        "src/bytecode/vm_class.cpp",
+                                        "src/common/error_reporter.cpp",
+                                        "src/common/value.cpp",
+                                        "src/common/semantic_analyzer.cpp",
+                                        "src/ast/type.cpp"};
+
     return sources;
 }
 
 bool NativeCompiler::compileToExecutable(const std::string& cppFile, const CompileOptions& options) {
     std::string compiler = getCompilerCommand();
-    
+
     if (options.verbose) {
         std::cout << "Using compiler: " << compiler << "\n";
     }
@@ -154,50 +164,50 @@ bool NativeCompiler::compileToExecutable(const std::string& cppFile, const Compi
     std::stringstream cmd;
     cmd << compiler << " ";
     cmd << "-std=c++20 ";
-    
+
     // Add optimization flags
     if (options.debug) {
         cmd << "-g -O0 ";
     } else {
         cmd << "-O2 ";
     }
-    
+
     // Static linking flags
     // Note: Full static linking may not work on all platforms (e.g., macOS)
     // The -static flag will cause compilation to fail on unsupported platforms
     // with a clear error message from the compiler
     cmd << "-static ";
-    
+
     // Include directories
     cmd << "-I. -Isrc ";
-    
+
     // Add the generated source file
     cmd << cppFile << " ";
-    
+
     // Add all source files
     auto sources = getSourceFiles();
     for (const auto& src : sources) {
         cmd << src << " ";
     }
-    
+
     // Output file
     cmd << "-o " << options.outputFile << " ";
-    
+
     // Link libraries statically
     cmd << "-lm -lpthread ";
-    
+
     // Suppress warnings for a cleaner build
     cmd << "2>&1";
-    
+
     if (options.verbose) {
         std::cout << "Compilation command:\n" << cmd.str() << "\n\n";
     } else {
         std::cout << "Compiling to native executable...\n";
     }
-    
+
     // Execute the compilation
     int result = std::system(cmd.str().c_str());
-    
+
     if (result == 0) {
         std::cout << "Successfully compiled to: " << options.outputFile << "\n";
         return true;
@@ -221,7 +231,7 @@ bool NativeCompiler::compile(const CompileOptions& options) {
         std::cerr << "Error: Cannot open input file: " << options.inputFile << "\n";
         return false;
     }
-    
+
     std::stringstream buffer;
     buffer << inFile.rdbuf();
     std::string sourceCode = buffer.str();
@@ -232,12 +242,12 @@ bool NativeCompiler::compile(const CompileOptions& options) {
         if (options.verbose) {
             std::cout << "Validating source code...\n";
         }
-        
+
         Lexer lex(sourceCode);
         auto tokens = lex.scanTokens();
         Parser parser(std::move(tokens), sourceCode);
         auto program = parser.parse();
-        
+
         if (options.verbose) {
             std::cout << "Source code validated successfully.\n";
         }
@@ -262,7 +272,7 @@ bool NativeCompiler::compile(const CompileOptions& options) {
     tempDirName << "izilang_compile_" << std::time(nullptr) << "_" << getpid();
     fs::path tempDir = fs::temp_directory_path() / tempDirName.str();
     fs::create_directories(tempDir);
-    
+
     if (options.verbose) {
         std::cout << "Using temporary directory: " << tempDir << "\n";
     }
@@ -272,7 +282,7 @@ bool NativeCompiler::compile(const CompileOptions& options) {
     if (options.verbose) {
         std::cout << "Generating embedded source file...\n";
     }
-    
+
     if (!generateEmbeddedSource(sourceCode, genCppFile.string())) {
         fs::remove_all(tempDir);
         return false;
@@ -291,4 +301,4 @@ bool NativeCompiler::compile(const CompileOptions& options) {
     return success;
 }
 
-} // namespace izi
+}  // namespace izi

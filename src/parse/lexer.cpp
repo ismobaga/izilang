@@ -165,24 +165,24 @@ void Lexer::string() {
     int stringStart = start;
     int stringStartLine = startLine;
     int stringStartColumn = startColumn;
-    
+
     // Track parts of the interpolated string
     bool hasInterpolation = false;
     bool emittedTokenForThisString = false;  // Track if we've emitted any tokens for this string
     int partStart = current;  // Start of current string part (after opening quote)
-    
+
     while (peek() != '"' && !isAtEnd()) {
         if (peek() == '\n') line++;
-        
+
         // Check for interpolation: ${
         if (peek() == '$' && peekNext() == '{') {
             hasInterpolation = true;
-            
+
             // Emit the string part before the interpolation
             if (current > partStart) {
                 std::string strPart = "\"" + source.substr(partStart, current - partStart) + "\"";
                 tokens.emplace_back(TokenType::STRING, strPart, stringStartLine, stringStartColumn);
-                
+
                 // Emit PLUS for concatenation
                 tokens.emplace_back(TokenType::PLUS, "+", line, column);
                 emittedTokenForThisString = true;
@@ -193,16 +193,16 @@ void Lexer::string() {
                 tokens.emplace_back(TokenType::STRING, "\"\"", stringStartLine, stringStartColumn);
                 tokens.emplace_back(TokenType::PLUS, "+", line, column);
             }
-            
-            // Skip ${ 
+
+            // Skip ${
             advance();  // $
             advance();  // {
-            
+
             // Emit str( to wrap the expression
             tokens.emplace_back(TokenType::IDENTIFIER, "str", line, column);
             tokens.emplace_back(TokenType::LEFT_PAREN, "(", line, column);
             emittedTokenForThisString = true;
-            
+
             // Tokenize the expression inside ${}
             int braceDepth = 1;
             while (braceDepth > 0 && !isAtEnd()) {
@@ -215,29 +215,29 @@ void Lexer::string() {
                         break;
                     }
                 }
-                
+
                 // Scan the token normally
                 start = current;
                 startLine = line;
                 startColumn = column;
                 scanToken();
             }
-            
+
             if (braceDepth != 0) {
                 throw LexerError(stringStartLine, stringStartColumn, "Unterminated interpolation in string");
             }
-            
+
             // Emit ) to close str() call
             tokens.emplace_back(TokenType::RIGHT_PAREN, ")", line, column);
-            
+
             // Emit PLUS for concatenation with next part
             tokens.emplace_back(TokenType::PLUS, "+", line, column);
-            
+
             // Update partStart to continue scanning the rest of the string
             partStart = current;
             continue;
         }
-        
+
         advance();
     }
 
@@ -271,21 +271,21 @@ void Lexer::number() {
         while (isdigit(peek())) advance();
     }
 
-    std::string_view lexeme = source.substr(start, current - start);
+    std::string_view lexeme = std::string_view(source).substr(start, current - start);
     tokens.emplace_back(TokenType::NUMBER, lexeme, startLine, startColumn);
 }
 
 void Lexer::identifier() {
     while (isalnum(peek()) || peek() == '_') advance();
 
-    std::string_view lexeme = source.substr(start, current - start);
-    
+    std::string_view lexeme = std::string_view(source).substr(start, current - start);
+
     // Check for standalone underscore (wildcard pattern)
     if (lexeme == "_") {
         tokens.emplace_back(TokenType::UNDERSCORE, lexeme, startLine, startColumn);
         return;
     }
-    
+
     TokenType type = keywordType(lexeme);
     tokens.emplace_back(type, lexeme, startLine, startColumn);
 }
@@ -333,7 +333,7 @@ void Lexer::skipBlockComment() {
     // This points to the '/' at the beginning of '/*'
     int commentStartLine = startLine;
     int commentStartColumn = startColumn;
-    
+
     // Skip until we find */ or reach end of file
     while (!isAtEnd()) {
         if (peek() == '*' && peekNext() == '/') {
@@ -343,7 +343,7 @@ void Lexer::skipBlockComment() {
         }
         advance();
     }
-    
+
     // If we reach here, we have an unterminated comment
     throw LexerError(commentStartLine, commentStartColumn, "Unterminated block comment");
 }

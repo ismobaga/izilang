@@ -62,7 +62,7 @@ void CliOptions::printCommandHelp(Command cmd) {
             std::cout << "  izi run script.iz\n";
             std::cout << "  izi run --vm script.iz\n";
             break;
-        
+
         case Command::Build:
             std::cout << "izi build - Compile/check without executing\n\n";
             std::cout << "Usage: izi build [options] <file>\n\n";
@@ -77,7 +77,7 @@ void CliOptions::printCommandHelp(Command cmd) {
             std::cout << "Examples:\n";
             std::cout << "  izi build app.iz\n";
             break;
-        
+
         case Command::Check:
             std::cout << "izi check - Parse and analyze without executing\n\n";
             std::cout << "Usage: izi check [options] <file>\n\n";
@@ -92,7 +92,7 @@ void CliOptions::printCommandHelp(Command cmd) {
             std::cout << "Examples:\n";
             std::cout << "  izi check script.iz\n";
             break;
-        
+
         case Command::Compile:
             std::cout << "izi compile - Compile to native executable\n\n";
             std::cout << "Usage: izi compile [options] <file> [-o <output>]\n\n";
@@ -110,7 +110,7 @@ void CliOptions::printCommandHelp(Command cmd) {
             std::cout << "  izi compile app.iz -o myapp\n";
             std::cout << "  izi compile --debug app.iz\n";
             break;
-        
+
         case Command::Chunk:
             std::cout << "izi chunk - Compile to bytecode chunk (.izb)\n\n";
             std::cout << "Usage: izi chunk [options] <file> [-o <output>]\n\n";
@@ -131,7 +131,7 @@ void CliOptions::printCommandHelp(Command cmd) {
             std::cout << "To run a .izb file:\n";
             std::cout << "  izi run --vm app.izb\n";
             break;
-        
+
         case Command::Test:
             std::cout << "izi test - Run test files\n\n";
             std::cout << "Usage: izi test [options] [pattern]\n\n";
@@ -147,7 +147,7 @@ void CliOptions::printCommandHelp(Command cmd) {
             std::cout << "  izi test              Run all tests\n";
             std::cout << "  izi test lexer        Run tests matching 'lexer'\n";
             break;
-        
+
         case Command::Repl:
             std::cout << "izi repl - Start interactive REPL\n\n";
             std::cout << "Usage: izi repl [options]\n\n";
@@ -167,7 +167,7 @@ void CliOptions::printCommandHelp(Command cmd) {
             std::cout << "  izi repl\n";
             std::cout << "  izi repl --vm\n";
             break;
-        
+
         case Command::Fmt:
             std::cout << "izi fmt - Format source code\n\n";
             std::cout << "Usage: izi fmt [options] <file>\n\n";
@@ -183,7 +183,7 @@ void CliOptions::printCommandHelp(Command cmd) {
             std::cout << "  izi fmt script.iz\n";
             std::cout << "  izi fmt --write script.iz\n";
             break;
-        
+
         case Command::Bench:
             std::cout << "izi bench - Run performance benchmark\n\n";
             std::cout << "Usage: izi bench [options] <file>\n\n";
@@ -200,7 +200,7 @@ void CliOptions::printCommandHelp(Command cmd) {
             std::cout << "  izi bench benchmarks/arithmetic.iz\n";
             std::cout << "  izi bench --vm --iterations 10 benchmarks/loops.iz\n";
             break;
-        
+
         default:
             printHelp();
             break;
@@ -209,7 +209,7 @@ void CliOptions::printCommandHelp(Command cmd) {
 
 CliOptions CliOptions::parse(int argc, char** argv) {
     CliOptions options;
-    
+
     // No arguments -> REPL mode
     if (argc == 1) {
         options.command = Command::Repl;
@@ -217,22 +217,22 @@ CliOptions CliOptions::parse(int argc, char** argv) {
     }
 
     int i = 1;
-    
+
     // Check if first argument is a command or option
     std::string firstArg = argv[i];
-    
+
     // Handle global options first
     if (firstArg == "--version" || firstArg == "-v") {
         options.command = Command::Version;
         return options;
     }
-    
+
     if (firstArg == "--help" || firstArg == "-h") {
         printHelp();
         options.command = Command::Help;
         return options;
     }
-    
+
     // Parse subcommand
     if (firstArg == "run") {
         options.command = Command::Run;
@@ -303,11 +303,11 @@ CliOptions CliOptions::parse(int argc, char** argv) {
         std::cerr << "Use 'izi --help' for usage information\n";
         std::exit(1);
     }
-    
+
     // Parse command-specific options and arguments
     while (i < argc) {
         std::string arg = argv[i];
-        
+
         if (arg == "--vm") {
             options.engine = Engine::VM;
             i++;
@@ -341,32 +341,45 @@ CliOptions CliOptions::parse(int argc, char** argv) {
             return options;
         } else if (arg[0] == '-') {
             std::cerr << "Error: Unknown option: " << arg << "\n";
-            
+
             // Map command to string for error message
             std::string cmdName;
             switch (options.command) {
-                case Command::Run: cmdName = "run"; break;
-                case Command::Build: cmdName = "build"; break;
-                case Command::Check: cmdName = "check"; break;
-                case Command::Compile: cmdName = "compile"; break;
-                case Command::Test: cmdName = "test"; break;
-                case Command::Repl: cmdName = "repl"; break;
-                case Command::Fmt: cmdName = "fmt"; break;
-                default: cmdName = ""; break;
+                case Command::Run:
+                    cmdName = "run";
+                    break;
+                case Command::Build:
+                    cmdName = "build";
+                    break;
+                case Command::Check:
+                    cmdName = "check";
+                    break;
+                case Command::Compile:
+                    cmdName = "compile";
+                    break;
+                case Command::Test:
+                    cmdName = "test";
+                    break;
+                case Command::Repl:
+                    cmdName = "repl";
+                    break;
+                case Command::Fmt:
+                    cmdName = "fmt";
+                    break;
+                default:
+                    cmdName = "";
+                    break;
             }
-            
+
             if (!cmdName.empty()) {
                 std::cerr << "Use 'izi help " << cmdName << "' for usage information\n";
             }
             std::exit(1);
         } else {
             // This is a positional argument
-            if (options.command == Command::Run || 
-                options.command == Command::Build || 
-                options.command == Command::Check ||
-                options.command == Command::Compile ||
-                options.command == Command::Chunk ||
-                options.command == Command::Bench ||
+            if (options.command == Command::Run || options.command == Command::Build ||
+                options.command == Command::Check || options.command == Command::Compile ||
+                options.command == Command::Chunk || options.command == Command::Bench ||
                 options.command == Command::Fmt) {
                 // These commands expect a filename
                 if (options.input.empty()) {
@@ -387,27 +400,37 @@ CliOptions CliOptions::parse(int argc, char** argv) {
             i++;
         }
     }
-    
+
     // Validate command-specific requirements
-    if (options.command == Command::Run || 
-        options.command == Command::Build || 
-        options.command == Command::Check ||
-        options.command == Command::Compile ||
-        options.command == Command::Chunk ||
-        options.command == Command::Bench) {
+    if (options.command == Command::Run || options.command == Command::Build || options.command == Command::Check ||
+        options.command == Command::Compile || options.command == Command::Chunk || options.command == Command::Bench) {
         if (options.input.empty()) {
             // Map command to string for error message
             std::string cmdName;
             switch (options.command) {
-                case Command::Run: cmdName = "run"; break;
-                case Command::Build: cmdName = "build"; break;
-                case Command::Check: cmdName = "check"; break;
-                case Command::Compile: cmdName = "compile"; break;
-                case Command::Chunk: cmdName = "chunk"; break;
-                case Command::Bench: cmdName = "bench"; break;
-                default: cmdName = ""; break;
+                case Command::Run:
+                    cmdName = "run";
+                    break;
+                case Command::Build:
+                    cmdName = "build";
+                    break;
+                case Command::Check:
+                    cmdName = "check";
+                    break;
+                case Command::Compile:
+                    cmdName = "compile";
+                    break;
+                case Command::Chunk:
+                    cmdName = "chunk";
+                    break;
+                case Command::Bench:
+                    cmdName = "bench";
+                    break;
+                default:
+                    cmdName = "";
+                    break;
             }
-            
+
             std::cerr << "Error: No input file specified\n";
             if (!cmdName.empty()) {
                 std::cerr << "Use 'izi help " << cmdName << "' for usage information\n";
@@ -415,7 +438,7 @@ CliOptions CliOptions::parse(int argc, char** argv) {
             std::exit(1);
         }
     }
-    
+
     if (options.command == Command::Fmt) {
         if (options.input.empty()) {
             std::cerr << "Error: 'fmt' command not yet implemented\n";
@@ -423,8 +446,8 @@ CliOptions CliOptions::parse(int argc, char** argv) {
             std::exit(1);
         }
     }
-    
+
     return options;
 }
 
-} // namespace izi
+}  // namespace izi

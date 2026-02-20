@@ -7,17 +7,17 @@ namespace izi {
 Value BoundMethod::call(Interpreter& interp, const std::vector<Value>& arguments) {
     // To properly bind 'this', we create a new environment with 'this' defined
     // and the method's closure as its parent
-    
+
     auto userFunc = std::dynamic_pointer_cast<UserFunction>(method);
     if (!userFunc) {
         // If it's not a UserFunction, just call it directly
         return method->call(interp, arguments);
     }
-    
+
     // Create a new environment with 'this' defined, using the method's closure as parent
     auto thisEnv = std::make_shared<Environment>(userFunc->getClosure());
     thisEnv->define("this", instance);
-    
+
     // Create a temporary UserFunction with the new closure
     std::shared_ptr<UserFunction> boundFunc;
     if (userFunc->getDecl()) {
@@ -27,7 +27,7 @@ Value BoundMethod::call(Interpreter& interp, const std::vector<Value>& arguments
     } else {
         throw std::runtime_error("Invalid UserFunction: no declaration or expression");
     }
-    
+
     // Call the bound function
     return boundFunc->call(interp, arguments);
 }
@@ -41,7 +41,7 @@ int IziClass::arity() const {
             return init->arity();
         }
     }
-    
+
     auto constructorIt = methods.find("constructor");
     if (constructorIt != methods.end()) {
         // Get the arity from the constructor
@@ -50,12 +50,12 @@ int IziClass::arity() const {
             return constructor->arity();
         }
     }
-    
+
     // If not found, check superclass
     if (superclass) {
         return superclass->arity();
     }
-    
+
     return 0;  // No constructor means no arguments
 }
 
@@ -65,7 +65,7 @@ void initializeFieldsRecursive(const IziClass* klass, std::shared_ptr<Instance> 
     if (klass->superclass) {
         initializeFieldsRecursive(klass->superclass.get(), instance);
     }
-    
+
     // Then initialize this class's fields
     for (const auto& fieldName : klass->fieldNames) {
         auto it = klass->fieldDefaults.find(fieldName);
@@ -83,10 +83,10 @@ void initializeFieldsRecursive(const IziClass* klass, std::shared_ptr<Instance> 
 Value IziClass::call(Interpreter& interp, const std::vector<Value>& arguments) {
     // Create a new instance
     auto instance = std::make_shared<Instance>(shared_from_this());
-    
+
     // Initialize fields from the entire inheritance chain (recursive)
     initializeFieldsRecursive(this, instance);
-    
+
     // Look for constructor or init method (init takes precedence for OOP convention)
     // Use getMethod to check the entire inheritance chain
     Value init = getMethod("init", instance);
@@ -104,7 +104,7 @@ Value IziClass::call(Interpreter& interp, const std::vector<Value>& arguments) {
             }
         }
     }
-    
+
     return instance;
 }
 
@@ -119,12 +119,12 @@ Value IziClass::getMethod(const std::string& name, std::shared_ptr<Instance> ins
         }
         return it->second;
     }
-    
+
     // If not found, check superclass
     if (superclass) {
         return superclass->getMethod(name, instance);
     }
-    
+
     return Nil{};
 }
 

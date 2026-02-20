@@ -60,34 +60,34 @@ void ChunkSerializer::writeValue(std::ofstream& out, const Value& value) {
         }
     } else if (std::holds_alternative<std::shared_ptr<VmCallable>>(value)) {
         auto callable = std::get<std::shared_ptr<VmCallable>>(value);
-        
+
         // Check if it's a VmUserFunction
         if (auto userFunc = std::dynamic_pointer_cast<VmUserFunction>(callable)) {
             writeUint8(out, static_cast<uint8_t>(ValueType::FUNCTION));
             writeString(out, userFunc->name());
-            
+
             // Write parameter count and names
             const auto& params = userFunc->params();
             writeUint32(out, static_cast<uint32_t>(params.size()));
             for (const auto& param : params) {
                 writeString(out, param);
             }
-            
+
             // Recursively serialize the function's chunk
             const Chunk& funcChunk = userFunc->getChunk();
-            
+
             // Write code section
             writeUint32(out, static_cast<uint32_t>(funcChunk.code.size()));
             for (uint8_t byte : funcChunk.code) {
                 writeUint8(out, byte);
             }
-            
+
             // Write constants section
             writeUint32(out, static_cast<uint32_t>(funcChunk.constants.size()));
             for (const auto& constant : funcChunk.constants) {
                 writeValue(out, constant);
             }
-            
+
             // Write names section
             writeUint32(out, static_cast<uint32_t>(funcChunk.names.size()));
             for (const auto& name : funcChunk.names) {
@@ -102,20 +102,20 @@ void ChunkSerializer::writeValue(std::ofstream& out, const Value& value) {
         writeUint8(out, static_cast<uint8_t>(ValueType::CLASS));
         const auto& vmClass = std::get<std::shared_ptr<VmClass>>(value);
         writeString(out, vmClass->className);
-        
+
         // Write field names
         writeUint32(out, static_cast<uint32_t>(vmClass->fieldNames.size()));
         for (const auto& fieldName : vmClass->fieldNames) {
             writeString(out, fieldName);
         }
-        
+
         // Write field defaults
         writeUint32(out, static_cast<uint32_t>(vmClass->fieldDefaults.size()));
         for (const auto& [fieldName, defaultValue] : vmClass->fieldDefaults) {
             writeString(out, fieldName);
             writeValue(out, defaultValue);
         }
-        
+
         // Write methods
         writeUint32(out, static_cast<uint32_t>(vmClass->methods.size()));
         for (const auto& [methodName, methodCallable] : vmClass->methods) {
@@ -168,16 +168,16 @@ std::string ChunkSerializer::readString(std::ifstream& in) {
 Value ChunkSerializer::readValue(std::ifstream& in) {
     uint8_t typeTag = readUint8(in);
     ValueType type = static_cast<ValueType>(typeTag);
-    
+
     switch (type) {
         case ValueType::NIL:
             return Nil{};
-            
+
         case ValueType::BOOL: {
             uint8_t boolVal = readUint8(in);
             return boolVal != 0;
         }
-        
+
         case ValueType::NUMBER: {
             double num;
             in.read(reinterpret_cast<char*>(&num), sizeof(num));
@@ -186,10 +186,10 @@ Value ChunkSerializer::readValue(std::ifstream& in) {
             }
             return num;
         }
-        
+
         case ValueType::STRING:
             return readString(in);
-            
+
         case ValueType::ARRAY: {
             uint32_t size = readUint32(in);
             auto arr = std::make_shared<Array>();
@@ -199,7 +199,7 @@ Value ChunkSerializer::readValue(std::ifstream& in) {
             }
             return arr;
         }
-        
+
         case ValueType::MAP: {
             uint32_t size = readUint32(in);
             auto map = std::make_shared<Map>();
@@ -210,7 +210,7 @@ Value ChunkSerializer::readValue(std::ifstream& in) {
             }
             return map;
         }
-        
+
         case ValueType::SET: {
             uint32_t size = readUint32(in);
             auto set = std::make_shared<Set>();
@@ -221,10 +221,10 @@ Value ChunkSerializer::readValue(std::ifstream& in) {
             }
             return set;
         }
-        
+
         case ValueType::FUNCTION: {
             std::string funcName = readString(in);
-            
+
             // Read parameters
             uint32_t paramCount = readUint32(in);
             std::vector<std::string> params;
@@ -232,46 +232,46 @@ Value ChunkSerializer::readValue(std::ifstream& in) {
             for (uint32_t i = 0; i < paramCount; ++i) {
                 params.push_back(readString(in));
             }
-            
+
             // Read function's chunk
             Chunk funcChunk;
-            
+
             // Read code section
             uint32_t codeSize = readUint32(in);
             funcChunk.code.reserve(codeSize);
             for (uint32_t i = 0; i < codeSize; ++i) {
                 funcChunk.code.push_back(readUint8(in));
             }
-            
+
             // Read constants section
             uint32_t constCount = readUint32(in);
             funcChunk.constants.reserve(constCount);
             for (uint32_t i = 0; i < constCount; ++i) {
                 funcChunk.constants.push_back(readValue(in));
             }
-            
+
             // Read names section
             uint32_t namesCount = readUint32(in);
             funcChunk.names.reserve(namesCount);
             for (uint32_t i = 0; i < namesCount; ++i) {
                 funcChunk.names.push_back(readString(in));
             }
-            
+
             auto funcChunkPtr = std::make_shared<Chunk>(std::move(funcChunk));
             return std::make_shared<VmUserFunction>(funcName, params, funcChunkPtr);
         }
-        
+
         case ValueType::NATIVE_FUNCTION: {
             // For native functions, we can't restore them from name alone
             // They need to be registered during VM initialization
             std::string funcName = readString(in);
-            throw std::runtime_error("Cannot deserialize native function '" + funcName + 
-                                   "': native functions must be registered at runtime");
+            throw std::runtime_error("Cannot deserialize native function '" + funcName +
+                                     "': native functions must be registered at runtime");
         }
-        
+
         case ValueType::CLASS: {
             std::string className = readString(in);
-            
+
             // Read field names
             uint32_t fieldCount = readUint32(in);
             std::vector<std::string> fieldNames;
@@ -279,7 +279,7 @@ Value ChunkSerializer::readValue(std::ifstream& in) {
             for (uint32_t i = 0; i < fieldCount; ++i) {
                 fieldNames.push_back(readString(in));
             }
-            
+
             // Read field defaults
             uint32_t defaultCount = readUint32(in);
             std::unordered_map<std::string, Value> fieldDefaults;
@@ -288,14 +288,14 @@ Value ChunkSerializer::readValue(std::ifstream& in) {
                 Value defaultValue = readValue(in);
                 fieldDefaults[fieldName] = defaultValue;
             }
-            
+
             // Read methods
             uint32_t methodCount = readUint32(in);
             std::unordered_map<std::string, std::shared_ptr<VmCallable>> methods;
             for (uint32_t i = 0; i < methodCount; ++i) {
                 std::string methodName = readString(in);
                 Value methodValue = readValue(in);
-                
+
                 // Convert Value to VmCallable
                 if (std::holds_alternative<std::shared_ptr<VmCallable>>(methodValue)) {
                     methods[methodName] = std::get<std::shared_ptr<VmCallable>>(methodValue);
@@ -303,16 +303,16 @@ Value ChunkSerializer::readValue(std::ifstream& in) {
                     throw std::runtime_error("Class method is not a callable");
                 }
             }
-            
+
             return std::make_shared<VmClass>(className, fieldNames, fieldDefaults, methods);
         }
-        
+
         case ValueType::ERROR: {
             std::string message = readString(in);
-            std::string type = readString(in);
-            return std::make_shared<Error>(message, type);
+            std::string errorType = readString(in);
+            return std::make_shared<Error>(message, errorType);
         }
-        
+
         default:
             throw std::runtime_error("Unknown value type tag: " + std::to_string(typeTag));
     }
@@ -324,32 +324,32 @@ bool ChunkSerializer::serializeToFile(const Chunk& chunk, const std::string& fil
     if (!out) {
         return false;
     }
-    
+
     try {
         // Write magic number
         out.write(MAGIC, 4);
-        
+
         // Write version
         writeUint32(out, FORMAT_VERSION);
-        
+
         // Write code section
         writeUint32(out, static_cast<uint32_t>(chunk.code.size()));
         for (uint8_t byte : chunk.code) {
             writeUint8(out, byte);
         }
-        
+
         // Write constants section
         writeUint32(out, static_cast<uint32_t>(chunk.constants.size()));
         for (const auto& constant : chunk.constants) {
             writeValue(out, constant);
         }
-        
+
         // Write names section
         writeUint32(out, static_cast<uint32_t>(chunk.names.size()));
         for (const auto& name : chunk.names) {
             writeString(out, name);
         }
-        
+
         return out.good();
     } catch (const std::exception& e) {
         return false;
@@ -361,44 +361,44 @@ Chunk ChunkSerializer::deserializeFromFile(const std::string& filepath) {
     if (!in) {
         throw std::runtime_error("Could not open bytecode file: " + filepath);
     }
-    
+
     // Read and verify magic number
     char magic[4];
     in.read(magic, 4);
     if (!in || std::memcmp(magic, MAGIC, 4) != 0) {
         throw std::runtime_error("Invalid bytecode file: magic number mismatch");
     }
-    
+
     // Read and verify version
     uint32_t version = readUint32(in);
     if (version != FORMAT_VERSION) {
         throw std::runtime_error("Incompatible bytecode version: " + std::to_string(version));
     }
-    
+
     Chunk chunk;
-    
+
     // Read code section
     uint32_t codeSize = readUint32(in);
     chunk.code.reserve(codeSize);
     for (uint32_t i = 0; i < codeSize; ++i) {
         chunk.code.push_back(readUint8(in));
     }
-    
+
     // Read constants section
     uint32_t constCount = readUint32(in);
     chunk.constants.reserve(constCount);
     for (uint32_t i = 0; i < constCount; ++i) {
         chunk.constants.push_back(readValue(in));
     }
-    
+
     // Read names section
     uint32_t namesCount = readUint32(in);
     chunk.names.reserve(namesCount);
     for (uint32_t i = 0; i < namesCount; ++i) {
         chunk.names.push_back(readString(in));
     }
-    
+
     return chunk;
 }
 
-} // namespace izi
+}  // namespace izi

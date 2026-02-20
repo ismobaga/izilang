@@ -24,7 +24,7 @@
 namespace izi {
 
 // Constructor needs to be defined to call registerNativeFunctions
-Interpreter::Interpreter(std::string_view source) 
+Interpreter::Interpreter(std::string_view source)
     : source_(source), globals(std::make_shared<Environment>()), env(globals) {
     registerNativeFunctions(*this);
 }
@@ -76,7 +76,7 @@ Value Interpreter::visit(BinaryExpr& expr) {
         }
         return evaluate(*expr.right);  // Only evaluate right if left is falsy
     }
-    
+
     if (expr.op.type == TokenType::AND) {
         Value left = evaluate(*expr.left);
         if (!isTruthy(left)) {
@@ -84,7 +84,7 @@ Value Interpreter::visit(BinaryExpr& expr) {
         }
         return evaluate(*expr.right);  // Only evaluate right if left is truthy
     }
-    
+
     // For all other operators, evaluate both operands
     Value left = evaluate(*expr.left);
     Value right = evaluate(*expr.right);
@@ -97,7 +97,8 @@ Value Interpreter::visit(BinaryExpr& expr) {
             if (std::holds_alternative<std::string>(left) && std::holds_alternative<std::string>(right)) {
                 return std::get<std::string>(left) + std::get<std::string>(right);
             }
-            throw RuntimeError(expr.op, "Cannot add " + getTypeName(left) + " and " + getTypeName(right) + ". Operands must be two numbers or two strings.");
+            throw RuntimeError(expr.op, "Cannot add " + getTypeName(left) + " and " + getTypeName(right) +
+                                            ". Operands must be two numbers or two strings.");
 
         case TokenType::MINUS:
             return Value{toNumber(left, expr.op) - toNumber(right, expr.op)};
@@ -163,8 +164,7 @@ Value Interpreter::visit(AssignExpr& expr) {
 
 Value Interpreter::visit(CallExpr& expr) {
     Value calleVal = evaluate(*expr.callee);
-    if (!std::holds_alternative<std::shared_ptr<Callable>>(calleVal))
-    {
+    if (!std::holds_alternative<std::shared_ptr<Callable>>(calleVal)) {
         throw std::runtime_error("Can only call functions and classes.");
     }
     auto callable = std::get<std::shared_ptr<Callable>>(calleVal);
@@ -174,9 +174,9 @@ Value Interpreter::visit(CallExpr& expr) {
         arguments.push_back(evaluate(*argExpr));
     }
     int arity = callable->arity();
-    if (arity>=0 && arguments.size() != static_cast<size_t>(arity)) {
-        throw std::runtime_error("Expected " + std::to_string(arity) +
-                                 " arguments but got " + std::to_string(arguments.size()) + ".");
+    if (arity >= 0 && arguments.size() != static_cast<size_t>(arity)) {
+        throw std::runtime_error("Expected " + std::to_string(arity) + " arguments but got " +
+                                 std::to_string(arguments.size()) + ".");
     }
     return callable->call(*this, arguments);
 }
@@ -285,7 +285,7 @@ Value Interpreter::visit(SetIndexExpr& expr) {
     if (std::holds_alternative<std::shared_ptr<Array>>(collection)) {
         auto array = std::get<std::shared_ptr<Array>>(collection);
         size_t idx = static_cast<size_t>(asNumber(index));
-        if (idx <0 ) {
+        if (idx < 0) {
             throw std::runtime_error("Array index cannot be negative.");
         }
         if (idx >= array->elements.size()) {
@@ -293,18 +293,18 @@ Value Interpreter::visit(SetIndexExpr& expr) {
         }
         array->elements[idx] = value;
         return value;
-    } 
-    
+    }
+
     if (std::holds_alternative<std::shared_ptr<Map>>(collection)) {
         auto map = std::get<std::shared_ptr<Map>>(collection);
-        if(!std::holds_alternative<std::string>(index)) {
+        if (!std::holds_alternative<std::string>(index)) {
             throw std::runtime_error("Map keys must be strings.");
         }
         std::string key = std::get<std::string>(index);
         map->entries[key] = value;
         return value;
-    } 
-        throw std::runtime_error("Index assignment is only supported on arrays and maps.");
+    }
+    throw std::runtime_error("Index assignment is only supported on arrays and maps.");
 }
 
 Value Interpreter::visit(FunctionExpr& expr) {
@@ -318,15 +318,15 @@ Value Interpreter::visit(FunctionExpr& expr) {
 Value Interpreter::visit(MatchExpr& expr) {
     // Evaluate the value to match against
     Value matchValue = evaluate(*expr.value);
-    
+
     // Try each case in order
     for (size_t i = 0; i < expr.cases.size(); ++i) {
         auto& matchCase = expr.cases[i];
-        
+
         bool matched = false;
         Value boundValue = Nil{};
         std::string varName;
-        
+
         // Check if pattern matches
         if (auto* wildcard = dynamic_cast<WildcardPattern*>(matchCase.pattern.get())) {
             // Wildcard always matches
@@ -340,49 +340,49 @@ Value Interpreter::visit(MatchExpr& expr) {
             boundValue = matchValue;
             varName = variable->name;
         }
-        
+
         // If pattern matched, check guard condition if present
         if (matched && matchCase.guard) {
             // Create a new environment for guard evaluation
             auto guardEnv = std::make_shared<Environment>(env);
-            
+
             // If variable pattern, bind the variable in guard scope
             if (!varName.empty()) {
                 guardEnv->define(varName, boundValue);
             }
-            
+
             // Evaluate guard in the new environment
             auto previousEnv = env;
             env = guardEnv;
             Value guardResult = evaluate(*matchCase.guard);
             env = previousEnv;
-            
+
             // Check if guard evaluates to truthy value
             if (!isTruthy(guardResult)) {
                 matched = false;
             }
         }
-        
+
         // If everything matched, evaluate and return the result
         if (matched) {
             // Create a new environment for result evaluation
             auto resultEnv = std::make_shared<Environment>(env);
-            
+
             // If variable pattern, bind the variable in result scope
             if (!varName.empty()) {
                 resultEnv->define(varName, boundValue);
             }
-            
+
             // Evaluate result in the new environment
             auto previousEnv = env;
             env = resultEnv;
             Value result = evaluate(*matchCase.result);
             env = previousEnv;
-            
+
             return result;
         }
     }
-    
+
     // No pattern matched
     throw std::runtime_error("No matching pattern found in match expression");
 }
@@ -397,7 +397,7 @@ void Interpreter::visit(VarStmt& stmt) {
     if (stmt.initializer) {
         value = evaluate(*stmt.initializer);
     }
-    
+
     // Check if this is a destructuring declaration
     if (stmt.pattern != nullptr) {
         // Array destructuring
@@ -406,7 +406,7 @@ void Interpreter::visit(VarStmt& stmt) {
                 throw std::runtime_error("Array destructuring requires an array value.");
             }
             auto array = std::get<std::shared_ptr<Array>>(value);
-            
+
             // Bind each variable in the pattern to corresponding array element
             for (size_t i = 0; i < arrayPattern->elements.size(); ++i) {
                 if (auto* varPattern = dynamic_cast<VariablePattern*>(arrayPattern->elements[i].get())) {
@@ -419,14 +419,14 @@ void Interpreter::visit(VarStmt& stmt) {
             }
             return;
         }
-        
+
         // Map destructuring
         if (auto* mapPattern = dynamic_cast<MapPattern*>(stmt.pattern.get())) {
             if (!std::holds_alternative<std::shared_ptr<Map>>(value)) {
                 throw std::runtime_error("Map destructuring requires a map value.");
             }
             auto map = std::get<std::shared_ptr<Map>>(value);
-            
+
             // Bind each variable in the pattern to corresponding map entry
             for (const auto& key : mapPattern->keys) {
                 Value mapValue = Nil{};
@@ -439,7 +439,7 @@ void Interpreter::visit(VarStmt& stmt) {
             return;
         }
     }
-    
+
     // Simple variable declaration
     env->define(stmt.name, value);
 }
@@ -483,16 +483,15 @@ void Interpreter::visit(ReturnStmt& stmt) {
     throw ReturnSignal{v};
 }
 
-
 void Interpreter::visit(ImportStmt& stmt) {
     std::string modulePath = stmt.module;
-    
+
     // Check if this is a native module
     if (isNativeModule(modulePath)) {
         // Handle native module import
         Value moduleValue = getNativeModule(modulePath, *this);
         auto moduleMap = std::get<std::shared_ptr<Map>>(moduleValue);
-        
+
         if (stmt.isWildcard) {
             // import * as name from "math"
             globals->define(stmt.wildcardAlias, moduleValue);
@@ -509,23 +508,23 @@ void Interpreter::visit(ImportStmt& stmt) {
             // import "math" - bind as module object
             globals->define(modulePath, moduleValue);
         }
-        
+
         // Mark as imported to avoid re-importing
         importedModules.insert(modulePath);
         return;
     }
-    
+
     // Handle file-based modules with relative path resolution
     modulePath = ModulePath::resolveImport(stmt.module, currentFile);
-    
+
     // Canonicalize the path for proper deduplication and cycle detection
     std::string canonicalPath = ModulePath::canonicalize(modulePath);
-    
+
     // Check if module is already imported (avoid re-importing)
     if (importedModules.contains(canonicalPath)) {
         return;
     }
-    
+
     // Check for circular imports
     auto it = std::find(importStack.begin(), importStack.end(), canonicalPath);
     if (it != importStack.end()) {
@@ -538,27 +537,27 @@ void Interpreter::visit(ImportStmt& stmt) {
         chain += " -> " + canonicalPath;
         throw std::runtime_error("Circular import detected: " + chain);
     }
-    
+
     // Load and parse the module
     std::string source = loadFile(modulePath);
     Lexer lexer(source);
     auto tokens = lexer.scanTokens();
     Parser parser(std::move(tokens));
     auto program = parser.parse();
-    
+
     // Save current file and push to import stack
     std::string previousFile = currentFile;
     currentFile = canonicalPath;
     importStack.push_back(canonicalPath);
-    
+
     try {
         // Execute the module
         interpret(program);
-        
+
         // Pop from import stack and mark as imported
         importStack.pop_back();
         importedModules.insert(canonicalPath);
-        
+
         // Restore previous file
         currentFile = previousFile;
     } catch (...) {
@@ -570,19 +569,17 @@ void Interpreter::visit(ImportStmt& stmt) {
 }
 std::string Interpreter::normalizeModulePath(const std::string& path) {
     // Turn "math" into "math.iz"
-    if (path.size() >= 3 && path.ends_with(".iz"))
-    {
+    if (path.size() >= 3 && path.ends_with(".iz")) {
         return path;
     }
     return path + ".iz";
-   
 }
 
 std::string Interpreter::loadFile(const std::string& path) {
     std::ifstream file(path);
     if (!file) {
         throw std::runtime_error("Could not open file: " + path);
-    }   
+    }
     std::stringstream buffer;
     buffer << file.rdbuf();
     return buffer.str();
@@ -607,7 +604,7 @@ void Interpreter::visit(TryStmt& stmt) {
     bool exceptionCaught = false;
     Value caughtException;
     Token exceptionToken(TokenType::ERROR, "", 0, 0);
-    
+
     // Execute try block
     try {
         execute(*stmt.tryBlock);
@@ -615,7 +612,7 @@ void Interpreter::visit(TryStmt& stmt) {
         exceptionCaught = true;
         caughtException = e.exception;
         exceptionToken = e.token;
-        
+
         // Execute catch block if present
         if (stmt.catchBlock != nullptr) {
             // Extract statements from BlockStmt
@@ -623,23 +620,23 @@ void Interpreter::visit(TryStmt& stmt) {
             if (blockPtr) {
                 // Create new environment for catch block with exception variable
                 auto catchEnv = std::make_shared<Environment>(env);
-                
+
                 // Bind exception to catch variable
                 if (!stmt.catchVariable.empty()) {
                     catchEnv->define(stmt.catchVariable, caughtException);
                 }
-                
+
                 executeBlock(blockPtr->statements, catchEnv);
                 exceptionCaught = false;  // Exception was handled
             }
         }
     }
-    
+
     // Execute finally block if present (always executes)
     if (stmt.finallyBlock != nullptr) {
         execute(*stmt.finallyBlock);
     }
-    
+
     // Re-throw if exception wasn't caught
     if (exceptionCaught) {
         throw ThrowSignal(caughtException, exceptionToken);
@@ -658,53 +655,46 @@ void Interpreter::visit(ClassStmt& stmt) {
     if (!stmt.superclass.empty()) {
         Value superValue = env->get(stmt.superclass);
         if (!std::holds_alternative<std::shared_ptr<Callable>>(superValue)) {
-            throw RuntimeError(Token(TokenType::IDENTIFIER, stmt.superclass, 0, 0),
-                             "Superclass must be a class.");
+            throw RuntimeError(Token(TokenType::IDENTIFIER, stmt.superclass, 0, 0), "Superclass must be a class.");
         }
         auto superCallable = std::get<std::shared_ptr<Callable>>(superValue);
         superclass = std::dynamic_pointer_cast<IziClass>(superCallable);
         if (!superclass) {
-            throw RuntimeError(Token(TokenType::IDENTIFIER, stmt.superclass, 0, 0),
-                             "Superclass must be a class.");
+            throw RuntimeError(Token(TokenType::IDENTIFIER, stmt.superclass, 0, 0), "Superclass must be a class.");
         }
     }
-    
+
     // Evaluate field defaults
     std::unordered_map<std::string, Value> fieldDefaults;
     std::vector<std::string> fieldNames;
-    
+
     for (const auto& field : stmt.fields) {
         fieldNames.push_back(field->name);
         if (field->initializer) {
             fieldDefaults[field->name] = evaluate(*field->initializer);
         }
     }
-    
+
     // Create method callables
     // If we have a superclass, we need to define 'super' in the method's environment
     std::unordered_map<std::string, Value> methods;
     for (const auto& method : stmt.methods) {
         std::shared_ptr<Environment> methodEnv = env;
-        
+
         // If there's a superclass, create a new environment with 'super' defined
         if (superclass) {
             methodEnv = std::make_shared<Environment>(env);
             methodEnv->define("super", superclass);
         }
-        
+
         auto userFunc = std::make_shared<UserFunction>(method.get(), methodEnv);
         methods[method->name] = userFunc;
     }
-    
+
     // Create the class
-    auto klass = std::make_shared<IziClass>(
-        stmt.name,
-        superclass,
-        std::move(fieldNames),
-        std::move(fieldDefaults),
-        std::move(methods)
-    );
-    
+    auto klass = std::make_shared<IziClass>(stmt.name, superclass, std::move(fieldNames), std::move(fieldDefaults),
+                                            std::move(methods));
+
     // Define the class in the current environment
     env->define(stmt.name, klass);
 }
@@ -712,17 +702,17 @@ void Interpreter::visit(ClassStmt& stmt) {
 // v0.3: Property access
 Value Interpreter::visit(PropertyExpr& expr) {
     Value object = expr.object->accept(*this);
-    
+
     // Handle instance property access
     if (std::holds_alternative<std::shared_ptr<Instance>>(object)) {
         auto instance = std::get<std::shared_ptr<Instance>>(object);
-        
+
         // Check if it's a field
         auto fieldIt = instance->fields.find(expr.property);
         if (fieldIt != instance->fields.end()) {
             return fieldIt->second;
         }
-        
+
         // Check if it's a method
         Value method = Nil{};
         if (std::holds_alternative<std::shared_ptr<IziClass>>(instance->klass)) {
@@ -730,16 +720,15 @@ Value Interpreter::visit(PropertyExpr& expr) {
             method = klass->getMethod(expr.property, instance);
         } else {
             throw RuntimeError(Token(TokenType::DOT, expr.property, 0, 0),
-                              "Cannot access method from VM class in interpreter mode");
+                               "Cannot access method from VM class in interpreter mode");
         }
         if (!std::holds_alternative<Nil>(method)) {
             return method;
         }
-        
-        throw RuntimeError(Token(TokenType::DOT, expr.property, 0, 0),
-                          "Undefined property '" + expr.property + "'.");
+
+        throw RuntimeError(Token(TokenType::DOT, expr.property, 0, 0), "Undefined property '" + expr.property + "'.");
     }
-    
+
     // Handle map property access (backward compatibility)
     if (std::holds_alternative<std::shared_ptr<Map>>(object)) {
         auto map = std::get<std::shared_ptr<Map>>(object);
@@ -747,35 +736,33 @@ Value Interpreter::visit(PropertyExpr& expr) {
         if (it != map->entries.end()) {
             return it->second;
         }
-        throw RuntimeError(Token(TokenType::DOT, expr.property, 0, 0),
-                          "Property '" + expr.property + "' not found.");
+        throw RuntimeError(Token(TokenType::DOT, expr.property, 0, 0), "Property '" + expr.property + "' not found.");
     }
-    
-    throw RuntimeError(Token(TokenType::DOT, expr.property, 0, 0),
-                      "Only instances and maps support property access.");
+
+    throw RuntimeError(Token(TokenType::DOT, expr.property, 0, 0), "Only instances and maps support property access.");
 }
 
 // v0.3: Property assignment
 Value Interpreter::visit(SetPropertyExpr& expr) {
     Value object = expr.object->accept(*this);
     Value value = expr.value->accept(*this);
-    
+
     // Handle instance property assignment
     if (std::holds_alternative<std::shared_ptr<Instance>>(object)) {
         auto instance = std::get<std::shared_ptr<Instance>>(object);
         instance->fields[expr.property] = value;
         return value;
     }
-    
+
     // Handle map property assignment (backward compatibility)
     if (std::holds_alternative<std::shared_ptr<Map>>(object)) {
         auto map = std::get<std::shared_ptr<Map>>(object);
         map->entries[expr.property] = value;
         return value;
     }
-    
+
     throw RuntimeError(Token(TokenType::DOT, expr.property, 0, 0),
-                      "Only instances and maps support property assignment.");
+                       "Only instances and maps support property assignment.");
 }
 
 // v0.3: This expression
@@ -783,8 +770,7 @@ Value Interpreter::visit(ThisExpr& expr) {
     try {
         return env->get("this");
     } catch (const std::runtime_error& e) {
-        throw RuntimeError(Token(TokenType::THIS, "this", 0, 0),
-                          "Cannot use 'this' outside of a class method.");
+        throw RuntimeError(Token(TokenType::THIS, "this", 0, 0), "Cannot use 'this' outside of a class method.");
     }
 }
 
@@ -795,41 +781,36 @@ Value Interpreter::visit(SuperExpr& expr) {
     try {
         Value superValue = env->get("super");
         if (!std::holds_alternative<std::shared_ptr<Callable>>(superValue)) {
-            throw RuntimeError(Token(TokenType::SUPER, "super", 0, 0),
-                             "Invalid superclass reference.");
+            throw RuntimeError(Token(TokenType::SUPER, "super", 0, 0), "Invalid superclass reference.");
         }
         auto superCallable = std::get<std::shared_ptr<Callable>>(superValue);
         superclass = std::dynamic_pointer_cast<IziClass>(superCallable);
         if (!superclass) {
-            throw RuntimeError(Token(TokenType::SUPER, "super", 0, 0),
-                             "Invalid superclass reference.");
+            throw RuntimeError(Token(TokenType::SUPER, "super", 0, 0), "Invalid superclass reference.");
         }
     } catch (const std::runtime_error& e) {
-        throw RuntimeError(Token(TokenType::SUPER, "super", 0, 0),
-                          "Cannot use 'super' outside of a subclass method.");
+        throw RuntimeError(Token(TokenType::SUPER, "super", 0, 0), "Cannot use 'super' outside of a subclass method.");
     }
-    
+
     // Get 'this' to bind the method to
     std::shared_ptr<Instance> instance;
     try {
         Value thisValue = env->get("this");
         if (!std::holds_alternative<std::shared_ptr<Instance>>(thisValue)) {
-            throw RuntimeError(Token(TokenType::SUPER, "super", 0, 0),
-                             "Cannot use 'super' without a valid instance.");
+            throw RuntimeError(Token(TokenType::SUPER, "super", 0, 0), "Cannot use 'super' without a valid instance.");
         }
         instance = std::get<std::shared_ptr<Instance>>(thisValue);
     } catch (const std::runtime_error& e) {
-        throw RuntimeError(Token(TokenType::SUPER, "super", 0, 0),
-                          "Cannot use 'super' outside of a class method.");
+        throw RuntimeError(Token(TokenType::SUPER, "super", 0, 0), "Cannot use 'super' outside of a class method.");
     }
-    
+
     // Get the method from the superclass
     Value method = superclass->getMethod(expr.method, instance);
     if (std::holds_alternative<Nil>(method)) {
         throw RuntimeError(Token(TokenType::SUPER, "super", 0, 0),
-                          "Undefined method '" + expr.method + "' in superclass.");
+                           "Undefined method '" + expr.method + "' in superclass.");
     }
-    
+
     return method;
 }
 

@@ -17,23 +17,20 @@ struct TypeAnnotation {
         Array,
         Map,
         Function,
-        Any,      // Default for unannotated code
-        Void      // For functions with no return value
+        Any,  // Default for unannotated code
+        Void  // For functions with no return value
     };
 
     Kind kind;
     std::unique_ptr<TypeAnnotation> elementType;  // For Array<T>
-    std::unique_ptr<TypeAnnotation> keyType;      // For Map<K, V>
-    std::unique_ptr<TypeAnnotation> valueType;    // For Map<K, V> or Function return
+    std::unique_ptr<TypeAnnotation> keyType;  // For Map<K, V>
+    std::unique_ptr<TypeAnnotation> valueType;  // For Map<K, V> or Function return
     std::vector<std::unique_ptr<TypeAnnotation>> paramTypes;  // For Function types
 
-    explicit TypeAnnotation(Kind k)
-        : kind(k), elementType(nullptr), keyType(nullptr), valueType(nullptr) {}
+    explicit TypeAnnotation(Kind k) : kind(k), elementType(nullptr), keyType(nullptr), valueType(nullptr) {}
 
     // For simple types (Number, String, Bool, Nil, Any, Void)
-    static std::unique_ptr<TypeAnnotation> simple(Kind k) {
-        return std::make_unique<TypeAnnotation>(k);
-    }
+    static std::unique_ptr<TypeAnnotation> simple(Kind k) { return std::make_unique<TypeAnnotation>(k); }
 
     // For Array<T>
     static std::unique_ptr<TypeAnnotation> array(std::unique_ptr<TypeAnnotation> elem) {
@@ -43,10 +40,8 @@ struct TypeAnnotation {
     }
 
     // For Map<K, V>
-    static std::unique_ptr<TypeAnnotation> map(
-        std::unique_ptr<TypeAnnotation> key,
-        std::unique_ptr<TypeAnnotation> value
-    ) {
+    static std::unique_ptr<TypeAnnotation> map(std::unique_ptr<TypeAnnotation> key,
+                                               std::unique_ptr<TypeAnnotation> value) {
         auto type = std::make_unique<TypeAnnotation>(Kind::Map);
         type->keyType = std::move(key);
         type->valueType = std::move(value);
@@ -54,10 +49,8 @@ struct TypeAnnotation {
     }
 
     // For Function(T1, T2, ...) -> R
-    static std::unique_ptr<TypeAnnotation> function(
-        std::vector<std::unique_ptr<TypeAnnotation>> params,
-        std::unique_ptr<TypeAnnotation> returnType
-    ) {
+    static std::unique_ptr<TypeAnnotation> function(std::vector<std::unique_ptr<TypeAnnotation>> params,
+                                                    std::unique_ptr<TypeAnnotation> returnType) {
         auto type = std::make_unique<TypeAnnotation>(Kind::Function);
         type->paramTypes = std::move(params);
         type->valueType = std::move(returnType);
@@ -73,4 +66,4 @@ struct TypeAnnotation {
 
 using TypePtr = std::unique_ptr<TypeAnnotation>;
 
-} // namespace izi
+}  // namespace izi

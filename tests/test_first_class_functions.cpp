@@ -8,21 +8,17 @@ using namespace izi;
 
 // Helper function to capture stdout
 class OutputCapture {
-public:
+   public:
     OutputCapture() {
         oldBuf = std::cout.rdbuf();
         std::cout.rdbuf(buffer.rdbuf());
     }
-    
-    ~OutputCapture() {
-        std::cout.rdbuf(oldBuf);
-    }
-    
-    std::string getOutput() {
-        return buffer.str();
-    }
-    
-private:
+
+    ~OutputCapture() { std::cout.rdbuf(oldBuf); }
+
+    std::string getOutput() { return buffer.str(); }
+
+   private:
     std::stringstream buffer;
     std::streambuf* oldBuf;
 };
@@ -37,14 +33,14 @@ TEST_CASE("First-class functions: Anonymous functions", "[first-class][anonymous
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         OutputCapture capture;
         Interpreter interp(source);
         interp.interpret(program);
-        
+
         REQUIRE(capture.getOutput() == "5\n");
     }
-    
+
     SECTION("Anonymous function with no parameters") {
         std::string source = R"(
             var greet = fn() { return "Hello"; };
@@ -54,14 +50,14 @@ TEST_CASE("First-class functions: Anonymous functions", "[first-class][anonymous
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         OutputCapture capture;
         Interpreter interp(source);
         interp.interpret(program);
-        
+
         REQUIRE(capture.getOutput() == "Hello\n");
     }
-    
+
     SECTION("Anonymous function with single parameter") {
         std::string source = R"(
             var square = fn(x) { return x * x; };
@@ -71,11 +67,11 @@ TEST_CASE("First-class functions: Anonymous functions", "[first-class][anonymous
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         OutputCapture capture;
         Interpreter interp(source);
         interp.interpret(program);
-        
+
         REQUIRE(capture.getOutput() == "25\n");
     }
 }
@@ -97,14 +93,14 @@ TEST_CASE("First-class functions: Higher-order functions", "[first-class][higher
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         OutputCapture capture;
         Interpreter interp(source);
         interp.interpret(program);
-        
+
         REQUIRE(capture.getOutput() == "10\n");
     }
-    
+
     SECTION("Higher-order function with anonymous function") {
         std::string source = R"(
             fn apply(f, x) {
@@ -117,14 +113,14 @@ TEST_CASE("First-class functions: Higher-order functions", "[first-class][higher
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         OutputCapture capture;
         Interpreter interp(source);
         interp.interpret(program);
-        
+
         REQUIRE(capture.getOutput() == "10\n");
     }
-    
+
     SECTION("Function returning result of another function") {
         std::string source = R"(
             fn compose(f, g, x) {
@@ -140,11 +136,11 @@ TEST_CASE("First-class functions: Higher-order functions", "[first-class][higher
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         OutputCapture capture;
         Interpreter interp(source);
         interp.interpret(program);
-        
+
         REQUIRE(capture.getOutput() == "12\n");
     }
 }
@@ -169,14 +165,14 @@ TEST_CASE("First-class functions: Closures", "[first-class][closures]") {
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         OutputCapture capture;
         Interpreter interp(source);
         interp.interpret(program);
-        
+
         REQUIRE(capture.getOutput() == "1\n2\n3\n");
     }
-    
+
     SECTION("Multiple independent closures") {
         std::string source = R"(
             fn makeCounter() {
@@ -199,14 +195,14 @@ TEST_CASE("First-class functions: Closures", "[first-class][closures]") {
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         OutputCapture capture;
         Interpreter interp(source);
         interp.interpret(program);
-        
+
         REQUIRE(capture.getOutput() == "1\n2\n1\n3\n");
     }
-    
+
     SECTION("Closure with parameter") {
         std::string source = R"(
             fn makeAdder(x) {
@@ -226,14 +222,14 @@ TEST_CASE("First-class functions: Closures", "[first-class][closures]") {
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         OutputCapture capture;
         Interpreter interp(source);
         interp.interpret(program);
-        
+
         REQUIRE(capture.getOutput() == "8\n13\n12\n");
     }
-    
+
     SECTION("Nested closures") {
         std::string source = R"(
             fn outer(a) {
@@ -252,11 +248,11 @@ TEST_CASE("First-class functions: Closures", "[first-class][closures]") {
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         OutputCapture capture;
         Interpreter interp(source);
         interp.interpret(program);
-        
+
         REQUIRE(capture.getOutput() == "6\n");
     }
 }
@@ -274,14 +270,14 @@ TEST_CASE("First-class functions: Complex scenarios", "[first-class][complex]") 
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         OutputCapture capture;
         Interpreter interp(source);
         interp.interpret(program);
-        
+
         REQUIRE(capture.getOutput() == "10\n15\n");
     }
-    
+
     SECTION("Closure modifying captured variable") {
         std::string source = R"(
             fn makeAccumulator() {
@@ -301,14 +297,14 @@ TEST_CASE("First-class functions: Complex scenarios", "[first-class][complex]") 
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         OutputCapture capture;
         Interpreter interp(source);
         interp.interpret(program);
-        
+
         REQUIRE(capture.getOutput() == "5\n8\n10\n");
     }
-    
+
     SECTION("Returning different functions based on condition") {
         std::string source = R"(
             fn makeOperation(isAdd) {
@@ -329,11 +325,11 @@ TEST_CASE("First-class functions: Complex scenarios", "[first-class][complex]") 
         auto tokens = lexer.scanTokens();
         Parser parser(std::move(tokens), source);
         auto program = parser.parse();
-        
+
         OutputCapture capture;
         Interpreter interp(source);
         interp.interpret(program);
-        
+
         REQUIRE(capture.getOutput() == "15\n5\n");
     }
 }

@@ -18,10 +18,7 @@ struct StackFrame {
     int column;
 
     StackFrame(std::string func, std::string file, int ln, int col)
-        : functionName(std::move(func)), 
-          fileName(std::move(file)), 
-          line(ln), 
-          column(col) {}
+        : functionName(std::move(func)), fileName(std::move(file)), line(ln), column(col) {}
 };
 
 // Base Error class for composable, inspectable errors
@@ -33,15 +30,11 @@ struct Error {
 
     // Constructor without cause
     explicit Error(std::string msg, std::string errorType = "Error")
-        : message(std::move(msg)), 
-          type(std::move(errorType)),
-          cause(nullptr) {}
+        : message(std::move(msg)), type(std::move(errorType)), cause(nullptr) {}
 
     // Constructor with cause for error chaining
     Error(std::string msg, std::string errorType, std::shared_ptr<Error> causedBy)
-        : message(std::move(msg)), 
-          type(std::move(errorType)),
-          cause(std::move(causedBy)) {}
+        : message(std::move(msg)), type(std::move(errorType)), cause(std::move(causedBy)) {}
 
     virtual ~Error() = default;
 
@@ -59,23 +52,20 @@ struct Error {
         if (stackTrace.empty()) {
             return "";
         }
-        
+
         std::string result = "\nStack trace:";
         for (const auto& frame : stackTrace) {
             result += "\n  at " + frame.functionName;
             if (!frame.fileName.empty()) {
-                result += " (" + frame.fileName + ":" + 
-                         std::to_string(frame.line) + ":" + 
-                         std::to_string(frame.column) + ")";
+                result +=
+                    " (" + frame.fileName + ":" + std::to_string(frame.line) + ":" + std::to_string(frame.column) + ")";
             }
         }
         return result;
     }
 
     // Add a stack frame
-    void addStackFrame(const StackFrame& frame) {
-        stackTrace.push_back(frame);
-    }
+    void addStackFrame(const StackFrame& frame) { stackTrace.push_back(frame); }
 
     // Add a stack frame with parameters
     void addStackFrame(std::string func, std::string file, int line, int col) {
@@ -85,17 +75,14 @@ struct Error {
 
 // IOError for input/output errors
 struct IOError : public Error {
-    explicit IOError(std::string msg)
-        : Error(std::move(msg), "IOError") {}
+    explicit IOError(std::string msg) : Error(std::move(msg), "IOError") {}
 
-    IOError(std::string msg, std::shared_ptr<Error> causedBy)
-        : Error(std::move(msg), "IOError", std::move(causedBy)) {}
+    IOError(std::string msg, std::shared_ptr<Error> causedBy) : Error(std::move(msg), "IOError", std::move(causedBy)) {}
 };
 
 // TypeError for type-related errors
 struct TypeError : public Error {
-    explicit TypeError(std::string msg)
-        : Error(std::move(msg), "TypeError") {}
+    explicit TypeError(std::string msg) : Error(std::move(msg), "TypeError") {}
 
     TypeError(std::string msg, std::shared_ptr<Error> causedBy)
         : Error(std::move(msg), "TypeError", std::move(causedBy)) {}
@@ -103,8 +90,7 @@ struct TypeError : public Error {
 
 // ValueError for value-related errors
 struct ValueError : public Error {
-    explicit ValueError(std::string msg)
-        : Error(std::move(msg), "ValueError") {}
+    explicit ValueError(std::string msg) : Error(std::move(msg), "ValueError") {}
 
     ValueError(std::string msg, std::shared_ptr<Error> causedBy)
         : Error(std::move(msg), "ValueError", std::move(causedBy)) {}

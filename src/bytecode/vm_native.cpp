@@ -121,32 +121,32 @@ Value vmNativeSplice(VM& vm, const std::vector<Value>& arguments) {
     if (!std::holds_alternative<std::shared_ptr<Array>>(arrVal)) {
         throw std::runtime_error("First argument to splice() must be an array.");
     }
-    
+
     auto arr = std::get<std::shared_ptr<Array>>(arrVal);
     size_t start = static_cast<size_t>(asNumber(arguments[1]));
-    
+
     if (start >= arr->elements.size()) {
         return std::make_shared<Array>();
     }
-    
+
     size_t deleteCount;
     if (arguments.size() == 3) {
         deleteCount = static_cast<size_t>(asNumber(arguments[2]));
     } else {
         deleteCount = arr->elements.size() - start;
     }
-    
+
     // Create result array with removed elements
     auto result = std::make_shared<Array>();
     size_t end = std::min(start + deleteCount, arr->elements.size());
-    
+
     for (size_t i = start; i < end; ++i) {
         result->elements.push_back(arr->elements[i]);
     }
-    
+
     // Remove elements from original array
     arr->elements.erase(arr->elements.begin() + start, arr->elements.begin() + end);
-    
+
     return result;
 }
 
@@ -256,9 +256,9 @@ Value vmNativeSetAdd(VM& vm, const std::vector<Value>& arguments) {
     if (!std::holds_alternative<std::shared_ptr<Set>>(setVal)) {
         throw std::runtime_error("First argument to setAdd() must be a set.");
     }
-    
+
     auto set = std::get<std::shared_ptr<Set>>(setVal);
-    
+
     // Convert value to string for key (using a simple serialization)
     std::string key;
     if (std::holds_alternative<std::string>(valueVal)) {
@@ -273,9 +273,10 @@ Value vmNativeSetAdd(VM& vm, const std::vector<Value>& arguments) {
     } else if (std::holds_alternative<Nil>(valueVal)) {
         key = "nil";
     } else {
-        throw std::runtime_error("setAdd() only supports primitive types (string, number, boolean, nil), but got: " + getTypeName(valueVal));
+        throw std::runtime_error("setAdd() only supports primitive types (string, number, boolean, nil), but got: " +
+                                 getTypeName(valueVal));
     }
-    
+
     set->values[key] = valueVal;
     return set;
 }
@@ -289,9 +290,9 @@ Value vmNativeSetHas(VM& vm, const std::vector<Value>& arguments) {
     if (!std::holds_alternative<std::shared_ptr<Set>>(setVal)) {
         throw std::runtime_error("First argument to setHas() must be a set.");
     }
-    
+
     auto set = std::get<std::shared_ptr<Set>>(setVal);
-    
+
     // Convert value to string for key lookup
     std::string key;
     if (std::holds_alternative<std::string>(valueVal)) {
@@ -308,7 +309,7 @@ Value vmNativeSetHas(VM& vm, const std::vector<Value>& arguments) {
     } else {
         return false;
     }
-    
+
     return (set->values.find(key) != set->values.end());
 }
 
@@ -321,9 +322,9 @@ Value vmNativeSetDelete(VM& vm, const std::vector<Value>& arguments) {
     if (!std::holds_alternative<std::shared_ptr<Set>>(setVal)) {
         throw std::runtime_error("First argument to setDelete() must be a set.");
     }
-    
+
     auto set = std::get<std::shared_ptr<Set>>(setVal);
-    
+
     // Convert value to string for key lookup
     std::string key;
     if (std::holds_alternative<std::string>(valueVal)) {
@@ -340,7 +341,7 @@ Value vmNativeSetDelete(VM& vm, const std::vector<Value>& arguments) {
     } else {
         return false;
     }
-    
+
     bool existed = (set->values.find(key) != set->values.end());
     if (existed) {
         set->values.erase(key);
@@ -471,10 +472,8 @@ Value vmNativeSubstring(VM& vm, const std::vector<Value>& arguments) {
     }
     std::string str = std::get<std::string>(arguments[0]);
     size_t start = static_cast<size_t>(asNumber(arguments[1]));
-    size_t length = (arguments.size() == 3) 
-        ? static_cast<size_t>(asNumber(arguments[2]))
-        : str.length() - start;
-    
+    size_t length = (arguments.size() == 3) ? static_cast<size_t>(asNumber(arguments[2])) : str.length() - start;
+
     if (start >= str.length()) {
         return std::string("");
     }
@@ -485,13 +484,12 @@ Value vmNativeSplit(VM& vm, const std::vector<Value>& arguments) {
     if (arguments.size() != 2) {
         throw std::runtime_error("split() takes exactly two arguments.");
     }
-    if (!std::holds_alternative<std::string>(arguments[0]) || 
-        !std::holds_alternative<std::string>(arguments[1])) {
+    if (!std::holds_alternative<std::string>(arguments[0]) || !std::holds_alternative<std::string>(arguments[1])) {
         throw std::runtime_error("Both arguments to split() must be strings.");
     }
     std::string str = std::get<std::string>(arguments[0]);
     std::string delim = std::get<std::string>(arguments[1]);
-    
+
     auto result = std::make_shared<Array>();
     if (delim.empty()) {
         for (char c : str) {
@@ -499,7 +497,7 @@ Value vmNativeSplit(VM& vm, const std::vector<Value>& arguments) {
         }
         return result;
     }
-    
+
     size_t start = 0;
     size_t end = str.find(delim);
     while (end != std::string::npos) {
@@ -521,7 +519,7 @@ Value vmNativeJoin(VM& vm, const std::vector<Value>& arguments) {
     }
     auto arr = std::get<std::shared_ptr<Array>>(arguments[0]);
     std::string sep = std::get<std::string>(arguments[1]);
-    
+
     std::stringstream ss;
     for (size_t i = 0; i < arr->elements.size(); ++i) {
         if (std::holds_alternative<std::string>(arr->elements[i])) {
@@ -544,9 +542,7 @@ Value vmNativeToUpper(VM& vm, const std::vector<Value>& arguments) {
         throw std::runtime_error("Argument to toUpper() must be a string.");
     }
     std::string str = std::get<std::string>(arguments[0]);
-    std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) {
-        return std::toupper(c);
-    });
+    std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) { return std::toupper(c); });
     return str;
 }
 
@@ -558,9 +554,7 @@ Value vmNativeToLower(VM& vm, const std::vector<Value>& arguments) {
         throw std::runtime_error("Argument to toLower() must be a string.");
     }
     std::string str = std::get<std::string>(arguments[0]);
-    std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) {
-        return std::tolower(c);
-    });
+    std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) { return std::tolower(c); });
     return str;
 }
 
@@ -572,17 +566,14 @@ Value vmNativeTrim(VM& vm, const std::vector<Value>& arguments) {
         throw std::runtime_error("Argument to trim() must be a string.");
     }
     std::string str = std::get<std::string>(arguments[0]);
-    
+
     // Trim from start
-    str.erase(str.begin(), std::find_if(str.begin(), str.end(), [](unsigned char ch) {
-        return !std::isspace(ch);
-    }));
-    
+    str.erase(str.begin(), std::find_if(str.begin(), str.end(), [](unsigned char ch) { return !std::isspace(ch); }));
+
     // Trim from end
-    str.erase(std::find_if(str.rbegin(), str.rend(), [](unsigned char ch) {
-        return !std::isspace(ch);
-    }).base(), str.end());
-    
+    str.erase(std::find_if(str.rbegin(), str.rend(), [](unsigned char ch) { return !std::isspace(ch); }).base(),
+              str.end());
+
     return str;
 }
 
@@ -590,17 +581,16 @@ Value vmNativeReplace(VM& vm, const std::vector<Value>& arguments) {
     if (arguments.size() != 3) {
         throw std::runtime_error("replace() takes exactly three arguments.");
     }
-    if (!std::holds_alternative<std::string>(arguments[0]) ||
-        !std::holds_alternative<std::string>(arguments[1]) ||
+    if (!std::holds_alternative<std::string>(arguments[0]) || !std::holds_alternative<std::string>(arguments[1]) ||
         !std::holds_alternative<std::string>(arguments[2])) {
         throw std::runtime_error("All arguments to replace() must be strings.");
     }
     std::string str = std::get<std::string>(arguments[0]);
     std::string from = std::get<std::string>(arguments[1]);
     std::string to = std::get<std::string>(arguments[2]);
-    
+
     if (from.empty()) return str;
-    
+
     size_t pos = 0;
     while ((pos = str.find(from, pos)) != std::string::npos) {
         str.replace(pos, from.length(), to);
@@ -613,8 +603,7 @@ Value vmNativeStartsWith(VM& vm, const std::vector<Value>& arguments) {
     if (arguments.size() != 2) {
         throw std::runtime_error("startsWith() takes exactly two arguments.");
     }
-    if (!std::holds_alternative<std::string>(arguments[0]) ||
-        !std::holds_alternative<std::string>(arguments[1])) {
+    if (!std::holds_alternative<std::string>(arguments[0]) || !std::holds_alternative<std::string>(arguments[1])) {
         throw std::runtime_error("Both arguments to startsWith() must be strings.");
     }
     std::string str = std::get<std::string>(arguments[0]);
@@ -626,8 +615,7 @@ Value vmNativeEndsWith(VM& vm, const std::vector<Value>& arguments) {
     if (arguments.size() != 2) {
         throw std::runtime_error("endsWith() takes exactly two arguments.");
     }
-    if (!std::holds_alternative<std::string>(arguments[0]) ||
-        !std::holds_alternative<std::string>(arguments[1])) {
+    if (!std::holds_alternative<std::string>(arguments[0]) || !std::holds_alternative<std::string>(arguments[1])) {
         throw std::runtime_error("Both arguments to endsWith() must be strings.");
     }
     std::string str = std::get<std::string>(arguments[0]);
@@ -640,8 +628,7 @@ Value vmNativeIndexOf(VM& vm, const std::vector<Value>& arguments) {
     if (arguments.size() != 2) {
         throw std::runtime_error("indexOf() takes exactly two arguments.");
     }
-    if (!std::holds_alternative<std::string>(arguments[0]) ||
-        !std::holds_alternative<std::string>(arguments[1])) {
+    if (!std::holds_alternative<std::string>(arguments[0]) || !std::holds_alternative<std::string>(arguments[1])) {
         throw std::runtime_error("Both arguments to indexOf() must be strings.");
     }
     std::string str = std::get<std::string>(arguments[0]);
@@ -665,11 +652,11 @@ Value vmNativeMap(VM& vm, const std::vector<Value>& arguments) {
     if (!std::holds_alternative<std::shared_ptr<VmCallable>>(arguments[1])) {
         throw std::runtime_error("Second argument to map() must be a function.");
     }
-    
+
     auto arr = std::get<std::shared_ptr<Array>>(arguments[0]);
     auto func = std::get<std::shared_ptr<VmCallable>>(arguments[1]);
     auto result = std::make_shared<Array>();
-    
+
     for (const auto& elem : arr->elements) {
         result->elements.push_back(func->call(vm, {elem}));
     }
@@ -686,11 +673,11 @@ Value vmNativeFilter(VM& vm, const std::vector<Value>& arguments) {
     if (!std::holds_alternative<std::shared_ptr<VmCallable>>(arguments[1])) {
         throw std::runtime_error("Second argument to filter() must be a function.");
     }
-    
+
     auto arr = std::get<std::shared_ptr<Array>>(arguments[0]);
     auto func = std::get<std::shared_ptr<VmCallable>>(arguments[1]);
     auto result = std::make_shared<Array>();
-    
+
     for (const auto& elem : arr->elements) {
         Value testResult = func->call(vm, {elem});
         if (isTruthy(testResult)) {
@@ -710,20 +697,20 @@ Value vmNativeReduce(VM& vm, const std::vector<Value>& arguments) {
     if (!std::holds_alternative<std::shared_ptr<VmCallable>>(arguments[1])) {
         throw std::runtime_error("Second argument to reduce() must be a function.");
     }
-    
+
     auto arr = std::get<std::shared_ptr<Array>>(arguments[0]);
     auto func = std::get<std::shared_ptr<VmCallable>>(arguments[1]);
-    
+
     if (arr->elements.empty()) {
         if (arguments.size() == 3) {
             return arguments[2];
         }
         throw std::runtime_error("reduce() of empty array with no initial value.");
     }
-    
+
     size_t start = 0;
     Value accumulator;
-    
+
     if (arguments.size() == 3) {
         accumulator = arguments[2];
         start = 0;
@@ -731,7 +718,7 @@ Value vmNativeReduce(VM& vm, const std::vector<Value>& arguments) {
         accumulator = arr->elements[0];
         start = 1;
     }
-    
+
     for (size_t i = start; i < arr->elements.size(); ++i) {
         accumulator = func->call(vm, {accumulator, arr->elements[i]});
     }
@@ -745,20 +732,19 @@ Value vmNativeSort(VM& vm, const std::vector<Value>& arguments) {
     if (!std::holds_alternative<std::shared_ptr<Array>>(arguments[0])) {
         throw std::runtime_error("Argument to sort() must be an array.");
     }
-    
+
     auto arr = std::get<std::shared_ptr<Array>>(arguments[0]);
     auto result = std::make_shared<Array>(*arr);
-    
-    std::sort(result->elements.begin(), result->elements.end(), 
-        [](const Value& a, const Value& b) {
-            if (std::holds_alternative<double>(a) && std::holds_alternative<double>(b)) {
-                return std::get<double>(a) < std::get<double>(b);
-            }
-            if (std::holds_alternative<std::string>(a) && std::holds_alternative<std::string>(b)) {
-                return std::get<std::string>(a) < std::get<std::string>(b);
-            }
-            return false;
-        });
+
+    std::sort(result->elements.begin(), result->elements.end(), [](const Value& a, const Value& b) {
+        if (std::holds_alternative<double>(a) && std::holds_alternative<double>(b)) {
+            return std::get<double>(a) < std::get<double>(b);
+        }
+        if (std::holds_alternative<std::string>(a) && std::holds_alternative<std::string>(b)) {
+            return std::get<std::string>(a) < std::get<std::string>(b);
+        }
+        return false;
+    });
     return result;
 }
 
@@ -769,7 +755,7 @@ Value vmNativeReverse(VM& vm, const std::vector<Value>& arguments) {
     if (!std::holds_alternative<std::shared_ptr<Array>>(arguments[0])) {
         throw std::runtime_error("Argument to reverse() must be an array.");
     }
-    
+
     auto arr = std::get<std::shared_ptr<Array>>(arguments[0]);
     auto result = std::make_shared<Array>();
     result->elements.assign(arr->elements.rbegin(), arr->elements.rend());
@@ -784,15 +770,13 @@ Value vmNativeConcat(VM& vm, const std::vector<Value>& arguments) {
         !std::holds_alternative<std::shared_ptr<Array>>(arguments[1])) {
         throw std::runtime_error("Both arguments to concat() must be arrays.");
     }
-    
+
     auto arr1 = std::get<std::shared_ptr<Array>>(arguments[0]);
     auto arr2 = std::get<std::shared_ptr<Array>>(arguments[1]);
     auto result = std::make_shared<Array>();
-    
-    result->elements.insert(result->elements.end(), 
-                           arr1->elements.begin(), arr1->elements.end());
-    result->elements.insert(result->elements.end(), 
-                           arr2->elements.begin(), arr2->elements.end());
+
+    result->elements.insert(result->elements.end(), arr1->elements.begin(), arr1->elements.end());
+    result->elements.insert(result->elements.end(), arr2->elements.begin(), arr2->elements.end());
     return result;
 }
 
@@ -803,21 +787,18 @@ Value vmNativeSlice(VM& vm, const std::vector<Value>& arguments) {
     if (!std::holds_alternative<std::shared_ptr<Array>>(arguments[0])) {
         throw std::runtime_error("First argument to slice() must be an array.");
     }
-    
+
     auto arr = std::get<std::shared_ptr<Array>>(arguments[0]);
     size_t start = static_cast<size_t>(asNumber(arguments[1]));
-    size_t end = (arguments.size() == 3) 
-        ? static_cast<size_t>(asNumber(arguments[2]))
-        : arr->elements.size();
-    
+    size_t end = (arguments.size() == 3) ? static_cast<size_t>(asNumber(arguments[2])) : arr->elements.size();
+
     auto result = std::make_shared<Array>();
     if (start >= arr->elements.size()) {
         return result;
     }
     end = std::min(end, arr->elements.size());
-    
-    result->elements.assign(arr->elements.begin() + start, 
-                           arr->elements.begin() + end);
+
+    result->elements.assign(arr->elements.begin() + start, arr->elements.begin() + end);
     return result;
 }
 
@@ -830,13 +811,13 @@ Value vmNativeReadFile(VM& vm, const std::vector<Value>& arguments) {
     if (!std::holds_alternative<std::string>(arguments[0])) {
         throw std::runtime_error("Argument to readFile() must be a string.");
     }
-    
+
     std::string filename = std::get<std::string>(arguments[0]);
     std::ifstream file(filename);
     if (!file.is_open()) {
         throw std::runtime_error("Failed to open file: " + filename);
     }
-    
+
     std::stringstream buffer;
     buffer << file.rdbuf();
     return buffer.str();
@@ -846,19 +827,18 @@ Value vmNativeWriteFile(VM& vm, const std::vector<Value>& arguments) {
     if (arguments.size() != 2) {
         throw std::runtime_error("writeFile() takes exactly two arguments.");
     }
-    if (!std::holds_alternative<std::string>(arguments[0]) ||
-        !std::holds_alternative<std::string>(arguments[1])) {
+    if (!std::holds_alternative<std::string>(arguments[0]) || !std::holds_alternative<std::string>(arguments[1])) {
         throw std::runtime_error("Both arguments to writeFile() must be strings.");
     }
-    
+
     std::string filename = std::get<std::string>(arguments[0]);
     std::string content = std::get<std::string>(arguments[1]);
-    
+
     std::ofstream file(filename);
     if (!file.is_open()) {
         throw std::runtime_error("Failed to open file for writing: " + filename);
     }
-    
+
     file << content;
     return Nil{};
 }
@@ -867,19 +847,18 @@ Value vmNativeAppendFile(VM& vm, const std::vector<Value>& arguments) {
     if (arguments.size() != 2) {
         throw std::runtime_error("appendFile() takes exactly two arguments.");
     }
-    if (!std::holds_alternative<std::string>(arguments[0]) ||
-        !std::holds_alternative<std::string>(arguments[1])) {
+    if (!std::holds_alternative<std::string>(arguments[0]) || !std::holds_alternative<std::string>(arguments[1])) {
         throw std::runtime_error("Both arguments to appendFile() must be strings.");
     }
-    
+
     std::string filename = std::get<std::string>(arguments[0]);
     std::string content = std::get<std::string>(arguments[1]);
-    
+
     std::ofstream file(filename, std::ios::app);
     if (!file.is_open()) {
         throw std::runtime_error("Failed to open file for appending: " + filename);
     }
-    
+
     file << content;
     return Nil{};
 }
@@ -891,7 +870,7 @@ Value vmNativeFileExists(VM& vm, const std::vector<Value>& arguments) {
     if (!std::holds_alternative<std::string>(arguments[0])) {
         throw std::runtime_error("Argument to fileExists() must be a string.");
     }
-    
+
     std::string filename = std::get<std::string>(arguments[0]);
     struct stat buffer;
     return (stat(filename.c_str(), &buffer) == 0);
@@ -948,7 +927,7 @@ Value vmNativeTimeNow(VM& vm, const std::vector<Value>& arguments) {
     if (arguments.size() != 0) {
         throw std::runtime_error("time.now() takes no arguments.");
     }
-    
+
     using namespace std::chrono;
     auto now = system_clock::now();
     auto ms = duration_cast<milliseconds>(now.time_since_epoch()).count();
@@ -962,15 +941,15 @@ Value vmNativeTimeSleep(VM& vm, const std::vector<Value>& arguments) {
     if (!std::holds_alternative<double>(arguments[0])) {
         throw std::runtime_error("Argument to time.sleep() must be a number (seconds).");
     }
-    
+
     double seconds = std::get<double>(arguments[0]);
     if (seconds < 0) {
         throw std::runtime_error("time.sleep() argument must be non-negative.");
     }
-    
+
     auto duration = std::chrono::milliseconds(static_cast<long long>(seconds * 1000));
     std::this_thread::sleep_for(duration);
-    
+
     return Nil{};
 }
 
@@ -981,23 +960,23 @@ Value vmNativeTimeFormat(VM& vm, const std::vector<Value>& arguments) {
     if (!std::holds_alternative<double>(arguments[0])) {
         throw std::runtime_error("First argument to time.format() must be a number (timestamp).");
     }
-    
+
     double timestamp = std::get<double>(arguments[0]);
     std::string format = "%Y-%m-%d %H:%M:%S";
-    
+
     if (arguments.size() == 2) {
         if (!std::holds_alternative<std::string>(arguments[1])) {
             throw std::runtime_error("Second argument to time.format() must be a string (format).");
         }
         format = std::get<std::string>(arguments[1]);
     }
-    
+
     std::time_t time = static_cast<std::time_t>(timestamp);
     std::tm* tm_info = std::localtime(&time);
-    
+
     char buffer[256];
     std::strftime(buffer, sizeof(buffer), format.c_str(), tm_info);
-    
+
     return std::string(buffer);
 }
 
@@ -1033,20 +1012,20 @@ static Value vmParseJsonBool(const std::string& str, size_t& pos) {
 static Value vmParseJsonNumber(const std::string& str, size_t& pos) {
     size_t start = pos;
     if (str[pos] == '-') ++pos;
-    
+
     while (pos < str.size() && std::isdigit(str[pos])) ++pos;
-    
+
     if (pos < str.size() && str[pos] == '.') {
         ++pos;
         while (pos < str.size() && std::isdigit(str[pos])) ++pos;
     }
-    
+
     if (pos < str.size() && (str[pos] == 'e' || str[pos] == 'E')) {
         ++pos;
         if (pos < str.size() && (str[pos] == '+' || str[pos] == '-')) ++pos;
         while (pos < str.size() && std::isdigit(str[pos])) ++pos;
     }
-    
+
     return std::stod(str.substr(start, pos - start));
 }
 
@@ -1055,7 +1034,7 @@ static Value vmParseJsonString(const std::string& str, size_t& pos) {
         throw std::runtime_error("Invalid JSON: expected string");
     }
     ++pos;
-    
+
     std::string result;
     while (pos < str.size() && str[pos] != '"') {
         if (str[pos] == '\\') {
@@ -1064,14 +1043,30 @@ static Value vmParseJsonString(const std::string& str, size_t& pos) {
                 throw std::runtime_error("Invalid JSON: unterminated string escape");
             }
             switch (str[pos]) {
-                case '"': result += '"'; break;
-                case '\\': result += '\\'; break;
-                case '/': result += '/'; break;
-                case 'b': result += '\b'; break;
-                case 'f': result += '\f'; break;
-                case 'n': result += '\n'; break;
-                case 'r': result += '\r'; break;
-                case 't': result += '\t'; break;
+                case '"':
+                    result += '"';
+                    break;
+                case '\\':
+                    result += '\\';
+                    break;
+                case '/':
+                    result += '/';
+                    break;
+                case 'b':
+                    result += '\b';
+                    break;
+                case 'f':
+                    result += '\f';
+                    break;
+                case 'n':
+                    result += '\n';
+                    break;
+                case 'r':
+                    result += '\r';
+                    break;
+                case 't':
+                    result += '\t';
+                    break;
                 default:
                     throw std::runtime_error("Invalid JSON: unknown escape sequence");
             }
@@ -1080,12 +1075,12 @@ static Value vmParseJsonString(const std::string& str, size_t& pos) {
         }
         ++pos;
     }
-    
+
     if (pos >= str.size()) {
         throw std::runtime_error("Invalid JSON: unterminated string");
     }
     ++pos;
-    
+
     return result;
 }
 
@@ -1094,35 +1089,35 @@ static Value vmParseJsonArray(const std::string& str, size_t& pos) {
         throw std::runtime_error("Invalid JSON: expected array");
     }
     ++pos;
-    
+
     auto arr = std::make_shared<Array>();
     vmSkipWhitespace(str, pos);
-    
+
     if (pos < str.size() && str[pos] == ']') {
         ++pos;
         return arr;
     }
-    
+
     while (pos < str.size()) {
         arr->elements.push_back(vmJsonValueFromString(str, pos));
         vmSkipWhitespace(str, pos);
-        
+
         if (pos >= str.size()) {
             throw std::runtime_error("Invalid JSON: unterminated array");
         }
-        
+
         if (str[pos] == ']') {
             ++pos;
             return arr;
         }
-        
+
         if (str[pos] != ',') {
             throw std::runtime_error("Invalid JSON: expected ',' or ']' in array");
         }
         ++pos;
         vmSkipWhitespace(str, pos);
     }
-    
+
     throw std::runtime_error("Invalid JSON: unterminated array");
 }
 
@@ -1131,71 +1126,71 @@ static Value vmParseJsonObject(const std::string& str, size_t& pos) {
         throw std::runtime_error("Invalid JSON: expected object");
     }
     ++pos;
-    
+
     auto map = std::make_shared<Map>();
     vmSkipWhitespace(str, pos);
-    
+
     if (pos < str.size() && str[pos] == '}') {
         ++pos;
         return map;
     }
-    
+
     while (pos < str.size()) {
         vmSkipWhitespace(str, pos);
-        
+
         if (str[pos] != '"') {
             throw std::runtime_error("Invalid JSON: expected string key in object");
         }
-        
+
         Value keyVal = vmParseJsonString(str, pos);
         std::string key = std::get<std::string>(keyVal);
-        
+
         vmSkipWhitespace(str, pos);
         if (pos >= str.size() || str[pos] != ':') {
             throw std::runtime_error("Invalid JSON: expected ':' after object key");
         }
         ++pos;
         vmSkipWhitespace(str, pos);
-        
+
         Value value = vmJsonValueFromString(str, pos);
         map->entries[key] = value;
-        
+
         vmSkipWhitespace(str, pos);
-        
+
         if (pos >= str.size()) {
             throw std::runtime_error("Invalid JSON: unterminated object");
         }
-        
+
         if (str[pos] == '}') {
             ++pos;
             return map;
         }
-        
+
         if (str[pos] != ',') {
             throw std::runtime_error("Invalid JSON: expected ',' or '}' in object");
         }
         ++pos;
     }
-    
+
     throw std::runtime_error("Invalid JSON: unterminated object");
 }
 
 static Value vmJsonValueFromString(const std::string& jsonStr, size_t& pos) {
     vmSkipWhitespace(jsonStr, pos);
-    
+
     if (pos >= jsonStr.size()) {
         throw std::runtime_error("Invalid JSON: unexpected end of input");
     }
-    
+
     char c = jsonStr[pos];
-    
+
     if (c == 'n') return vmParseJsonNull(jsonStr, pos);
     if (c == 't' || c == 'f') return vmParseJsonBool(jsonStr, pos);
     if (c == '"') return vmParseJsonString(jsonStr, pos);
     if (c == '[') return vmParseJsonArray(jsonStr, pos);
     if (c == '{') return vmParseJsonObject(jsonStr, pos);
     if (c == '-' || std::isdigit(c)) return vmParseJsonNumber(jsonStr, pos);
-    
+
     throw std::runtime_error("Invalid JSON: unexpected character");
 }
 
@@ -1227,14 +1222,30 @@ static std::string vmValueToJson(const Value& value) {
         oss << '"';
         for (char c : str) {
             switch (c) {
-                case '"': oss << "\\\""; break;
-                case '\\': oss << "\\\\"; break;
-                case '\b': oss << "\\b"; break;
-                case '\f': oss << "\\f"; break;
-                case '\n': oss << "\\n"; break;
-                case '\r': oss << "\\r"; break;
-                case '\t': oss << "\\t"; break;
-                default: oss << c; break;
+                case '"':
+                    oss << "\\\"";
+                    break;
+                case '\\':
+                    oss << "\\\\";
+                    break;
+                case '\b':
+                    oss << "\\b";
+                    break;
+                case '\f':
+                    oss << "\\f";
+                    break;
+                case '\n':
+                    oss << "\\n";
+                    break;
+                case '\r':
+                    oss << "\\r";
+                    break;
+                case '\t':
+                    oss << "\\t";
+                    break;
+                default:
+                    oss << c;
+                    break;
             }
         }
         oss << '"';
@@ -1262,7 +1273,7 @@ static std::string vmValueToJson(const Value& value) {
         oss << '}';
         return oss.str();
     }
-    
+
     return "null";
 }
 
@@ -1273,10 +1284,10 @@ Value vmNativeJsonParse(VM& vm, const std::vector<Value>& arguments) {
     if (!std::holds_alternative<std::string>(arguments[0])) {
         throw std::runtime_error("Argument to json.parse() must be a string.");
     }
-    
+
     std::string jsonStr = std::get<std::string>(arguments[0]);
     size_t pos = 0;
-    
+
     try {
         Value result = vmJsonValueFromString(jsonStr, pos);
         vmSkipWhitespace(jsonStr, pos);
@@ -1293,7 +1304,7 @@ Value vmNativeJsonStringify(VM& vm, const std::vector<Value>& arguments) {
     if (arguments.size() != 1) {
         throw std::runtime_error("json.stringify() takes exactly one argument.");
     }
-    
+
     try {
         return vmValueToJson(arguments[0]);
     } catch (const std::exception& e) {
@@ -1306,11 +1317,10 @@ Value vmNativeRegexMatch(VM& vm, const std::vector<Value>& arguments) {
     if (arguments.size() != 2) {
         throw std::runtime_error("regex.match() takes exactly two arguments.");
     }
-    if (!std::holds_alternative<std::string>(arguments[0]) ||
-        !std::holds_alternative<std::string>(arguments[1])) {
+    if (!std::holds_alternative<std::string>(arguments[0]) || !std::holds_alternative<std::string>(arguments[1])) {
         throw std::runtime_error("Both arguments to regex.match() must be strings.");
     }
-    
+
     // NOTE: regex.match() is currently disabled due to a memory issue
     // Use regex.test() and regex.replace() for now
     throw std::runtime_error("regex.match() is currently disabled. Use regex.test() or regex.replace() instead.");
@@ -1320,16 +1330,15 @@ Value vmNativeRegexReplace(VM& vm, const std::vector<Value>& arguments) {
     if (arguments.size() != 3) {
         throw std::runtime_error("regex.replace() takes exactly three arguments.");
     }
-    if (!std::holds_alternative<std::string>(arguments[0]) ||
-        !std::holds_alternative<std::string>(arguments[1]) ||
+    if (!std::holds_alternative<std::string>(arguments[0]) || !std::holds_alternative<std::string>(arguments[1]) ||
         !std::holds_alternative<std::string>(arguments[2])) {
         throw std::runtime_error("All arguments to regex.replace() must be strings.");
     }
-    
+
     std::string text = std::get<std::string>(arguments[0]);
     std::string pattern = std::get<std::string>(arguments[1]);
     std::string replacement = std::get<std::string>(arguments[2]);
-    
+
     try {
         std::regex re(pattern);
         return std::regex_replace(text, re, replacement);
@@ -1342,14 +1351,13 @@ Value vmNativeRegexTest(VM& vm, const std::vector<Value>& arguments) {
     if (arguments.size() != 2) {
         throw std::runtime_error("regex.test() takes exactly two arguments.");
     }
-    if (!std::holds_alternative<std::string>(arguments[0]) ||
-        !std::holds_alternative<std::string>(arguments[1])) {
+    if (!std::holds_alternative<std::string>(arguments[0]) || !std::holds_alternative<std::string>(arguments[1])) {
         throw std::runtime_error("Both arguments to regex.test() must be strings.");
     }
-    
+
     std::string text = std::get<std::string>(arguments[0]);
     std::string pattern = std::get<std::string>(arguments[1]);
-    
+
     try {
         std::regex re(pattern);
         return std::regex_search(text, re);
@@ -1363,14 +1371,14 @@ void registerVmNatives(VM& vm) {
     vm.setGlobal("print", std::make_shared<VmNativeFunction>("print", -1, vmNativePrint));
     vm.setGlobal("len", std::make_shared<VmNativeFunction>("len", 1, vmNativeLen));
     vm.setGlobal("clock", std::make_shared<VmNativeFunction>("clock", 0, vmNativeClock));
-    
+
     // Array functions
     vm.setGlobal("push", std::make_shared<VmNativeFunction>("push", 2, vmNativePush));
     vm.setGlobal("pop", std::make_shared<VmNativeFunction>("pop", 1, vmNativePop));
     vm.setGlobal("shift", std::make_shared<VmNativeFunction>("shift", 1, vmNativeShift));
     vm.setGlobal("unshift", std::make_shared<VmNativeFunction>("unshift", 2, vmNativeUnshift));
     vm.setGlobal("splice", std::make_shared<VmNativeFunction>("splice", -1, vmNativeSplice));
-    
+
     // Map functions
     vm.setGlobal("keys", std::make_shared<VmNativeFunction>("keys", 1, vmNativeKeys));
     vm.setGlobal("values", std::make_shared<VmNativeFunction>("values", 1, vmNativeValues));
@@ -1378,14 +1386,14 @@ void registerVmNatives(VM& vm) {
     vm.setGlobal("has", std::make_shared<VmNativeFunction>("has", 2, vmNativeHas));
     vm.setGlobal("delete", std::make_shared<VmNativeFunction>("delete", 2, vmNativeDelete));
     vm.setGlobal("entries", std::make_shared<VmNativeFunction>("entries", 1, vmNativeEntries));
-    
+
     // Set functions
     vm.setGlobal("Set", std::make_shared<VmNativeFunction>("Set", 0, vmNativeSet));
     vm.setGlobal("setAdd", std::make_shared<VmNativeFunction>("setAdd", 2, vmNativeSetAdd));
     vm.setGlobal("setHas", std::make_shared<VmNativeFunction>("setHas", 2, vmNativeSetHas));
     vm.setGlobal("setDelete", std::make_shared<VmNativeFunction>("setDelete", 2, vmNativeSetDelete));
     vm.setGlobal("setSize", std::make_shared<VmNativeFunction>("setSize", 1, vmNativeSetSize));
-    
+
     // std.math functions
     vm.setGlobal("sqrt", std::make_shared<VmNativeFunction>("sqrt", 1, vmNativeSqrt));
     vm.setGlobal("pow", std::make_shared<VmNativeFunction>("pow", 2, vmNativePow));
@@ -1398,7 +1406,7 @@ void registerVmNatives(VM& vm) {
     vm.setGlobal("tan", std::make_shared<VmNativeFunction>("tan", 1, vmNativeTan));
     vm.setGlobal("min", std::make_shared<VmNativeFunction>("min", -1, vmNativeMin));
     vm.setGlobal("max", std::make_shared<VmNativeFunction>("max", -1, vmNativeMax));
-    
+
     // std.string functions
     vm.setGlobal("substring", std::make_shared<VmNativeFunction>("substring", -1, vmNativeSubstring));
     vm.setGlobal("split", std::make_shared<VmNativeFunction>("split", 2, vmNativeSplit));
@@ -1410,7 +1418,7 @@ void registerVmNatives(VM& vm) {
     vm.setGlobal("startsWith", std::make_shared<VmNativeFunction>("startsWith", 2, vmNativeStartsWith));
     vm.setGlobal("endsWith", std::make_shared<VmNativeFunction>("endsWith", 2, vmNativeEndsWith));
     vm.setGlobal("indexOf", std::make_shared<VmNativeFunction>("indexOf", 2, vmNativeIndexOf));
-    
+
     // std.array functions
     vm.setGlobal("map", std::make_shared<VmNativeFunction>("map", 2, vmNativeMap));
     vm.setGlobal("filter", std::make_shared<VmNativeFunction>("filter", 2, vmNativeFilter));
@@ -1419,7 +1427,7 @@ void registerVmNatives(VM& vm) {
     vm.setGlobal("reverse", std::make_shared<VmNativeFunction>("reverse", 1, vmNativeReverse));
     vm.setGlobal("concat", std::make_shared<VmNativeFunction>("concat", 2, vmNativeConcat));
     vm.setGlobal("slice", std::make_shared<VmNativeFunction>("slice", -1, vmNativeSlice));
-    
+
     // std.io functions
     vm.setGlobal("readFile", std::make_shared<VmNativeFunction>("readFile", 1, vmNativeReadFile));
     vm.setGlobal("writeFile", std::make_shared<VmNativeFunction>("writeFile", 2, vmNativeWriteFile));
@@ -1427,4 +1435,4 @@ void registerVmNatives(VM& vm) {
     vm.setGlobal("fileExists", std::make_shared<VmNativeFunction>("fileExists", 1, vmNativeFileExists));
 }
 
-} // namespace izi
+}  // namespace izi

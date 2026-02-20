@@ -9,7 +9,7 @@
 namespace izi {
 
 class VmUserFunction : public VmCallable {
-public:
+   public:
     VmUserFunction(std::string name, std::vector<std::string> params, std::shared_ptr<Chunk> functionChunk)
         : name_(std::move(name)), params_(std::move(params)), chunk_(std::move(functionChunk)) {}
 
@@ -21,10 +21,10 @@ public:
     const Chunk& getChunk() const { return *chunk_; }
     const std::vector<std::string>& params() const { return params_; }
 
-private:
+   private:
     std::string name_;
     std::vector<std::string> params_;
     std::shared_ptr<Chunk> chunk_;
 };
 
-} // namespace izi
+}  // namespace izi

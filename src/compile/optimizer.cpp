@@ -16,20 +16,20 @@ std::vector<StmtPtr> Optimizer::optimize(std::vector<StmtPtr> program) {
 
 ExprPtr Optimizer::optimizeExpr(ExprPtr expr) {
     if (!expr) return nullptr;
-    
+
     // Visit the expression to optimize it
     expr->accept(*this);
-    
+
     // Return the optimized expression
     return std::move(currentExpr);
 }
 
 StmtPtr Optimizer::optimizeStmt(StmtPtr stmt) {
     if (!stmt) return nullptr;
-    
+
     // Visit the statement to optimize it
     stmt->accept(*this);
-    
+
     // Return the optimized statement
     return std::move(currentStmt);
 }
@@ -43,10 +43,10 @@ Value Optimizer::evaluateConstantBinary(const Value& left, TokenType op, const V
     if (!std::holds_alternative<double>(left) || !std::holds_alternative<double>(right)) {
         return Nil{};  // Not a constant we can fold
     }
-    
+
     double l = std::get<double>(left);
     double r = std::get<double>(right);
-    
+
     switch (op) {
         case TokenType::PLUS:
             return l + r;
@@ -94,47 +94,43 @@ Value Optimizer::visit(BinaryExpr& expr) {
     // Optimize children first
     auto left = optimizeExpr(std::move(expr.left));
     auto right = optimizeExpr(std::move(expr.right));
-    
+
     // Constant folding: if both operands are constants, evaluate at compile time
     if (isConstant(*left) && isConstant(*right)) {
         auto* leftLit = static_cast<LiteralExpr*>(left.get());
         auto* rightLit = static_cast<LiteralExpr*>(right.get());
-        
+
         Value result = evaluateConstantBinary(leftLit->value, expr.op.type, rightLit->value);
-        
+
         // If we got a valid result, return a literal expression
         if (!std::holds_alternative<Nil>(result)) {
             currentExpr = std::make_unique<LiteralExpr>(result);
             return result;
         }
     }
-    
+
     // No optimization possible, return the original expression with optimized children
     expr.left = std::move(left);
     expr.right = std::move(right);
-    currentExpr = std::make_unique<BinaryExpr>(
-        std::move(expr.left), 
-        expr.op, 
-        std::move(expr.right)
-    );
+    currentExpr = std::make_unique<BinaryExpr>(std::move(expr.left), expr.op, std::move(expr.right));
     return Nil{};
 }
 
 Value Optimizer::visit(UnaryExpr& expr) {
     // Optimize child first
     auto right = optimizeExpr(std::move(expr.right));
-    
+
     // Constant folding: if operand is constant, evaluate at compile time
     if (isConstant(*right)) {
         auto* rightLit = static_cast<LiteralExpr*>(right.get());
         Value result = evaluateConstantUnary(expr.op.type, rightLit->value);
-        
+
         if (!std::holds_alternative<Nil>(result)) {
             currentExpr = std::make_unique<LiteralExpr>(result);
             return result;
         }
     }
-    
+
     // No optimization possible, return the original expression with optimized child
     expr.right = std::move(right);
     currentExpr = std::make_unique<UnaryExpr>(expr.op, std::move(expr.right));
@@ -181,7 +177,7 @@ Value Optimizer::visit(ConditionalExpr& expr) {
     expr.condition = optimizeExpr(std::move(expr.condition));
     expr.thenBranch = optimizeExpr(std::move(expr.thenBranch));
     expr.elseBranch = optimizeExpr(std::move(expr.elseBranch));
-    
+
     // Constant folding: if condition is a literal, only keep the appropriate branch
     if (auto* lit = dynamic_cast<LiteralExpr*>(expr.condition.get())) {
         if (isTruthy(lit->value)) {
@@ -191,12 +187,9 @@ Value Optimizer::visit(ConditionalExpr& expr) {
         }
         return Nil{};
     }
-    
-    currentExpr = std::make_unique<ConditionalExpr>(
-        std::move(expr.condition),
-        std::move(expr.thenBranch),
-        std::move(expr.elseBranch)
-    );
+
+    currentExpr = std::make_unique<ConditionalExpr>(std::move(expr.condition), std::move(expr.thenBranch),
+                                                    std::move(expr.elseBranch));
     return Nil{};
 }
 
@@ -233,11 +226,8 @@ Value Optimizer::visit(SetIndexExpr& expr) {
     expr.collection = optimizeExpr(std::move(expr.collection));
     expr.index = optimizeExpr(std::move(expr.index));
     expr.value = optimizeExpr(std::move(expr.value));
-    currentExpr = std::make_unique<SetIndexExpr>(
-        std::move(expr.collection), 
-        std::move(expr.index), 
-        std::move(expr.value)
-    );
+    currentExpr =
+        std::make_unique<SetIndexExpr>(std::move(expr.collection), std::move(expr.index), std::move(expr.value));
     return Nil{};
 }
 
@@ -245,17 +235,17 @@ Value Optimizer::visit(FunctionExpr& expr) {
     // Optimize function body with dead code elimination
     std::vector<StmtPtr> optimizedBody;
     bool foundReturn = false;
-    
+
     for (auto& stmt : expr.body) {
         // Dead code elimination: don't include statements after return
         if (foundReturn) {
             continue;
         }
-        
+
         auto opt = optimizeStmt(std::move(stmt));
         if (opt) {
             optimizedBody.push_back(std::move(opt));
-            
+
             // Check if this is a return statement
             if (dynamic_cast<ReturnStmt*>(optimizedBody.back().get())) {
                 foundReturn = true;
@@ -287,11 +277,7 @@ Value Optimizer::visit(PropertyExpr& expr) {
 Value Optimizer::visit(SetPropertyExpr& expr) {
     expr.object = optimizeExpr(std::move(expr.object));
     expr.value = optimizeExpr(std::move(expr.value));
-    currentExpr = std::make_unique<SetPropertyExpr>(
-        std::move(expr.object), 
-        expr.property, 
-        std::move(expr.value)
-    );
+    currentExpr = std::make_unique<SetPropertyExpr>(std::move(expr.object), expr.property, std::move(expr.value));
     return Nil{};
 }
 
@@ -325,7 +311,7 @@ void Optimizer::visit(IfStmt& stmt) {
     if (stmt.elseBranch) {
         stmt.elseBranch = optimizeStmt(std::move(stmt.elseBranch));
     }
-    
+
     // Constant folding for if statements: if condition is a constant, eliminate dead branch
     if (isConstant(*stmt.condition)) {
         auto* condLit = static_cast<LiteralExpr*>(stmt.condition.get());
@@ -337,18 +323,15 @@ void Optimizer::visit(IfStmt& stmt) {
             currentStmt = std::move(stmt.elseBranch);
         }
     } else {
-        currentStmt = std::make_unique<IfStmt>(
-            std::move(stmt.condition),
-            std::move(stmt.thenBranch),
-            std::move(stmt.elseBranch)
-        );
+        currentStmt =
+            std::make_unique<IfStmt>(std::move(stmt.condition), std::move(stmt.thenBranch), std::move(stmt.elseBranch));
     }
 }
 
 void Optimizer::visit(WhileStmt& stmt) {
     stmt.condition = optimizeExpr(std::move(stmt.condition));
     stmt.body = optimizeStmt(std::move(stmt.body));
-    
+
     // Dead code elimination: if condition is constant false, remove the loop
     if (isConstant(*stmt.condition)) {
         auto* condLit = static_cast<LiteralExpr*>(stmt.condition.get());
@@ -358,31 +341,31 @@ void Optimizer::visit(WhileStmt& stmt) {
             return;
         }
     }
-    
+
     currentStmt = std::make_unique<WhileStmt>(std::move(stmt.condition), std::move(stmt.body));
 }
 
 void Optimizer::visit(BlockStmt& stmt) {
     std::vector<StmtPtr> optimizedStmts;
     bool foundReturn = false;
-    
+
     for (auto& s : stmt.statements) {
         // Dead code elimination: don't include statements after return
         if (foundReturn) {
             continue;
         }
-        
+
         auto opt = optimizeStmt(std::move(s));
         if (opt) {
             optimizedStmts.push_back(std::move(opt));
-            
+
             // Check if this is a return statement
             if (dynamic_cast<ReturnStmt*>(optimizedStmts.back().get())) {
                 foundReturn = true;
             }
         }
     }
-    
+
     currentStmt = std::make_unique<BlockStmt>(std::move(optimizedStmts));
 }
 
@@ -390,19 +373,12 @@ void Optimizer::visit(VarStmt& stmt) {
     if (stmt.initializer) {
         stmt.initializer = optimizeExpr(std::move(stmt.initializer));
     }
-    
+
     if (stmt.pattern) {
-        currentStmt = std::make_unique<VarStmt>(
-            std::move(stmt.pattern), 
-            std::move(stmt.initializer),
-            std::move(stmt.typeAnnotation)
-        );
+        currentStmt = std::make_unique<VarStmt>(std::move(stmt.pattern), std::move(stmt.initializer),
+                                                std::move(stmt.typeAnnotation));
     } else {
-        currentStmt = std::make_unique<VarStmt>(
-            stmt.name, 
-            std::move(stmt.initializer),
-            std::move(stmt.typeAnnotation)
-        );
+        currentStmt = std::make_unique<VarStmt>(stmt.name, std::move(stmt.initializer), std::move(stmt.typeAnnotation));
     }
 }
 
@@ -410,31 +386,26 @@ void Optimizer::visit(FunctionStmt& stmt) {
     // Optimize function body with dead code elimination
     std::vector<StmtPtr> optimizedBody;
     bool foundReturn = false;
-    
+
     for (auto& s : stmt.body) {
         // Dead code elimination: don't include statements after return
         if (foundReturn) {
             continue;
         }
-        
+
         auto opt = optimizeStmt(std::move(s));
         if (opt) {
             optimizedBody.push_back(std::move(opt));
-            
+
             // Check if this is a return statement
             if (dynamic_cast<ReturnStmt*>(optimizedBody.back().get())) {
                 foundReturn = true;
             }
         }
     }
-    
-    currentStmt = std::make_unique<FunctionStmt>(
-        stmt.name,
-        stmt.params,
-        std::move(optimizedBody),
-        std::move(stmt.paramTypes),
-        std::move(stmt.returnType)
-    );
+
+    currentStmt = std::make_unique<FunctionStmt>(stmt.name, stmt.params, std::move(optimizedBody),
+                                                 std::move(stmt.paramTypes), std::move(stmt.returnType));
 }
 
 void Optimizer::visit(ImportStmt& stmt) {
@@ -469,13 +440,9 @@ void Optimizer::visit(TryStmt& stmt) {
     if (stmt.finallyBlock) {
         stmt.finallyBlock = optimizeStmt(std::move(stmt.finallyBlock));
     }
-    
-    currentStmt = std::make_unique<TryStmt>(
-        std::move(stmt.tryBlock),
-        stmt.catchVariable,
-        std::move(stmt.catchBlock),
-        std::move(stmt.finallyBlock)
-    );
+
+    currentStmt = std::make_unique<TryStmt>(std::move(stmt.tryBlock), stmt.catchVariable, std::move(stmt.catchBlock),
+                                            std::move(stmt.finallyBlock));
 }
 
 void Optimizer::visit(ThrowStmt& stmt) {
@@ -490,7 +457,7 @@ void Optimizer::visit(ClassStmt& stmt) {
             field->initializer = optimizeExpr(std::move(field->initializer));
         }
     }
-    
+
     // Optimize method bodies
     for (auto& method : stmt.methods) {
         std::vector<StmtPtr> optimizedBody;
@@ -502,13 +469,9 @@ void Optimizer::visit(ClassStmt& stmt) {
         }
         method->body = std::move(optimizedBody);
     }
-    
-    currentStmt = std::make_unique<ClassStmt>(
-        stmt.name,
-        stmt.superclass,
-        std::move(stmt.fields),
-        std::move(stmt.methods)
-    );
+
+    currentStmt =
+        std::make_unique<ClassStmt>(stmt.name, stmt.superclass, std::move(stmt.fields), std::move(stmt.methods));
 }
 
-} // namespace izi
+}  // namespace izi

@@ -17,11 +17,7 @@ namespace izi {
 
 // Semantic analysis errors and warnings
 struct SemanticDiagnostic {
-    enum class Severity {
-        Error,
-        Warning,
-        Info
-    };
+    enum class Severity { Error, Warning, Info };
 
     Severity severity;
     std::string message;
@@ -36,16 +32,14 @@ struct SemanticDiagnostic {
 // Phase 1: Type checking (when type annotations present)
 // Phase 2: Dead code detection, unused variables, unreachable code
 class SemanticAnalyzer : public ExprVisitor, public StmtVisitor {
-public:
+   public:
     SemanticAnalyzer() = default;
 
     // Analyze a program and collect diagnostics
     void analyze(const std::vector<StmtPtr>& program);
 
     // Get collected diagnostics
-    const std::vector<SemanticDiagnostic>& getDiagnostics() const {
-        return diagnostics_;
-    }
+    const std::vector<SemanticDiagnostic>& getDiagnostics() const { return diagnostics_; }
 
     bool hasErrors() const {
         for (const auto& diag : diagnostics_) {
@@ -93,9 +87,9 @@ public:
     void visit(ThrowStmt& stmt) override;
     void visit(ClassStmt& stmt) override;
 
-private:
+   private:
     std::vector<SemanticDiagnostic> diagnostics_;
-    
+
     // Symbol table for type tracking
     struct Scope {
         std::unordered_map<std::string, TypePtr> variables;
@@ -110,7 +104,7 @@ private:
     bool hasReturnedInCurrentBlock_ = false;
     bool inMethod_ = false;  // Track if we're inside a class method
     std::string currentClassName_;  // Track current class name for validation
-    
+
     // Class tracking for duplicate detection
     std::unordered_set<std::string> currentClassFields_;
     std::unordered_set<std::string> currentClassMethods_;
@@ -130,9 +124,9 @@ private:
     TypePtr inferType(Expr& expr);
     bool areTypesCompatible(const TypeAnnotation& expected, const TypeAnnotation& actual);
     TypePtr valueToType(const Value& value);
-    
+
     // Helper to check if a type is explicitly annotated (not Any)
     bool isExplicitlyTyped(const TypeAnnotation* type);
 };
 
-} // namespace izi
+}  // namespace izi

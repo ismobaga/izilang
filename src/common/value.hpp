@@ -20,21 +20,9 @@ struct Set;
 struct Instance;
 struct Error;
 
-using Value = std::variant<
-    Nil,
-    bool,
-    double,
-    std::string,
-    std::shared_ptr<Array>,
-    std::shared_ptr<Map>,
-    std::shared_ptr<Set>,
-    std::shared_ptr<Callable>,
-    std::shared_ptr<VmCallable>,
-    std::shared_ptr<VmClass>,
-    std::shared_ptr<Instance>,
-    std::shared_ptr<Error>
-    >;
-
+using Value = std::variant<Nil, bool, double, std::string, std::shared_ptr<Array>, std::shared_ptr<Map>,
+                           std::shared_ptr<Set>, std::shared_ptr<Callable>, std::shared_ptr<VmCallable>,
+                           std::shared_ptr<VmClass>, std::shared_ptr<Instance>, std::shared_ptr<Error>>;
 
 // Forward declare to avoid circular dependency
 }  // namespace izi
@@ -42,22 +30,19 @@ using Value = std::variant<
 // Include after Value definition to avoid circular dependency
 #include "callable.hpp"
 
-
-
 namespace izi {
 
-        struct Array {
-        std::vector<Value> elements;
-    };
-    struct Map {
-        std::unordered_map<std::string, Value> entries;
-    };
-    struct Set {
-        std::unordered_map<std::string, Value> values;  // Using string keys for uniqueness
-    };
+struct Array {
+    std::vector<Value> elements;
+};
+struct Map {
+    std::unordered_map<std::string, Value> entries;
+};
+struct Set {
+    std::unordered_map<std::string, Value> values;  // Using string keys for uniqueness
+};
 
-
-void printValue(const Value &v); // forward
+void printValue(const Value& v);  // forward
 
 inline void printArray(const Array& arr) {
     std::cout << "[";
@@ -82,7 +67,7 @@ inline void printMap(const Map& map) {
         ++count;
     }
     std::cout << "}";
-}   
+}
 
 inline void printSet(const Set& set) {
     std::cout << "Set{";
@@ -96,8 +81,6 @@ inline void printSet(const Set& set) {
     }
     std::cout << "}";
 }
-
-
 
 void printValue(const Value& v);
 std::string valueToString(const Value& v);

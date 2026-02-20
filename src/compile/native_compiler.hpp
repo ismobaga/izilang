@@ -7,19 +7,19 @@ namespace izi {
 
 /**
  * NativeCompiler - Compiles IziLang source code to native executables
- * 
+ *
  * This compiler generates a standalone executable by:
  * 1. Embedding the source code into a C++ file
  * 2. Compiling that C++ file with the IziLang interpreter
  * 3. Statically linking all dependencies
  */
 class NativeCompiler {
-public:
+   public:
     struct CompileOptions {
-        std::string inputFile;       // Input .iz source file
-        std::string outputFile;      // Output executable name
-        bool debug = false;          // Include debug symbols
-        bool verbose = false;        // Print compilation steps
+        std::string inputFile;  // Input .iz source file
+        std::string outputFile;  // Output executable name
+        bool debug = false;  // Include debug symbols
+        bool verbose = false;  // Print compilation steps
     };
 
     /**
@@ -29,7 +29,7 @@ public:
      */
     static bool compile(const CompileOptions& options);
 
-private:
+   private:
     /**
      * Generate C++ code that embeds the IziLang source
      * @param sourceCode The IziLang source code to embed
@@ -66,4 +66,4 @@ private:
     static std::vector<std::string> getSourceFiles();
 };
 
-} // namespace izi
+}  // namespace izi
