@@ -194,19 +194,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Future Roadmap
 
-### v0.2 (Planned)
-- Classes and OOP features
-- Dot notation for module objects (`module.function()`)
-- Gradual typing with optional type annotations
+### v0.4 (In Progress)
+- Code formatter (`izi fmt`)
 - LSP server implementation
-- Code formatter
-- REPL (Read-Eval-Print Loop)
-
-### v0.3 (Planned)
 - Async/await concurrency model
-- Mark-and-Sweep garbage collection
-- Performance optimizations
-- Enhanced error recovery
+- Package manager (MVP)
+- Debug Adapter Protocol (DAP)
 
 ### v1.0+ (Planned)
 - JIT compilation

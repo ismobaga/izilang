@@ -600,7 +600,7 @@ greet("Alice");  // Provide required argument
 
 - [Getting Started Guide](GETTING_STARTED.md)
 - [CLI Reference](CLI_REFERENCE.md)
-- [Language Reference](LANGUAGE_REFERENCE.md)
+- [Language Specification](V03_SPECIFICATION.md)
 - [GitHub Issues](https://github.com/ismobaga/izilang/issues)
 
 ---
