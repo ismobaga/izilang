@@ -34,6 +34,8 @@ struct CliOptions {
     bool debug = false;
     bool optimize = true;  // Enable optimizations by default
     bool memoryStats = false;  // Enable memory statistics tracking
+    bool write = false;   // fmt: write formatted output back to file in-place
+    bool check = false;   // fmt: check if file needs formatting (exit 1 if yes)
     std::string input;  // Filename or inline code
     std::string output;  // Output filename for compile command
     std::vector<std::string> args;  // Additional arguments (e.g., test patterns)

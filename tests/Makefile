@@ -75,6 +75,7 @@ GENERATED += $(OBJDIR)/chunk_serializer.o
 GENERATED += $(OBJDIR)/cli.o
 GENERATED += $(OBJDIR)/compiler.o
 GENERATED += $(OBJDIR)/error_reporter.o
+GENERATED += $(OBJDIR)/formatter.o
 GENERATED += $(OBJDIR)/interpreter.o
 GENERATED += $(OBJDIR)/izi_class.o
 GENERATED += $(OBJDIR)/lexer.o
@@ -91,6 +92,7 @@ GENERATED += $(OBJDIR)/test_classes.o
 GENERATED += $(OBJDIR)/test_collections.o
 GENERATED += $(OBJDIR)/test_error_system.o
 GENERATED += $(OBJDIR)/test_first_class_functions.o
+GENERATED += $(OBJDIR)/test_formatter.o
 GENERATED += $(OBJDIR)/test_http.o
 GENERATED += $(OBJDIR)/test_integration.o
 GENERATED += $(OBJDIR)/test_ipc.o
@@ -124,6 +126,7 @@ OBJECTS += $(OBJDIR)/chunk_serializer.o
 OBJECTS += $(OBJDIR)/cli.o
 OBJECTS += $(OBJDIR)/compiler.o
 OBJECTS += $(OBJDIR)/error_reporter.o
+OBJECTS += $(OBJDIR)/formatter.o
 OBJECTS += $(OBJDIR)/interpreter.o
 OBJECTS += $(OBJDIR)/izi_class.o
 OBJECTS += $(OBJDIR)/lexer.o
@@ -140,6 +143,7 @@ OBJECTS += $(OBJDIR)/test_classes.o
 OBJECTS += $(OBJDIR)/test_collections.o
 OBJECTS += $(OBJDIR)/test_error_system.o
 OBJECTS += $(OBJDIR)/test_first_class_functions.o
+OBJECTS += $(OBJDIR)/test_formatter.o
 OBJECTS += $(OBJDIR)/test_http.o
 OBJECTS += $(OBJDIR)/test_integration.o
 OBJECTS += $(OBJDIR)/test_ipc.o
@@ -274,6 +278,9 @@ $(OBJDIR)/value.o: ../src/common/value.cpp
 $(OBJDIR)/compiler.o: ../src/compile/compiler.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/formatter.o: ../src/compile/formatter.cpp
+	@echo "$(notdir $<)"
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/native_compiler.o: ../src/compile/native_compiler.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
@@ -317,6 +324,9 @@ $(OBJDIR)/test_error_system.o: test_error_system.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/test_first_class_functions.o: test_first_class_functions.cpp
+	@echo "$(notdir $<)"
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/test_formatter.o: test_formatter.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/test_http.o: test_http.cpp

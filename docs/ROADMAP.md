@@ -1,8 +1,8 @@
 # IziLang Development Roadmap
 
-**Last Updated**: February 20, 2026  
-**Current Version**: v0.3.0  
-**Next Milestone**: v0.4.0 "Concurrency & Ecosystem"
+**Last Updated**: February 21, 2026  
+**Current Version**: v0.4.0-dev (v0.3.0 released)  
+**Next Milestone**: v0.4.0 "Concurrency & Ecosystem" → v1.0.0 "Stable"
 
 ---
 
@@ -200,11 +200,11 @@ IziLang aims to be a **modern, expressive, and developer-friendly programming la
 - Timeline: 1 week
 
 #### Code Formatter
-- [ ] `izi fmt <file>` command
+- [x] `izi fmt <file>` command
 - [ ] Format entire directory: `izi fmt src/`
-- [ ] Check mode: `izi fmt --check`
+- [x] Check mode: `izi fmt --check`
 - [ ] Configurable style (`.izifmt.toml`)
-- [ ] Auto-indent, spacing rules
+- [x] Auto-indent, spacing rules
 - Timeline: 2 weeks
 
 #### LSP Server
@@ -412,13 +412,14 @@ IziLang aims to be a **modern, expressive, and developer-friendly programming la
 
 ### Core Language
 
-- [ ] **Async/Await** - Async functions with event loop
+- [x] **Async/Await** - `async fn` declarations and `await` expressions
+- [x] **Macro System** - `macro name(params) { body }` with `name!(args)` expansion
 - [ ] **Promises** - `then()`, `catch()`, `finally()` chaining
 - [ ] **Concurrent Collections** - Thread-safe arrays and maps
 
 ### Tooling
 
-- [ ] **Code Formatter** - `izi fmt` command with configurable style
+- [x] **Code Formatter** - `izi fmt` command with check mode
 - [ ] **LSP Server** - Diagnostics, auto-completion, hover, go-to-definition
 - [ ] **VS Code Extension** - Connect to LSP, debugger support, marketplace
 - [ ] **Package Manager** - `izi-pkg init/install/publish` with registry
@@ -426,18 +427,24 @@ IziLang aims to be a **modern, expressive, and developer-friendly programming la
 
 ### Standard Library
 
-- [ ] **std.async** - Async I/O, HTTP client
-- [ ] **std.json** (already available via native modules) - Stabilize API
+- [ ] **std.async** - Full async I/O, event loop integration
+- [x] **std.json** - `parse` and `stringify` (stable)
+- [x] **std.time** - `now`, `sleep`, `format` (stable)
+- [x] **std.regex** - `match`, `replace`, `test` (stable)
+- [x] **std.http** - `get`, `post`, `request` (stable)
+- [x] **std.net** - TCP/UDP socket primitives (stable)
+- [x] **std.log** - Structured logging module (stable)
 
 ### Performance
 
-- [ ] **Constant Folding** - Evaluate constant expressions at compile time
+- [x] **Constant Folding** - Implemented in AST Optimizer
+- [x] **Dead Code Elimination** - Implemented in AST Optimizer
 - [ ] **Inline Caching** - Speed up property lookups
-- [ ] **Benchmark Suite** - Compare against Python, Ruby, JavaScript
+- [x] **Benchmark Suite** - `izi bench` command
 
 ---
 
-## v1.0 — "Stable" (Target: Q4 2026)
+## v1.0 — "Stable" (Target: Q1 2027)
 
 **Goal**: Declare the language stable with backward compatibility guarantees.
 
@@ -590,17 +597,24 @@ Q2 2026 ✅ Completed
 │   └── VM import system and benchmarks
 
 Q3 2026 🟡 In Progress
-├── Code formatter (izi fmt)
-├── LSP server (basic)
-├── Async/await concurrency
-├── Package manager (MVP)
+├── Code formatter (izi fmt)         ✅ Done
+├── Async/await syntax & runtime     ✅ Done
+├── Macro system                      ✅ Done
+├── std.json / time / regex / http   ✅ Done
+├── LSP server (basic diagnostics)   🟡 In Progress
+├── std.async (full event loop I/O)  🟡 In Progress
+├── Package manager (MVP)            ❌ Not started
 └── v0.4.0 Release - "Concurrency & Ecosystem"
 
-Q4 2026
-├── Stability improvements
-├── Ecosystem growth
-├── Documentation polish
-├── Production validation
+Q4 2026 — Q1 2027
+├── Productivity operators (?., ??, destructuring)
+├── LSP autocompletion + hover
+├── VS Code extension (marketplace)
+├── Debug Adapter Protocol (DAP)
+├── Package manager backend + registry
+├── std.test built-in framework
+├── Language freeze + API stability
+├── Ecosystem growth (50+ packages)
 └── v1.0.0 Release - "Stable"
 ```
 
@@ -627,9 +641,12 @@ Q4 2026
 - ✅ Semantic analysis and static checks
 
 ### v0.4
-- 🎯 LSP server in VS Code
-- 🎯 Code formatter
-- 🎯 Async/await concurrency
+- ✅ Code formatter (`izi fmt`)
+- ✅ Async/await syntax and runtime
+- ✅ Macro system
+- ✅ Rich stdlib (json, time, regex, http, net, log, ipc)
+- 🎯 LSP server (diagnostics + autocompletion)
+- 🎯 Full async I/O (`std.async`)
 - 🎯 Package manager MVP
 
 ### v1.0
