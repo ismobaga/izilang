@@ -31,6 +31,7 @@
 #include "bytecode/vm_native.hpp"
 #include "bytecode/chunk_serializer.hpp"
 #include "common/error_reporter.hpp"
+#include "common/diagnostics.hpp"
 #include "common/cli.hpp"
 #include "common/semantic_analyzer.hpp"
 #include "common/memory_metrics.hpp"
@@ -40,16 +41,34 @@ namespace fs = std::filesystem;
 
 void runCode(const std::string& src, bool useVM, bool debug, bool optimize, const std::string& filename = "<stdin>",
              const std::vector<std::string>& args = {}) {
-    try {
-        if (debug) {
-            std::cout << "[DEBUG] Lexing and parsing...\n";
-        }
+    if (debug) {
+        std::cout << "[DEBUG] Lexing and parsing...\n";
+    }
 
+    // Phase 1: Lex and parse – separate from execution so all parse errors are
+    // reported together before attempting to run any code.
+    DiagnosticEngine diags(src);
+    std::vector<StmtPtr> program;
+    try {
         Lexer lex(src);
         auto tokens = lex.scanTokens();
-        Parser parser(std::move(tokens), src);
-        auto program = parser.parse();
+        Parser parser(std::move(tokens), src, &diags);
+        program = parser.parse();
+    } catch (const LexerError& e) {
+        ErrorReporter reporter(src);
+        std::cerr << "In file '" << filename << "':\n";
+        std::cerr << reporter.formatError(e.line, e.column, e.what(), "Lexer Error") << '\n';
+        throw;
+    }
 
+    if (diags.hasErrors()) {
+        std::cerr << "In file '" << filename << "':\n";
+        std::cerr << diags.formatAll();
+        throw std::runtime_error("parse errors");
+    }
+
+    // Phase 2: Execute the parsed program.
+    try {
         // Apply optimizations if enabled
         if (optimize) {
             if (debug) {
@@ -78,11 +97,6 @@ void runCode(const std::string& src, bool useVM, bool debug, bool optimize, cons
             registerVmNatives(vm);
             Value result = vm.run(chunk);
         }
-    } catch (const LexerError& e) {
-        ErrorReporter reporter(src);
-        std::cerr << "In file '" << filename << "':\n";
-        std::cerr << reporter.formatError(e.line, e.column, e.what(), "Lexer Error") << '\n';
-        throw;
     } catch (const ParserError& e) {
         ErrorReporter reporter(src);
         std::cerr << "In file '" << filename << "':\n";
@@ -118,8 +132,14 @@ void runReplLine(const std::string& src, Interpreter* interp, VM* vm, bool useVM
 
         Lexer lex(src);
         auto tokens = lex.scanTokens();
-        Parser parser(std::move(tokens), src);
+        DiagnosticEngine diags(src);
+        Parser parser(std::move(tokens), src, &diags);
         auto program = parser.parse();
+
+        if (diags.hasErrors()) {
+            std::cerr << diags.formatAll();
+            return;
+        }
 
         // Apply optimizations if enabled
         if (optimize) {
@@ -865,8 +885,15 @@ int main(int argc, char** argv) {
         try {
             Lexer lex(src);
             auto tokens = lex.scanTokens();
-            Parser parser(std::move(tokens), src);
+            DiagnosticEngine diags(src);
+            Parser parser(std::move(tokens), src, &diags);
             auto program = parser.parse();
+
+            if (diags.hasErrors()) {
+                std::cerr << "In file '" << options.input << "':\n";
+                std::cerr << diags.formatAll();
+                return 1;
+            }
 
             // Format the AST
             Formatter formatter;
@@ -966,8 +993,15 @@ int main(int argc, char** argv) {
                 std::cout << "[DEBUG] Lexing complete, " << tokens.size() << " tokens\n";
             }
 
-            Parser parser(std::move(tokens), src);
+            DiagnosticEngine diags(src);
+            Parser parser(std::move(tokens), src, &diags);
             auto program = parser.parse();
+
+            if (diags.hasErrors()) {
+                std::cerr << "In file '" << options.input << "':\n";
+                std::cerr << diags.formatAll();
+                return 1;
+            }
 
             if (options.debug) {
                 std::cout << "[DEBUG] Parsing complete, " << program.size() << " statements\n";
@@ -1123,8 +1157,15 @@ int main(int argc, char** argv) {
                 std::cout << "[DEBUG] Lexing complete\n";
             }
 
-            Parser parser(std::move(tokens), src);
+            DiagnosticEngine diags(src);
+            Parser parser(std::move(tokens), src, &diags);
             auto program = parser.parse();
+
+            if (diags.hasErrors()) {
+                std::cerr << "In file '" << options.input << "':\n";
+                std::cerr << diags.formatAll();
+                return 1;
+            }
 
             if (options.debug) {
                 std::cout << "[DEBUG] Parsing complete\n";
@@ -1178,8 +1219,15 @@ int main(int argc, char** argv) {
                 std::cout << "[DEBUG] Lexing complete, " << tokens.size() << " tokens\n";
             }
 
-            Parser parser(std::move(tokens), src);
+            DiagnosticEngine diags(src);
+            Parser parser(std::move(tokens), src, &diags);
             auto program = parser.parse();
+
+            if (diags.hasErrors()) {
+                std::cerr << "In file '" << options.input << "':\n";
+                std::cerr << diags.formatAll();
+                return 1;
+            }
 
             if (options.debug) {
                 std::cout << "[DEBUG] Parsing complete, " << program.size() << " statements\n";
