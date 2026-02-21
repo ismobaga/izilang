@@ -11,7 +11,8 @@ void SemanticAnalyzer::analyze(const std::vector<StmtPtr>& program) {
     // Pre-populate global scope with built-in function names
     auto anyType = TypeAnnotation::simple(TypeAnnotation::Kind::Any);
     for (const auto& builtin :
-         {"print", "clock", "len", "str", "spawn", "await", "sleep", "push", "pop", "shift", "unshift", "splice",
+         {"print", "clock", "len", "str", "spawn", "await", "sleep", "mutex", "lock", "unlock", "trylock",
+          "thread_spawn", "push", "pop", "shift", "unshift", "splice",
           "keys", "values", "hasKey", "has", "delete", "entries", "Set", "setAdd", "setHas", "setDelete", "setSize",
           "sqrt", "pow", "abs", "floor", "ceil", "round", "sin", "cos", "tan", "min", "max", "substring", "split",
           "join", "toUpper", "toLower", "trim", "replace", "startsWith", "endsWith", "indexOf", "map", "filter",

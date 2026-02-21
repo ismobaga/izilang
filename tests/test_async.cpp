@@ -276,3 +276,170 @@ TEST_CASE("Interpreter: async fn interacts with spawn/await native functions", "
         REQUIRE(std::holds_alternative<std::shared_ptr<Task>>(t));
     }
 }
+
+TEST_CASE("Interpreter: mutex() creates a Mutex value", "[interpreter][concurrency]") {
+    SECTION("mutex() returns a Mutex") {
+        std::string code = R"(
+            var m = mutex();
+        )";
+        Lexer lexer(code);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto stmts = parser.parse();
+
+        Interpreter interp;
+        interp.interpret(stmts);
+
+        Value m = interp.getGlobals()->get("m");
+        REQUIRE(std::holds_alternative<std::shared_ptr<Mutex>>(m));
+    }
+
+    SECTION("lock() and unlock() work on a mutex") {
+        std::string code = R"(
+            var m = mutex();
+            lock(m);
+            unlock(m);
+        )";
+        Lexer lexer(code);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto stmts = parser.parse();
+
+        Interpreter interp;
+        REQUIRE_NOTHROW(interp.interpret(stmts));
+    }
+
+    SECTION("trylock() returns true when mutex is free") {
+        std::string code = R"(
+            var m = mutex();
+            var acquired = trylock(m);
+            unlock(m);
+        )";
+        Lexer lexer(code);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto stmts = parser.parse();
+
+        Interpreter interp;
+        interp.interpret(stmts);
+
+        Value acquired = interp.getGlobals()->get("acquired");
+        REQUIRE(std::holds_alternative<bool>(acquired));
+        REQUIRE(std::get<bool>(acquired) == true);
+    }
+}
+
+TEST_CASE("Interpreter: thread_spawn runs callable on OS thread", "[interpreter][concurrency]") {
+    SECTION("thread_spawn returns a Task with OS thread support") {
+        std::string code = R"(
+            var t = thread_spawn(fn() { return 42; });
+            await t;
+        )";
+        Lexer lexer(code);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto stmts = parser.parse();
+
+        Interpreter interp;
+        interp.interpret(stmts);
+
+        Value t = interp.getGlobals()->get("t");
+        REQUIRE(std::holds_alternative<std::shared_ptr<Task>>(t));
+        auto task = std::get<std::shared_ptr<Task>>(t);
+        REQUIRE(task->osMutex != nullptr);
+        REQUIRE(task->osCv != nullptr);
+        REQUIRE(task->state == Task::State::Completed);
+    }
+
+    SECTION("await on thread_spawn task returns the result") {
+        std::string code = R"(
+            var t = thread_spawn(fn() { return 99; });
+            var result = await t;
+        )";
+        Lexer lexer(code);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto stmts = parser.parse();
+
+        Interpreter interp;
+        interp.interpret(stmts);
+
+        Value result = interp.getGlobals()->get("result");
+        REQUIRE(std::holds_alternative<double>(result));
+        REQUIRE(std::get<double>(result) == 99.0);
+    }
+
+    SECTION("thread_spawn with arithmetic returns correct result") {
+        std::string code = R"(
+            var t = thread_spawn(fn() { return 3 + 4; });
+            var result = await t;
+        )";
+        Lexer lexer(code);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto stmts = parser.parse();
+
+        Interpreter interp;
+        interp.interpret(stmts);
+
+        Value result = interp.getGlobals()->get("result");
+        REQUIRE(std::holds_alternative<double>(result));
+        REQUIRE(std::get<double>(result) == 7.0);
+    }
+
+    SECTION("multiple thread_spawn tasks run concurrently") {
+        std::string code = R"(
+            var t1 = thread_spawn(fn() { return 10; });
+            var t2 = thread_spawn(fn() { return 20; });
+            var r1 = await t1;
+            var r2 = await t2;
+        )";
+        Lexer lexer(code);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto stmts = parser.parse();
+
+        Interpreter interp;
+        interp.interpret(stmts);
+
+        Value r1 = interp.getGlobals()->get("r1");
+        Value r2 = interp.getGlobals()->get("r2");
+        REQUIRE(std::holds_alternative<double>(r1));
+        REQUIRE(std::holds_alternative<double>(r2));
+        REQUIRE(std::get<double>(r1) == 10.0);
+        REQUIRE(std::get<double>(r2) == 20.0);
+    }
+
+    SECTION("thread_spawn with shared Array and mutex provides atomic increments") {
+        std::string code = R"(
+            var counter = [0];
+            var m = mutex();
+            var t1 = thread_spawn(fn() {
+                lock(m);
+                counter[0] = counter[0] + 1;
+                unlock(m);
+            });
+            var t2 = thread_spawn(fn() {
+                lock(m);
+                counter[0] = counter[0] + 1;
+                unlock(m);
+            });
+            await t1;
+            await t2;
+        )";
+        Lexer lexer(code);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto stmts = parser.parse();
+
+        Interpreter interp;
+        interp.interpret(stmts);
+
+        Value counter = interp.getGlobals()->get("counter");
+        REQUIRE(std::holds_alternative<std::shared_ptr<Array>>(counter));
+        auto arr = std::get<std::shared_ptr<Array>>(counter);
+        REQUIRE(arr->elements.size() == 1);
+        REQUIRE(std::holds_alternative<double>(arr->elements[0]));
+        REQUIRE(std::get<double>(arr->elements[0]) == 2.0);
+    }
+}

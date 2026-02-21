@@ -135,6 +135,11 @@ auto nativeTimeFormat(Interpreter& interp, const std::vector<Value>& arguments) 
 auto nativeSpawn(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 auto nativeAwait(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 auto nativeSleep(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeMutex(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeLock(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeUnlock(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeTryLock(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeThreadSpawn(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 
 // std.json functions
 auto nativeJsonParse(Interpreter& interp, const std::vector<Value>& arguments) -> Value;

@@ -979,6 +979,20 @@ Value Interpreter::visit(AwaitExpr& expr) {
     // If the value is a Task, run it and return its result
     if (std::holds_alternative<std::shared_ptr<Task>>(val)) {
         auto task = std::get<std::shared_ptr<Task>>(val);
+
+        // OS-thread task: block until the thread signals completion
+        if (task->osMutex != nullptr) {
+            std::unique_lock<std::mutex> lock(*task->osMutex);
+            task->osCv->wait(lock, [&task] {
+                return task->state == Task::State::Completed || task->state == Task::State::Failed;
+            });
+            if (task->state == Task::State::Failed) {
+                throw std::runtime_error("Thread failed: " + task->errorMessage);
+            }
+            return task->result;
+        }
+
+        // Cooperative (lazy) task: run synchronously on the current thread
         if (task->state == Task::State::Running) {
             throw std::runtime_error("await: task is already running (re-entrant await not allowed).");
         }

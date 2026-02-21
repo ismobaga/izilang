@@ -57,6 +57,8 @@ std::string valueToString(const Value& v) {
             case Task::State::Completed: oss << "<task: completed>"; break;
             case Task::State::Failed:   oss << "<task: failed>"; break;
         }
+    } else if (std::holds_alternative<std::shared_ptr<Mutex>>(v)) {
+        oss << "<mutex>";
     } else {
         oss << "<unknown>";
     }
@@ -101,6 +103,8 @@ void printValue(const Value& v) {
             case Task::State::Completed: std::cout << "<task: completed>"; break;
             case Task::State::Failed:   std::cout << "<task: failed>"; break;
         }
+    } else if (std::holds_alternative<std::shared_ptr<Mutex>>(v)) {
+        std::cout << "<mutex>";
     } else {
         std::cout << "<unknown>";
     }
