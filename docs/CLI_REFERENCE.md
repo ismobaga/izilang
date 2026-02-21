@@ -380,7 +380,7 @@ izi repl --vm
 
 **Example Session:**
 ```
-IziLang 0.2.0 REPL
+IziLang 0.3.0 REPL
 Type 'exit()' or press Ctrl+D to quit
 Type ':help' for REPL commands
 
@@ -399,7 +399,7 @@ Type ':help' for REPL commands
 
 ### `fmt` - Format Source Code
 
-*(Coming in v0.2 - not yet implemented)*
+*(Coming in v0.4 - not yet implemented)*
 
 Format IziLang source code according to standard style.
 
@@ -477,7 +477,7 @@ Currently, IziLang doesn't use environment variables. This may change in future 
 
 ## Configuration Files
 
-### `.izifmt.toml` *(Coming in v0.2)*
+### `.izifmt.toml` *(Coming in v0.4)*
 
 Configuration file for the code formatter.
 
@@ -558,7 +558,7 @@ izi repl
 
 - [Getting Started Guide](GETTING_STARTED.md)
 - [Editor Setup](EDITOR_SETUP.md)
-- [Language Reference](LANGUAGE_REFERENCE.md)
+- [Language Specification](V03_SPECIFICATION.md)
 - [Troubleshooting](ERRORS_TROUBLESHOOTING.md)
 
 ---

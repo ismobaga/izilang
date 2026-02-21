@@ -1,8 +1,8 @@
 # IziLang Project Status
 
-**Last Updated**: February 11, 2026  
-**Version**: v0.1.0-rc1 (Release Candidate 1)  
-**Status**: Ready for Release
+**Last Updated**: February 20, 2026  
+**Version**: v0.3.0  
+**Status**: Released
 
 ---
 

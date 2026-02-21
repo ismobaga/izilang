@@ -495,7 +495,7 @@ Planned for next release:
 - [v0.3 Milestone Issue](https://github.com/ismobaga/izilang/issues/XX)
 - [CHANGELOG.md](../CHANGELOG.md)
 - [Getting Started Guide](GETTING_STARTED.md)
-- [API Reference](API_REFERENCE.md)
+- [API Reference](STANDARD_LIBRARY.md)
 
 ---
 

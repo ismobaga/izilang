@@ -271,7 +271,7 @@ print(evens);  // Output: [2, 4]
 - Read about [Editor Setup](EDITOR_SETUP.md) to get syntax highlighting and IDE support
 - Explore example programs in the `examples/` directory
 - Learn about [Error Handling](ERRORS_TROUBLESHOOTING.md) and common issues
-- Visit the [Language Reference](LANGUAGE_REFERENCE.md) for comprehensive language documentation
+- Visit the [Language Specification](V03_SPECIFICATION.md) for comprehensive language documentation
 
 ## Getting Help
 

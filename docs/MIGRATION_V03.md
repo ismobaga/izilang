@@ -316,7 +316,7 @@ diff v02.txt v03.txt
 ### Resources
 
 - [v0.3 Specification](V03_SPECIFICATION.md)
-- [API Reference](API_REFERENCE.md)
+- [API Reference](STANDARD_LIBRARY.md)
 - [GitHub Issues](https://github.com/ismobaga/izilang/issues)
 
 ### Common Questions
