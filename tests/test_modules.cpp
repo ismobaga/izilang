@@ -747,3 +747,131 @@ TEST_CASE("Native module system - path module", "[modules][path]") {
         REQUIRE_NOTHROW(interp.interpret(program));
     }
 }
+
+TEST_CASE("Native module system - ui module", "[modules][ui]") {
+    SECTION("ui module can be imported") {
+        std::string source = R"(
+            import ui;
+        )";
+
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+
+        Interpreter interp(source);
+        REQUIRE_NOTHROW(interp.interpret(program));
+    }
+
+    SECTION("ui.color() creates a color value with r, g, b, a fields") {
+        std::string source = R"(
+            import * as assert from "std.assert";
+            import ui;
+            var c = ui.color(255, 128, 0);
+            assert.eq(c.r, 255);
+            assert.eq(c.g, 128);
+            assert.eq(c.b, 0);
+            assert.eq(c.a, 255);
+        )";
+
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+
+        Interpreter interp(source);
+        REQUIRE_NOTHROW(interp.interpret(program));
+    }
+
+    SECTION("ui.color() accepts optional alpha channel") {
+        std::string source = R"(
+            import * as assert from "std.assert";
+            import ui;
+            var c = ui.color(10, 20, 30, 128);
+            assert.eq(c.r, 10);
+            assert.eq(c.g, 20);
+            assert.eq(c.b, 30);
+            assert.eq(c.a, 128);
+        )";
+
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+
+        Interpreter interp(source);
+        REQUIRE_NOTHROW(interp.interpret(program));
+    }
+
+    SECTION("ui.key constants are accessible") {
+        std::string source = R"(
+            import ui;
+            var esc = ui.key.escape;
+            var sp = ui.key.space;
+            var a = ui.key.a;
+        )";
+
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+
+        Interpreter interp(source);
+        REQUIRE_NOTHROW(interp.interpret(program));
+    }
+
+    SECTION("ui.mouse constants are accessible") {
+        std::string source = R"(
+            import ui;
+            var left = ui.mouse.left;
+            var right = ui.mouse.right;
+            var middle = ui.mouse.middle;
+        )";
+
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+
+        Interpreter interp(source);
+        REQUIRE_NOTHROW(interp.interpret(program));
+    }
+
+    SECTION("ui module exposes expected functions") {
+        std::string source = R"(
+            import ui;
+            var cw = ui.createWindow;
+            var col = ui.color;
+            var kd = ui.keyDown;
+            var kp = ui.keyPressed;
+            var md = ui.mouseDown;
+            var mp = ui.mousePressed;
+            var gmp = ui.getMousePosition;
+            var gmw = ui.getMouseWheelMove;
+            var gcp = ui.getCharPressed;
+        )";
+
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+
+        Interpreter interp(source);
+        REQUIRE_NOTHROW(interp.interpret(program));
+    }
+
+    SECTION("ui.color() with wrong arg count throws") {
+        std::string source = R"(
+            import ui;
+            var c = ui.color(255, 128);
+        )";
+
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+
+        Interpreter interp(source);
+        REQUIRE_THROWS(interp.interpret(program));
+    }
+}

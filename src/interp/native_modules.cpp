@@ -1,5 +1,6 @@
 #include "native_modules.hpp"
 #include "native.hpp"
+#include "native_ui.hpp"
 #include "interpreter.hpp"
 #include <cmath>
 
@@ -205,7 +206,8 @@ bool isNativeModule(const std::string& path) {
            path == "std.json" || path == "http" || path == "std.http" || path == "log" || path == "std.log" ||
            path == "assert" || path == "std.assert" || path == "env" || path == "std.env" || path == "process" ||
            path == "std.process" || path == "path" || path == "std.path" || path == "fs" || path == "std.fs" ||
-           path == "time" || path == "std.time" || path == "regex" || path == "std.regex";
+           path == "time" || path == "std.time" || path == "regex" || path == "std.regex" ||
+           path == "ui" || path == "std.ui";
 }
 
 Value getNativeModule(const std::string& name, Interpreter& interp) {
@@ -237,6 +239,8 @@ Value getNativeModule(const std::string& name, Interpreter& interp) {
         return createRegexModule(interp);
     } else if (name == "http" || name == "std.http") {
         return createHttpModule(interp);
+    } else if (name == "ui" || name == "std.ui") {
+        return createUiModule(interp);
     }
 
     throw std::runtime_error("Unknown native module: " + name);

@@ -1,0 +1,41 @@
+// IZI ui module demo
+// Requires raylib: build with --raylib=<path> flag passed to premake5
+//
+// Usage:
+//   ./izi examples/demo_ui.iz
+
+import ui
+
+win = ui.createWindow("IZI + raylib", 900, 600)
+
+while win.isOpen() {
+  if ui.keyPressed(ui.key.escape) { win.close() }
+
+  win.beginDrawing()
+  win.clear(ui.color(20, 20, 24))
+
+  // Draw a filled rectangle that follows the mouse
+  pos = ui.getMousePosition()
+  mx = pos.x
+  my = pos.y
+  win.fillRect(mx - 50, my - 20, 100, 40, ui.color(80, 140, 255))
+
+  // Draw text
+  win.drawText(20, 20, "Hello IZI", 24, ui.color(240, 240, 240))
+  win.drawText(20, 54, "Move mouse, press ESC to quit", 16, ui.color(180, 180, 180))
+
+  // Draw a circle at a fixed position
+  win.drawCircle(450, 300, 40, ui.color(255, 80, 80))
+
+  // Draw an outlined rectangle
+  win.drawRect(200, 200, 150, 80, ui.color(80, 255, 80))
+
+  // Draw a line
+  win.drawLine(0, 0, 900, 600, 2, ui.color(255, 255, 0))
+
+  // Show FPS
+  fps = win.getFps()
+  win.drawText(20, 570, "FPS: " + str(fps), 14, ui.color(120, 120, 120))
+
+  win.endDrawing()
+}

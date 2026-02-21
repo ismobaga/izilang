@@ -6,6 +6,13 @@ cppdialect "c++20"
 
 outputdir = "%{cfg.buildcfg}"
 
+-- Optional raylib support: set RAYLIB_DIR environment variable or pass --raylib=path
+newoption {
+    trigger = "raylib",
+    value = "PATH",
+    description = "Path to raylib installation (enables HAVE_RAYLIB)"
+}
+
 project "izi"
 location "."
 kind "ConsoleApp"
@@ -18,6 +25,13 @@ objdir("obj/" .. outputdir .. "/%{prj.name}")
 files {"src/**.h", "src/**.hpp", "src/**.c", "src/**.cpp"}
 
 includedirs {"src"}
+
+if _OPTIONS["raylib"] then
+    defines {"HAVE_RAYLIB"}
+    includedirs {_OPTIONS["raylib"] .. "/include"}
+    libdirs {_OPTIONS["raylib"] .. "/lib"}
+    links {"raylib"}
+end
 
 filter "configurations:Debug"
 runtime "Debug"
@@ -32,6 +46,9 @@ systemversion "latest"
 
 filter "system:linux"
 links {"m", "dl", "pthread"}
+if _OPTIONS["raylib"] then
+    links {"GL", "X11"}
+end
 
 project "tests"
 location "tests"
@@ -56,6 +73,13 @@ includedirs {
     "tests"
 }
 
+if _OPTIONS["raylib"] then
+    defines {"HAVE_RAYLIB"}
+    includedirs {_OPTIONS["raylib"] .. "/include"}
+    libdirs {_OPTIONS["raylib"] .. "/lib"}
+    links {"raylib"}
+end
+
 filter "configurations:Debug"
 runtime "Debug"
 symbols "on"
@@ -69,3 +93,6 @@ systemversion "latest"
 
 filter "system:linux"
 links {"m", "dl", "pthread"}
+if _OPTIONS["raylib"] then
+    links {"GL", "X11"}
+end
