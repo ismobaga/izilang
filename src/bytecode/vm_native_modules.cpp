@@ -228,7 +228,8 @@ Value createVmRegexModule(VM& vm) {
 }
 
 bool isVmNativeModule(const std::string& path) {
-    return path == "math" || path == "string" || path == "array" || path == "io" || path == "json" ||
+    return path == "math" || path == "std.math" || path == "string" || path == "std.string" ||
+           path == "array" || path == "std.array" || path == "io" || path == "std.io" || path == "json" ||
            path == "std.json" || path == "http" || path == "log" || path == "std.log" || path == "assert" ||
            path == "std.assert" || path == "env" || path == "std.env" || path == "process" || path == "std.process" ||
            path == "path" || path == "std.path" || path == "fs" || path == "std.fs" || path == "time" ||
@@ -238,13 +239,13 @@ bool isVmNativeModule(const std::string& path) {
 }
 
 Value getVmNativeModule(const std::string& name, VM& vm) {
-    if (name == "math") {
+    if (name == "math" || name == "std.math") {
         return createVmMathModule(vm);
-    } else if (name == "string") {
+    } else if (name == "string" || name == "std.string") {
         return createVmStringModule(vm);
-    } else if (name == "array") {
+    } else if (name == "array" || name == "std.array") {
         return createVmArrayModule(vm);
-    } else if (name == "io") {
+    } else if (name == "io" || name == "std.io") {
         return createVmIOModule(vm);
     } else if (name == "log" || name == "std.log") {
         return createVmLogModule(vm);

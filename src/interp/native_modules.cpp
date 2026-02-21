@@ -233,7 +233,8 @@ Value createRegexModule(Interpreter& interp) {
 }
 
 bool isNativeModule(const std::string& path) {
-    return path == "math" || path == "string" || path == "array" || path == "io" || path == "json" ||
+    return path == "math" || path == "std.math" || path == "string" || path == "std.string" ||
+           path == "array" || path == "std.array" || path == "io" || path == "std.io" || path == "json" ||
            path == "std.json" || path == "http" || path == "std.http" || path == "log" || path == "std.log" ||
            path == "assert" || path == "std.assert" || path == "env" || path == "std.env" || path == "process" ||
            path == "std.process" || path == "path" || path == "std.path" || path == "fs" || path == "std.fs" ||
@@ -243,13 +244,13 @@ bool isNativeModule(const std::string& path) {
 }
 
 Value getNativeModule(const std::string& name, Interpreter& interp) {
-    if (name == "math") {
+    if (name == "math" || name == "std.math") {
         return createMathModule(interp);
-    } else if (name == "string") {
+    } else if (name == "string" || name == "std.string") {
         return createStringModule(interp);
-    } else if (name == "array") {
+    } else if (name == "array" || name == "std.array") {
         return createArrayModule(interp);
-    } else if (name == "io") {
+    } else if (name == "io" || name == "std.io") {
         return createIOModule(interp);
     } else if (name == "log" || name == "std.log") {
         return createLogModule(interp);
