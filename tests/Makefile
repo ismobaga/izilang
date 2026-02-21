@@ -71,6 +71,7 @@ endif
 GENERATED :=
 OBJECTS :=
 
+GENERATED += $(OBJDIR)/ast_printer.o
 GENERATED += $(OBJDIR)/chunk_serializer.o
 GENERATED += $(OBJDIR)/cli.o
 GENERATED += $(OBJDIR)/compiler.o
@@ -88,6 +89,7 @@ GENERATED += $(OBJDIR)/native_ui.o
 GENERATED += $(OBJDIR)/optimizer.o
 GENERATED += $(OBJDIR)/parser.o
 GENERATED += $(OBJDIR)/semantic_analyzer.o
+GENERATED += $(OBJDIR)/test_ast_printer.o
 GENERATED += $(OBJDIR)/test_async.o
 GENERATED += $(OBJDIR)/test_classes.o
 GENERATED += $(OBJDIR)/test_collections.o
@@ -124,6 +126,7 @@ GENERATED += $(OBJDIR)/vm_native.o
 GENERATED += $(OBJDIR)/vm_native_modules.o
 GENERATED += $(OBJDIR)/vm_native_ui.o
 GENERATED += $(OBJDIR)/vm_user_function.o
+OBJECTS += $(OBJDIR)/ast_printer.o
 OBJECTS += $(OBJDIR)/chunk_serializer.o
 OBJECTS += $(OBJDIR)/cli.o
 OBJECTS += $(OBJDIR)/compiler.o
@@ -141,6 +144,7 @@ OBJECTS += $(OBJDIR)/native_ui.o
 OBJECTS += $(OBJDIR)/optimizer.o
 OBJECTS += $(OBJDIR)/parser.o
 OBJECTS += $(OBJDIR)/semantic_analyzer.o
+OBJECTS += $(OBJDIR)/test_ast_printer.o
 OBJECTS += $(OBJDIR)/test_async.o
 OBJECTS += $(OBJDIR)/test_classes.o
 OBJECTS += $(OBJDIR)/test_collections.o
@@ -243,6 +247,9 @@ endif
 $(OBJDIR)/type.o: ../src/ast/type.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/ast_printer.o: ../src/ast/ast_printer.cpp
+	@echo "$(notdir $<)"
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/chunk_serializer.o: ../src/bytecode/chunk_serializer.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
@@ -316,6 +323,9 @@ $(OBJDIR)/lexer.o: ../src/parse/lexer.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/parser.o: ../src/parse/parser.cpp
+	@echo "$(notdir $<)"
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/test_ast_printer.o: test_ast_printer.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/test_async.o: test_async.cpp
