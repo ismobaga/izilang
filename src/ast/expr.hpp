@@ -188,11 +188,24 @@ using StmtPtr = std::unique_ptr<Stmt>;
 
 // Function expression for anonymous functions
 // e.g., fn(a, b) { return a + b; }
+// If isAsync is true, calling the function returns a pending Task instead of running immediately.
 struct FunctionExpr : Expr {
     std::vector<std::string> params;
     std::vector<StmtPtr> body;
+    bool isAsync = false;  // true when declared with 'async fn'; call returns a Task
 
-    FunctionExpr(std::vector<std::string> p, std::vector<StmtPtr> b) : params(std::move(p)), body(std::move(b)) {}
+    FunctionExpr(std::vector<std::string> p, std::vector<StmtPtr> b, bool async = false)
+        : params(std::move(p)), body(std::move(b)), isAsync(async) {}
+
+    Value accept(ExprVisitor& v) override { return v.visit(*this); }
+};
+
+// Await expression for awaiting async tasks
+// e.g., await someTask
+struct AwaitExpr : Expr {
+    ExprPtr value;
+
+    explicit AwaitExpr(ExprPtr v) : value(std::move(v)) {}
 
     Value accept(ExprVisitor& v) override { return v.visit(*this); }
 };

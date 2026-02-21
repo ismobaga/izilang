@@ -23,6 +23,12 @@ StmtPtr Parser::declaration() {
         StmtPtr stmt;
         if (match({TokenType::MACRO})) stmt = macroDeclaration();
         else if (match({TokenType::VAR})) stmt = varDeclaration();
+        else if (check(TokenType::ASYNC) && current + 1 < tokens.size() &&
+                 tokens[current + 1].type == TokenType::FN) {
+            advance();  // consume 'async'
+            advance();  // consume 'fn'
+            stmt = functionDeclaration(true);
+        }
         else if (match({TokenType::FN})) stmt = functionDeclaration();
         else if (match({TokenType::CLASS})) stmt = classDeclaration();
         else if (match({TokenType::IMPORT})) stmt = importStatement();
@@ -110,7 +116,7 @@ StmtPtr Parser::varDeclaration() {
     return std::make_unique<VarStmt>(std::string(name.lexeme), std::move(initializer), std::move(typeAnnotation));
 }
 
-StmtPtr Parser::functionDeclaration() {
+StmtPtr Parser::functionDeclaration(bool isAsync) {
     Token name = consume(TokenType::IDENTIFIER, "Expect function name.");
     consume(TokenType::LEFT_PAREN, "Expect '(' after function name.");
 
@@ -148,7 +154,7 @@ StmtPtr Parser::functionDeclaration() {
     }
 
     return std::make_unique<FunctionStmt>(std::string(name.lexeme), std::move(params), std::move(bodyStmts),
-                                          std::move(paramTypes), std::move(returnType));
+                                          std::move(paramTypes), std::move(returnType), isAsync);
 }
 
 StmtPtr Parser::importStatement() {
@@ -286,7 +292,14 @@ StmtPtr Parser::exportStatement() {
         return std::make_unique<ReExportStmt>(std::move(moduleName), std::move(names));
     }
 
-    // export fn name() { ... }
+    // export fn name() { ... }  or  export async fn name() { ... }
+    if (check(TokenType::ASYNC) && current + 1 < tokens.size() &&
+        tokens[current + 1].type == TokenType::FN) {
+        advance();  // consume 'async'
+        advance();  // consume 'fn'
+        auto funcDecl = functionDeclaration(true);
+        return std::make_unique<ExportStmt>(std::move(funcDecl));
+    }
     if (match({TokenType::FN})) {
         auto funcDecl = functionDeclaration();
         return std::make_unique<ExportStmt>(std::move(funcDecl));
@@ -936,6 +949,12 @@ ExprPtr Parser::unary() {
         return std::make_unique<UnaryExpr>(op, std::move(right));
     }
 
+    // await expression: await <expr>
+    if (match({TokenType::AWAIT})) {
+        ExprPtr value = unary();
+        return std::make_unique<AwaitExpr>(std::move(value));
+    }
+
     return call();
 }
 ExprPtr Parser::call() {
@@ -994,7 +1013,13 @@ ExprPtr Parser::primary() {
         return std::make_unique<LiteralExpr>(value);
     }
 
-    // Function expression: fn(params) { body }
+    // Function expression: fn(params) { body } or async fn(params) { body }
+    bool asyncFn = false;
+    if (check(TokenType::ASYNC) && current + 1 < tokens.size() &&
+        tokens[current + 1].type == TokenType::FN) {
+        advance();  // consume 'async'
+        asyncFn = true;
+    }
     if (match({TokenType::FN})) {
         consume(TokenType::LEFT_PAREN, "Expect '(' after 'fn' in function expression.");
 
@@ -1017,7 +1042,7 @@ ExprPtr Parser::primary() {
             bodyStmts = std::move(blockPtr->statements);
         }
 
-        return std::make_unique<FunctionExpr>(std::move(params), std::move(bodyStmts));
+        return std::make_unique<FunctionExpr>(std::move(params), std::move(bodyStmts), asyncFn);
     }
 
     // Match expression: match value { pattern => result, ... }

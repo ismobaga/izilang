@@ -1,0 +1,26 @@
+// Example: Async/Await in IziLang
+//
+// async fn declarations wrap their return value in a Task when called.
+// The `await` keyword runs the task and returns its result.
+
+async fn fetchData(url) {
+    // In a real implementation, this would perform I/O
+    // For this demo, we simulate a slow computation
+    return "data from " + url;
+}
+
+async fn processData(data) {
+    return "processed: " + data;
+}
+
+async fn main() {
+    var raw = await fetchData("https://api.example.com/data");
+    var result = await processData(raw);
+    print(result);
+}
+
+// Calling an async fn returns a pending Task
+var task = main();
+
+// Running the task with await
+await task;

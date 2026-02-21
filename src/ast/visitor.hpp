@@ -22,6 +22,7 @@ struct PropertyExpr;  // v0.3
 struct SetPropertyExpr;  // v0.3
 struct ThisExpr;  // v0.3
 struct SuperExpr;  // v0.3
+struct AwaitExpr;  // async/await
 
 struct ExprStmt;
 struct BlockStmt;
@@ -62,6 +63,7 @@ class ExprVisitor {
     virtual Value visit(SetPropertyExpr&) = 0;  // v0.3
     virtual Value visit(ThisExpr&) = 0;  // v0.3
     virtual Value visit(SuperExpr&) = 0;  // v0.3
+    virtual Value visit(AwaitExpr&) = 0;  // async/await
 };
 
 class StmtVisitor {

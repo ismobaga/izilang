@@ -70,6 +70,7 @@ class SemanticAnalyzer : public ExprVisitor, public StmtVisitor {
     Value visit(SetPropertyExpr& expr) override;
     Value visit(ThisExpr& expr) override;
     Value visit(SuperExpr& expr) override;
+    Value visit(AwaitExpr& expr) override;  // async/await
 
     // StmtVisitor interface
     void visit(ExprStmt& stmt) override;

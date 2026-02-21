@@ -104,6 +104,7 @@ class Interpreter : public ExprVisitor, public StmtVisitor {
     Value visit(SetPropertyExpr& expr) override;  // v0.3
     Value visit(ThisExpr& expr) override;  // v0.3
     Value visit(SuperExpr& expr) override;  // v0.3
+    Value visit(AwaitExpr& expr) override;  // async/await
 
     // StmVisitor
 

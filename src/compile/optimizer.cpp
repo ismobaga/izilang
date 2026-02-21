@@ -291,6 +291,12 @@ Value Optimizer::visit(SuperExpr& expr) {
     return Nil{};
 }
 
+Value Optimizer::visit(AwaitExpr& expr) {
+    expr.value = optimizeExpr(std::move(expr.value));
+    currentExpr = std::make_unique<AwaitExpr>(std::move(expr.value));
+    return Nil{};
+}
+
 // Statement visitors
 
 void Optimizer::visit(ExprStmt& stmt) {

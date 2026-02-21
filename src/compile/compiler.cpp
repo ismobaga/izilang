@@ -920,4 +920,17 @@ Value BytecodeCompiler::visit(SuperExpr& expr) {
     return Nil{};  // Return value not used in visitor pattern
 }
 
+Value BytecodeCompiler::visit(AwaitExpr& expr) {
+    // Compile await(expr) as a call to the native await() function registered
+    // in registerNativeFunctions() (see src/interp/native.cpp).
+    // Stack layout: push await_fn, push inner value, CALL 1
+    uint8_t awaitIndex = makeName("await");
+    emitOp(OpCode::GET_GLOBAL);
+    emitByte(awaitIndex);
+    expr.value->accept(*this);
+    emitOp(OpCode::CALL);
+    emitByte(1);
+    return Nil{};
+}
+
 }  // namespace izi

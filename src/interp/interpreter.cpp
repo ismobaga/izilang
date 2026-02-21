@@ -973,4 +973,33 @@ Value Interpreter::visit(SuperExpr& expr) {
     return method;
 }
 
+Value Interpreter::visit(AwaitExpr& expr) {
+    Value val = evaluate(*expr.value);
+
+    // If the value is a Task, run it and return its result
+    if (std::holds_alternative<std::shared_ptr<Task>>(val)) {
+        auto task = std::get<std::shared_ptr<Task>>(val);
+        if (task->state == Task::State::Running) {
+            throw std::runtime_error("await: task is already running (re-entrant await not allowed).");
+        }
+        if (task->state == Task::State::Pending) {
+            task->state = Task::State::Running;
+            try {
+                task->result = task->callable->call(*this, {});
+                task->state = Task::State::Completed;
+            } catch (const std::exception& e) {
+                task->state = Task::State::Failed;
+                task->errorMessage = e.what();
+            }
+        }
+        if (task->state == Task::State::Failed) {
+            throw std::runtime_error("Task failed: " + task->errorMessage);
+        }
+        return task->result;
+    }
+
+    // For non-task values, await is a no-op (consistent with JS semantics)
+    return val;
+}
+
 }  // namespace izi
