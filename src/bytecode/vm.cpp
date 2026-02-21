@@ -33,7 +33,7 @@ uint16_t VM::readShort() {
     return (high << 8) | low;
 }
 
-Value VM::run(const Chunk& entry) {
+Value VM::run(const Chunk& entry, const std::vector<Value>& initialLocals) {
     bool wasRunning = isRunning;
     isRunning = true;
 
@@ -47,11 +47,23 @@ Value VM::run(const Chunk& entry) {
 
     frames.push_back(mainFrame);
 
-    // Check for stack overflow
+    // Check for stack overflow (call depth)
     if (frames.size() > MAX_CALL_FRAMES) {
         isRunning = wasRunning;
         throw std::runtime_error("Stack overflow: Maximum call depth of " + std::to_string(MAX_CALL_FRAMES) +
                                  " exceeded.");
+    }
+
+    // Push initial local variable slots (function parameters) after the frame is set up
+    // so that GET_LOCAL 0 == stack[stackBase + 0] == first parameter.
+    // Guard against unreasonably large parameter lists that would exhaust the stack.
+    if (stack.size() + initialLocals.size() > STACK_MAX) {
+        frames.pop_back();
+        isRunning = wasRunning;
+        throw std::runtime_error("Stack overflow: too many local variables in function call.");
+    }
+    for (const auto& local : initialLocals) {
+        stack.push_back(local);
     }
 
     while (true) {
@@ -181,11 +193,14 @@ Value VM::run(const Chunk& entry) {
 
                     // Check if we've returned from the frame we pushed in this run() call
                     if (frames.size() == startingFrameCount) {
+                        // Clean up any local variable slots that were pushed for this frame
+                        stack.resize(finished.stackBase);
                         isRunning = wasRunning;
                         return result;
                     }
 
                     if (frames.empty()) {
+                        stack.resize(finished.stackBase);
                         isRunning = wasRunning;
                         return result;  // Exit the VM
                     }

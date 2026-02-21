@@ -59,6 +59,12 @@ class BytecodeCompiler : public ExprVisitor, public StmtVisitor {
     std::vector<std::string> importStack;  // Track files being imported (for circular detection)
     std::string currentFile;  // Current file being compiled
 
+    // Register allocation: local variable slots for function scopes.
+    // When non-empty, the compiler is inside a function body and uses
+    // GET_LOCAL / SET_LOCAL instead of GET_GLOBAL / SET_GLOBAL for
+    // variables whose names appear in this table.
+    std::vector<std::string> locals;  // locals[i] = name of local at slot i
+
     // Loop context for break/continue
     struct LoopContext {
         std::vector<size_t> breakJumps;
@@ -79,6 +85,10 @@ class BytecodeCompiler : public ExprVisitor, public StmtVisitor {
     size_t emitJump(OpCode op);
     void patchJump(size_t offset);
     void emitLoop(size_t loopStart);
+
+    // Register allocation helpers
+    // Returns the local slot index for the given name, or -1 if not a local.
+    int resolveLocal(const std::string& name) const;
 
     // Import helpers
     std::string normalizeModulePath(const std::string& path);
