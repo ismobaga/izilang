@@ -28,12 +28,12 @@ ifeq ($(origin AR), default)
   AR = ar
 endif
 RESCOMP = windres
-DEFINES +=
+DEFINES += -DHAVE_READLINE
 INCLUDES += -Isrc
 FORCE_INCLUDE +=
 ALL_CPPFLAGS += $(CPPFLAGS) -MD -MP $(DEFINES) $(INCLUDES)
 ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
-LIBS += -lm -ldl -lpthread
+LIBS += -lm -ldl -lpthread -lreadline
 LDDEPS +=
 LINKCMD = $(CXX) -o "$@" $(OBJECTS) $(RESOURCES) $(ALL_LDFLAGS) $(LIBS)
 define PREBUILDCMDS
