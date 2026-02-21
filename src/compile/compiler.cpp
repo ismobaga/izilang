@@ -396,9 +396,9 @@ void BytecodeCompiler::visit(ImportStmt& stmt) {
             for (const auto& name : stmt.namedImports) {
                 emitOp(OpCode::LOAD_MODULE);
                 emitByte(moduleNameIndex);
-                emitOp(OpCode::GET_PROPERTY);
-                emitByte(makeName(name));
                 uint8_t nameIdx = makeName(name);
+                emitOp(OpCode::GET_PROPERTY);
+                emitByte(nameIdx);
                 emitOp(OpCode::SET_GLOBAL);
                 emitByte(nameIdx);
                 emitOp(OpCode::POP);
