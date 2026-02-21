@@ -189,7 +189,8 @@ bool isVmNativeModule(const std::string& path) {
            path == "std.json" || path == "http" || path == "log" || path == "std.log" || path == "assert" ||
            path == "std.assert" || path == "env" || path == "std.env" || path == "process" || path == "std.process" ||
            path == "path" || path == "std.path" || path == "fs" || path == "std.fs" || path == "time" ||
-           path == "std.time" || path == "regex" || path == "std.regex";
+           path == "std.time" || path == "regex" || path == "std.regex" ||
+           path == "window" || path == "std.window";
 }
 
 Value getVmNativeModule(const std::string& name, VM& vm) {
@@ -222,6 +223,20 @@ Value getVmNativeModule(const std::string& name, VM& vm) {
     } else if (name == "http") {
         // Placeholder for future implementation
         auto module = std::make_shared<Map>();
+        return Value{module};
+    } else if (name == "window" || name == "std.window") {
+        auto module = std::make_shared<Map>();
+        module->entries["create"]     = Value{std::make_shared<VmNativeFunction>("create",     3,  vmNativeWindowCreate)};
+        module->entries["destroy"]    = Value{std::make_shared<VmNativeFunction>("destroy",    1,  vmNativeWindowDestroy)};
+        module->entries["clear"]      = Value{std::make_shared<VmNativeFunction>("clear",      -1, vmNativeWindowClear)};
+        module->entries["present"]    = Value{std::make_shared<VmNativeFunction>("present",    1,  vmNativeWindowPresent)};
+        module->entries["pollEvent"]  = Value{std::make_shared<VmNativeFunction>("pollEvent",  0,  vmNativeWindowPollEvent)};
+        module->entries["drawRect"]   = Value{std::make_shared<VmNativeFunction>("drawRect",   -1, vmNativeWindowDrawRect)};
+        module->entries["drawLine"]   = Value{std::make_shared<VmNativeFunction>("drawLine",   -1, vmNativeWindowDrawLine)};
+        module->entries["drawText"]   = Value{std::make_shared<VmNativeFunction>("drawText",   -1, vmNativeWindowDrawText)};
+        module->entries["setTitle"]   = Value{std::make_shared<VmNativeFunction>("setTitle",   2,  vmNativeWindowSetTitle)};
+        module->entries["getSize"]    = Value{std::make_shared<VmNativeFunction>("getSize",    1,  vmNativeWindowGetSize)};
+        module->entries["isOpen"]     = Value{std::make_shared<VmNativeFunction>("isOpen",     1,  vmNativeWindowIsOpen)};
         return Value{module};
     }
 

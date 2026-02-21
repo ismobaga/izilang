@@ -1,5 +1,6 @@
 #include "native.hpp"
 #include "interpreter.hpp"
+#include "common/window_backend.hpp"
 #include <chrono>
 #include <cmath>
 #include <algorithm>
@@ -2169,6 +2170,40 @@ auto nativeSleep(Interpreter& /*interp*/, const std::vector<Value>& arguments) -
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<long long>(ms)));
     return Nil{};
+}
+
+auto nativeWindowCreate(Interpreter& /*interp*/, const std::vector<Value>& args) -> Value {
+    return window_backend::windowCreate(args);
+}
+auto nativeWindowDestroy(Interpreter& /*interp*/, const std::vector<Value>& args) -> Value {
+    return window_backend::windowDestroy(args);
+}
+auto nativeWindowClear(Interpreter& /*interp*/, const std::vector<Value>& args) -> Value {
+    return window_backend::windowClear(args);
+}
+auto nativeWindowPresent(Interpreter& /*interp*/, const std::vector<Value>& args) -> Value {
+    return window_backend::windowPresent(args);
+}
+auto nativeWindowPollEvent(Interpreter& /*interp*/, const std::vector<Value>& args) -> Value {
+    return window_backend::windowPollEvent(args);
+}
+auto nativeWindowDrawRect(Interpreter& /*interp*/, const std::vector<Value>& args) -> Value {
+    return window_backend::windowDrawRect(args);
+}
+auto nativeWindowDrawLine(Interpreter& /*interp*/, const std::vector<Value>& args) -> Value {
+    return window_backend::windowDrawLine(args);
+}
+auto nativeWindowDrawText(Interpreter& /*interp*/, const std::vector<Value>& args) -> Value {
+    return window_backend::windowDrawText(args);
+}
+auto nativeWindowSetTitle(Interpreter& /*interp*/, const std::vector<Value>& args) -> Value {
+    return window_backend::windowSetTitle(args);
+}
+auto nativeWindowGetSize(Interpreter& /*interp*/, const std::vector<Value>& args) -> Value {
+    return window_backend::windowGetSize(args);
+}
+auto nativeWindowIsOpen(Interpreter& /*interp*/, const std::vector<Value>& args) -> Value {
+    return window_backend::windowIsOpen(args);
 }
 
 void registerNativeFunctions(Interpreter& interp) {

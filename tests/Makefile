@@ -33,7 +33,7 @@ INCLUDES += -I../src -I.
 FORCE_INCLUDE +=
 ALL_CPPFLAGS += $(CPPFLAGS) -MD -MP $(DEFINES) $(INCLUDES)
 ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
-LIBS += -lm -ldl -lpthread
+LIBS += -lm -ldl -lpthread -lSDL2 -lSDL2_ttf
 LDDEPS +=
 LINKCMD = $(CXX) -o "$@" $(OBJECTS) $(RESOURCES) $(ALL_LDFLAGS) $(LIBS)
 define PREBUILDCMDS
@@ -106,6 +106,7 @@ GENERATED += $(OBJDIR)/test_try_catch.o
 GENERATED += $(OBJDIR)/test_value.o
 GENERATED += $(OBJDIR)/test_vm_simple.o
 GENERATED += $(OBJDIR)/test_vm_stack.o
+GENERATED += $(OBJDIR)/test_window.o
 GENERATED += $(OBJDIR)/type.o
 GENERATED += $(OBJDIR)/user_function.o
 GENERATED += $(OBJDIR)/value.o
@@ -149,6 +150,7 @@ OBJECTS += $(OBJDIR)/test_try_catch.o
 OBJECTS += $(OBJDIR)/test_value.o
 OBJECTS += $(OBJDIR)/test_vm_simple.o
 OBJECTS += $(OBJDIR)/test_vm_stack.o
+OBJECTS += $(OBJDIR)/test_window.o
 OBJECTS += $(OBJDIR)/type.o
 OBJECTS += $(OBJDIR)/user_function.o
 OBJECTS += $(OBJDIR)/value.o
@@ -347,6 +349,9 @@ $(OBJDIR)/test_vm_simple.o: test_vm_simple.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/test_vm_stack.o: test_vm_stack.cpp
+	@echo "$(notdir $<)"
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/test_window.o: test_window.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 

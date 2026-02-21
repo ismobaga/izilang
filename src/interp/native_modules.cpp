@@ -168,6 +168,33 @@ Value createHttpModule(Interpreter& interp) {
     return Value{module};
 }
 
+Value createWindowModule(Interpreter& interp) {
+    auto module = std::make_shared<Map>();
+
+    // Window creation/destruction
+    module->entries["create"] = Value{std::make_shared<NativeFunction>("create", 3, nativeWindowCreate)};
+    module->entries["destroy"] = Value{std::make_shared<NativeFunction>("destroy", 1, nativeWindowDestroy)};
+
+    // Rendering
+    module->entries["clear"] = Value{std::make_shared<NativeFunction>("clear", -1, nativeWindowClear)};
+    module->entries["present"] = Value{std::make_shared<NativeFunction>("present", 1, nativeWindowPresent)};
+
+    // Drawing primitives
+    module->entries["drawRect"] = Value{std::make_shared<NativeFunction>("drawRect", -1, nativeWindowDrawRect)};
+    module->entries["drawLine"] = Value{std::make_shared<NativeFunction>("drawLine", -1, nativeWindowDrawLine)};
+    module->entries["drawText"] = Value{std::make_shared<NativeFunction>("drawText", -1, nativeWindowDrawText)};
+
+    // Event handling
+    module->entries["pollEvent"] = Value{std::make_shared<NativeFunction>("pollEvent", 0, nativeWindowPollEvent)};
+
+    // Window properties
+    module->entries["setTitle"] = Value{std::make_shared<NativeFunction>("setTitle", 2, nativeWindowSetTitle)};
+    module->entries["getSize"] = Value{std::make_shared<NativeFunction>("getSize", 1, nativeWindowGetSize)};
+    module->entries["isOpen"] = Value{std::make_shared<NativeFunction>("isOpen", 1, nativeWindowIsOpen)};
+
+    return Value{module};
+}
+
 Value createTimeModule(Interpreter& interp) {
     auto module = std::make_shared<Map>();
 
@@ -205,7 +232,8 @@ bool isNativeModule(const std::string& path) {
            path == "std.json" || path == "http" || path == "std.http" || path == "log" || path == "std.log" ||
            path == "assert" || path == "std.assert" || path == "env" || path == "std.env" || path == "process" ||
            path == "std.process" || path == "path" || path == "std.path" || path == "fs" || path == "std.fs" ||
-           path == "time" || path == "std.time" || path == "regex" || path == "std.regex";
+           path == "time" || path == "std.time" || path == "regex" || path == "std.regex" ||
+           path == "window" || path == "std.window";
 }
 
 Value getNativeModule(const std::string& name, Interpreter& interp) {
@@ -237,6 +265,8 @@ Value getNativeModule(const std::string& name, Interpreter& interp) {
         return createRegexModule(interp);
     } else if (name == "http" || name == "std.http") {
         return createHttpModule(interp);
+    } else if (name == "window" || name == "std.window") {
+        return createWindowModule(interp);
     }
 
     throw std::runtime_error("Unknown native module: " + name);

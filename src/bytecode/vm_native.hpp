@@ -105,6 +105,19 @@ Value vmNativeRegexMatch(VM& vm, const std::vector<Value>& arguments);
 Value vmNativeRegexReplace(VM& vm, const std::vector<Value>& arguments);
 Value vmNativeRegexTest(VM& vm, const std::vector<Value>& arguments);
 
+// std.window native functions
+Value vmNativeWindowCreate(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeWindowDestroy(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeWindowClear(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeWindowPresent(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeWindowPollEvent(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeWindowDrawRect(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeWindowDrawLine(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeWindowDrawText(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeWindowSetTitle(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeWindowGetSize(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeWindowIsOpen(VM& vm, const std::vector<Value>& arguments);
+
 void registerVmNatives(VM& vm);
 
 }  // namespace izi

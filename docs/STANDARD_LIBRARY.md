@@ -658,6 +658,102 @@ try {
 - DNS resolution failures or connection refused errors also throw a runtime error.
 - The `Connection: close` header is sent automatically; persistent connections are not supported.
 
+## window - GUI Window and Drawing
+
+A graphical window library built on [SDL2](https://www.libsdl.org/) that provides window management, 2-D drawing primitives, text rendering (via SDL2_ttf), and input event handling. This module enables GUI application development directly from IziLang scripts.
+
+**Requirements:** A working display environment (X11 or Wayland on Linux, native windowing on macOS/Windows) with the SDL2 and SDL2_ttf shared libraries installed.
+
+### Module Import
+
+```izilang
+import "window";
+var win = window.create("My App", 800, 600);
+```
+
+Or use the namespaced version:
+
+```izilang
+import * as window from "std.window";
+var win = window.create("My App", 800, 600);
+```
+
+Or import specific functions:
+```izilang
+import { create, destroy, clear, present, pollEvent } from "window";
+```
+
+### Functions
+
+**Window Lifecycle:**
+- `create(title: String, width: Number, height: Number): Number` — Create a new window and GPU renderer. Returns a numeric window handle used by all other functions.
+- `destroy(handle: Number)` — Destroy the window and free its resources.
+- `isOpen(handle: Number): Bool` — Returns `true` if the window is still open (not destroyed and no quit event received).
+
+**Rendering:**
+- `clear(handle: Number [, r: Number, g: Number, b: Number])` — Fill the renderer with a colour. Colour components are 0–255; defaults to black (`0, 0, 0`).
+- `present(handle: Number)` — Swap the back buffer to the screen, displaying everything drawn since the last `clear`.
+- `setTitle(handle: Number, title: String)` — Update the window title bar text.
+- `getSize(handle: Number): Map` — Returns `{ "width": Number, "height": Number }`.
+
+**Drawing Primitives:**
+- `drawRect(handle, x, y, w, h [, r, g, b [, a]])` — Draw a filled rectangle. Colour defaults to white; `a` (alpha) defaults to `255`.
+- `drawLine(handle, x1, y1, x2, y2 [, r, g, b [, a]])` — Draw a line between two points.
+- `drawText(handle, text, x, y [, r, g, b [, fontSize]])` — Render a UTF-8 text string. Requires a TrueType font to be available on the system; if none is found the call is silently ignored. `fontSize` defaults to `16`.
+
+**Event Handling:**
+- `pollEvent(): Map` — Retrieve the next pending event from the OS event queue without blocking. Returns a map whose `"type"` field identifies the event:
+
+| `type` | Additional fields | Description |
+|--------|-------------------|-------------|
+| `"none"` | — | No pending events |
+| `"quit"` | — | Window close button pressed or OS quit signal |
+| `"keydown"` / `"keyup"` | `key: String`, `scancode: Number`, `repeat: Bool` | Keyboard key event |
+| `"mousemove"` | `x, y, dx, dy: Number` | Mouse cursor moved |
+| `"mousedown"` / `"mouseup"` | `x, y: Number`, `button: Number` | Mouse button event (1=left, 2=middle, 3=right) |
+| `"mousewheel"` | `x, y: Number` | Mouse wheel scrolled |
+| `"other"` | — | Any other SDL event |
+
+### Example
+
+```izilang
+import * as window from "std.window";
+
+var win = window.create("My IziLang App", 640, 480);
+var running = true;
+
+while (running) {
+    var event = window.pollEvent();
+
+    if (event.type == "quit") {
+        running = false;
+    }
+    if (event.type == "keydown" && event.key == "Escape") {
+        running = false;
+    }
+
+    // Clear to a dark background
+    window.clear(win, 30, 30, 40);
+
+    // Draw UI elements
+    window.drawRect(win, 220, 200, 200, 50, 70, 130, 200, 255);
+    window.drawText(win, "Hello, World!", 245, 215, 255, 255, 255, 20);
+    window.drawLine(win, 0, 0, 640, 480, 255, 80, 80, 255);
+
+    window.present(win);
+}
+
+window.destroy(win);
+```
+
+### Notes
+
+- All drawing calls must happen between `clear` and `present`.
+- Window handles are plain numbers. Passing an invalid or already-destroyed handle throws a runtime error.
+- Text rendering requires a TrueType font on the host system (DejaVu, Liberation, FreeSans, or Ubuntu fonts are tried automatically). If no font is found, `drawText` is a no-op.
+- The library does **not** limit frame rate; use `std.time`'s `sleep` when targeting a specific FPS.
+- On headless systems without a display server, `window.create` will throw a runtime error (`SDL_CreateWindow failed`).
+
 ## Additional Built-in Functions
 
 These functions are available globally without imports:

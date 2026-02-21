@@ -21,6 +21,7 @@ Value createProcessModule(Interpreter& interp);
 Value createPathModule(Interpreter& interp);
 Value createFsModule(Interpreter& interp);
 Value createHttpModule(Interpreter& interp);
+Value createWindowModule(Interpreter& interp);
 
 // Check if a module path refers to a native module
 bool isNativeModule(const std::string& path);

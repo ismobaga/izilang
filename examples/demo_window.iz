@@ -1,0 +1,54 @@
+// demo_window.iz
+// Demonstrates the std.window module for GUI application development.
+// Requires a display environment (X11 or Wayland) to show graphics.
+
+import * as window from "std.window";
+
+// Create a 640x480 window
+var win = window.create("IziLang GUI Demo", 640, 480);
+
+var running = true;
+var frameCount = 0;
+
+while (running) {
+    // Handle events
+    var event = window.pollEvent();
+    var eventType = event.type;
+
+    if (eventType == "quit") {
+        running = false;
+    }
+
+    if (eventType == "keydown") {
+        if (event.key == "Escape") {
+            running = false;
+        }
+    }
+
+    // Clear the screen with a dark background
+    window.clear(win, 30, 30, 40);
+
+    // Draw a title bar area
+    window.drawRect(win, 0, 0, 640, 50, 50, 50, 80, 255);
+    window.drawText(win, "IziLang Window Demo", 20, 14, 220, 220, 255, 22);
+
+    // Draw a blue filled rectangle (button background)
+    window.drawRect(win, 220, 180, 200, 50, 70, 130, 200, 255);
+    window.drawText(win, "Hello, World!", 250, 195, 255, 255, 255, 18);
+
+    // Draw some lines forming a cross
+    window.drawLine(win, 50, 100, 50, 400, 200, 80, 80, 255);
+    window.drawLine(win, 50, 250, 590, 250, 200, 80, 80, 255);
+
+    // Draw a green rectangle in the lower right
+    window.drawRect(win, 450, 350, 140, 80, 80, 180, 80, 255);
+    window.drawText(win, "Press ESC to quit", 460, 382, 255, 255, 255, 14);
+
+    // Show the frame
+    window.present(win);
+
+    frameCount = frameCount + 1;
+}
+
+window.destroy(win);
+print("Demo exited after", frameCount, "frames.");

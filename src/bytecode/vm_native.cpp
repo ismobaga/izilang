@@ -1,4 +1,5 @@
 #include "vm_native.hpp"
+#include "common/window_backend.hpp"
 #include <chrono>
 #include <iostream>
 #include <cmath>
@@ -1364,6 +1365,40 @@ Value vmNativeRegexTest(VM& vm, const std::vector<Value>& arguments) {
     } catch (const std::regex_error& e) {
         throw std::runtime_error(std::string("Regex error: ") + e.what());
     }
+}
+
+Value vmNativeWindowCreate(VM& /*vm*/, const std::vector<Value>& args) {
+    return window_backend::windowCreate(args);
+}
+Value vmNativeWindowDestroy(VM& /*vm*/, const std::vector<Value>& args) {
+    return window_backend::windowDestroy(args);
+}
+Value vmNativeWindowClear(VM& /*vm*/, const std::vector<Value>& args) {
+    return window_backend::windowClear(args);
+}
+Value vmNativeWindowPresent(VM& /*vm*/, const std::vector<Value>& args) {
+    return window_backend::windowPresent(args);
+}
+Value vmNativeWindowPollEvent(VM& /*vm*/, const std::vector<Value>& args) {
+    return window_backend::windowPollEvent(args);
+}
+Value vmNativeWindowDrawRect(VM& /*vm*/, const std::vector<Value>& args) {
+    return window_backend::windowDrawRect(args);
+}
+Value vmNativeWindowDrawLine(VM& /*vm*/, const std::vector<Value>& args) {
+    return window_backend::windowDrawLine(args);
+}
+Value vmNativeWindowDrawText(VM& /*vm*/, const std::vector<Value>& args) {
+    return window_backend::windowDrawText(args);
+}
+Value vmNativeWindowSetTitle(VM& /*vm*/, const std::vector<Value>& args) {
+    return window_backend::windowSetTitle(args);
+}
+Value vmNativeWindowGetSize(VM& /*vm*/, const std::vector<Value>& args) {
+    return window_backend::windowGetSize(args);
+}
+Value vmNativeWindowIsOpen(VM& /*vm*/, const std::vector<Value>& args) {
+    return window_backend::windowIsOpen(args);
 }
 
 void registerVmNatives(VM& vm) {

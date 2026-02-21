@@ -31,7 +31,7 @@ filter "system:windows"
 systemversion "latest"
 
 filter "system:linux"
-links {"m", "dl", "pthread"}
+links {"m", "dl", "pthread", "SDL2", "SDL2_ttf"}
 
 project "tests"
 location "tests"
@@ -68,4 +68,4 @@ filter "system:windows"
 systemversion "latest"
 
 filter "system:linux"
-links {"m", "dl", "pthread"}
+links {"m", "dl", "pthread", "SDL2", "SDL2_ttf"}

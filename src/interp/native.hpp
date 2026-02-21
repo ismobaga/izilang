@@ -150,6 +150,19 @@ auto nativeHttpGet(Interpreter& interp, const std::vector<Value>& arguments) -> 
 auto nativeHttpPost(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 auto nativeHttpRequest(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 
+// std.window functions
+auto nativeWindowCreate(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeWindowDestroy(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeWindowClear(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeWindowPresent(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeWindowPollEvent(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeWindowDrawRect(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeWindowDrawLine(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeWindowDrawText(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeWindowSetTitle(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeWindowGetSize(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeWindowIsOpen(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+
 void registerNativeFunctions(Interpreter& interpreter);
 
 }  // namespace izi
