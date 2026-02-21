@@ -2,7 +2,41 @@
 #include "interpreter.hpp"
 
 namespace izi {
+
+// Helper: create a bound callable (function + captured args) as a Task
+class BoundCall : public Callable {
+   public:
+    BoundCall(std::shared_ptr<Callable> fn, std::vector<Value> args)
+        : fn_(std::move(fn)), args_(std::move(args)) {}
+
+    int arity() const override { return 0; }
+    std::string name() const override { return fn_->name(); }
+
+    Value call(Interpreter& interp, const std::vector<Value>& /*unused*/) override {
+        return fn_->call(interp, args_);
+    }
+
+   private:
+    std::shared_ptr<Callable> fn_;
+    std::vector<Value> args_;
+};
+
 Value UserFunction::call(Interpreter& interp, const std::vector<Value>& arguments) {
+    // If async, wrap in a pending Task instead of running immediately.
+    // We create a copy of this UserFunction with isAsync_=false so that when the
+    // Task is later executed (via await), it runs the body directly without
+    // wrapping again (which would cause infinite recursion / re-wrapping).
+    if (isAsync_) {
+        // We need a shared_ptr to this; create a copy wrapped as shared_ptr
+        // We capture arguments in a BoundCall so the task can be awaited later
+        auto self = std::make_shared<UserFunction>(*this);
+        self->isAsync_ = false;  // Run body directly when the task executes
+        auto task = std::make_shared<Task>();
+        task->callable = std::make_shared<BoundCall>(std::move(self), arguments);
+        task->state = Task::State::Pending;
+        return task;
+    }
+
     // Check call depth to prevent stack overflow
     if (interp.callDepth >= MAX_CALL_DEPTH) {
         throw std::runtime_error("Stack overflow: Maximum call depth of " + std::to_string(MAX_CALL_DEPTH) +

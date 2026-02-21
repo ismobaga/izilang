@@ -318,6 +318,8 @@ TokenType Lexer::keywordType(std::string_view text) {
     if (text == "finally") return TokenType::FINALLY;
     if (text == "throw") return TokenType::THROW;
     if (text == "match") return TokenType::MATCH;
+    if (text == "async") return TokenType::ASYNC;
+    if (text == "await") return TokenType::AWAIT;
     if (text == "macro") return TokenType::MACRO;
     if (text == "default") return TokenType::DEFAULT;
     return TokenType::IDENTIFIER;

@@ -63,7 +63,7 @@ class Parser {
     StmtPtr returnStatement();
     StmtPtr breakStatement();
     StmtPtr continueStatement();
-    StmtPtr functionDeclaration();
+    StmtPtr functionDeclaration(bool isAsync = false);
     StmtPtr importStatement();
     StmtPtr exportStatement();
     StmtPtr tryStatement();

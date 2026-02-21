@@ -291,6 +291,11 @@ Value SemanticAnalyzer::visit(SuperExpr& expr) {
     return Nil{};
 }
 
+Value SemanticAnalyzer::visit(AwaitExpr& expr) {
+    expr.value->accept(*this);
+    return Nil{};
+}
+
 // Statement visitors
 void SemanticAnalyzer::visit(ExprStmt& stmt) {
     stmt.expr->accept(*this);

@@ -77,6 +77,10 @@ enum class TokenType {
     UNDERSCORE,
     DEFAULT,
 
+    // Async/Await keywords
+    ASYNC,
+    AWAIT,
+
     // Macro keyword
     MACRO,
 
@@ -223,6 +227,10 @@ inline const char* tokenTypeToString(TokenType type) {
             return "MATCH";
         case TokenType::UNDERSCORE:
             return "UNDERSCORE";
+        case TokenType::ASYNC:
+            return "ASYNC";
+        case TokenType::AWAIT:
+            return "AWAIT";
         case TokenType::MACRO:
             return "MACRO";
         case TokenType::END_OF_FILE:

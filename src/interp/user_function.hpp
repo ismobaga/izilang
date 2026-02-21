@@ -20,11 +20,11 @@ class UserFunction : public Callable {
    public:
     // Constructor for function statements (named functions)
     UserFunction(FunctionStmt* declaration, Environment* closure)
-        : decl(declaration), closure(closure), funcExpr(nullptr) {}
+        : decl(declaration), closure(closure), funcExpr(nullptr), isAsync_(declaration->isAsync) {}
 
     // Constructor for function expressions (anonymous functions)
     UserFunction(FunctionExpr* expression, Environment* closure)
-        : decl(nullptr), closure(closure), funcExpr(expression) {}
+        : decl(nullptr), closure(closure), funcExpr(expression), isAsync_(expression->isAsync) {}
 
     std::string name() const override {
         if (decl) return decl->name.empty() ? "<anonymous>" : decl->name;
@@ -39,6 +39,8 @@ class UserFunction : public Callable {
 
     Value call(Interpreter& interp, const std::vector<Value>& arguments) override;
 
+    bool getIsAsync() const { return isAsync_; }
+
     // Get the closure (needed for binding methods)
     Environment* getClosure() const { return closure; }
 
@@ -50,6 +52,7 @@ class UserFunction : public Callable {
     FunctionStmt* decl;  // For named functions (from statements)
     FunctionExpr* funcExpr;  // For anonymous functions (from expressions)
     Environment* closure;  // Non-owning; owned by EnvironmentArena
+    bool isAsync_ = false;
 };
 
 }  // namespace izi

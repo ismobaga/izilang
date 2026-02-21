@@ -84,14 +84,16 @@ struct FunctionStmt : public Stmt {
     std::vector<StmtPtr> body;
     std::vector<TypePtr> paramTypes;  // Optional parameter type annotations (v0.3)
     TypePtr returnType;  // Optional return type annotation (v0.3)
+    bool isAsync = false;  // true when declared with 'async fn'; call returns a Task
 
     FunctionStmt(std::string n, std::vector<std::string> p, std::vector<StmtPtr> b, std::vector<TypePtr> pTypes = {},
-                 TypePtr rType = nullptr)
+                 TypePtr rType = nullptr, bool async = false)
         : name(std::move(n)),
           params(std::move(p)),
           body(std::move(b)),
           paramTypes(std::move(pTypes)),
-          returnType(std::move(rType)) {}
+          returnType(std::move(rType)),
+          isAsync(async) {}
 
     void accept(StmtVisitor& v) override { v.visit(*this); }
 };
