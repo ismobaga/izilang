@@ -13,6 +13,12 @@ newoption {
     description = "Path to raylib installation (enables HAVE_RAYLIB)"
 }
 
+-- Optional: disable GNU readline support (enabled by default on Linux/macOS)
+newoption {
+    trigger = "no-readline",
+    description = "Disable GNU readline support in the REPL"
+}
+
 project "izi"
 location "."
 kind "ConsoleApp"
@@ -33,6 +39,10 @@ if _OPTIONS["raylib"] then
     links {"raylib"}
 end
 
+if not _OPTIONS["no-readline"] then
+    defines {"HAVE_READLINE"}
+end
+
 filter "configurations:Debug"
 runtime "Debug"
 symbols "on"
@@ -48,6 +58,14 @@ filter "system:linux"
 links {"m", "dl", "pthread"}
 if _OPTIONS["raylib"] then
     links {"GL", "X11"}
+end
+if not _OPTIONS["no-readline"] then
+    links {"readline"}
+end
+
+filter "system:macosx"
+if not _OPTIONS["no-readline"] then
+    links {"readline"}
 end
 
 project "tests"

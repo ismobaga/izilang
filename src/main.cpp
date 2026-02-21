@@ -4,7 +4,21 @@
 #include <unordered_set>
 #include <filesystem>
 #include <vector>
+#include <deque>
 #include <chrono>
+#include <algorithm>
+#include <cctype>
+#include <cstring>
+
+#ifdef HAVE_READLINE
+#include <readline/readline.h>
+#include <readline/history.h>
+// readline defines RETURN as a macro (CTRL('M')) which conflicts with
+// IziLang's OpCode::RETURN enum value; undefine it after the include.
+#ifdef RETURN
+#undef RETURN
+#endif
+#endif
 
 #include "interp/interpreter.hpp"
 #include "parse/lexer.hpp"
@@ -94,7 +108,8 @@ void runCode(const std::string& src, bool useVM, bool debug, bool optimize, cons
 }
 
 void runReplLine(const std::string& src, Interpreter* interp, VM* vm, bool useVM, bool debug, bool optimize,
-                 const std::string& filename = "<repl>") {
+                 const std::string& filename = "<repl>",
+                 std::vector<StmtPtr>* outProgram = nullptr) {
     try {
         if (debug) {
             std::cout << "[DEBUG] Lexing and parsing...\n";
@@ -128,6 +143,14 @@ void runReplLine(const std::string& src, Interpreter* interp, VM* vm, bool useVM
             Chunk chunk = compiler.compile(program);
             Value result = vm->run(chunk);
         }
+
+        // Hand ownership of the AST back to the caller so that raw pointers
+        // stored inside UserFunction (e.g. FunctionStmt*) remain valid.
+        if (outProgram) {
+            for (auto& stmt : program) {
+                outProgram->push_back(std::move(stmt));
+            }
+        }
     } catch (const LexerError& e) {
         ErrorReporter reporter(src);
         std::cerr << "In file '" << filename << "':\n";
@@ -158,6 +181,202 @@ void runReplLine(const std::string& src, Interpreter* interp, VM* vm, bool useVM
     }
 }
 
+// ---------------------------------------------------------------------------
+// REPL helpers: syntax highlighting and readline integration
+// ---------------------------------------------------------------------------
+
+// IziLang keywords for syntax highlighting and auto-completion
+static const std::vector<std::string> REPL_KEYWORDS = {
+    "fn", "var", "if", "else", "while", "for", "return", "break", "continue",
+    "class", "true", "false", "nil", "and", "or", "import", "export", "from",
+    "as", "try", "catch", "finally", "throw", "match", "super", "this",
+    "extends", "print"};
+
+// Apply ANSI syntax highlighting to a source string
+static std::string syntaxHighlight(const std::string& input) {
+    if (input.empty()) return input;
+
+    // ANSI color codes
+    static const char* RESET    = "\033[0m";
+    static const char* KEYWORD  = "\033[1;34m";  // Bold blue
+    static const char* STRING   = "\033[0;32m";  // Green
+    static const char* NUMBER   = "\033[0;33m";  // Yellow
+    static const char* COMMENT  = "\033[0;90m";  // Dark gray
+    static const char* OPERATOR = "\033[0;36m";  // Cyan
+
+    std::string result;
+    result.reserve(input.size() * 3);
+
+    size_t i = 0;
+    while (i < input.size()) {
+        char c = input[i];
+
+        // Double-quoted string literals
+        if (c == '"') {
+            result += STRING;
+            result += c;
+            ++i;
+            while (i < input.size()) {
+                char sc = input[i];
+                result += sc;
+                if (sc == '\\' && i + 1 < input.size()) {
+                    ++i;
+                    result += input[i];  // escaped character
+                } else if (sc == '"') {
+                    break;
+                }
+                ++i;
+            }
+            result += RESET;
+            ++i;
+            continue;
+        }
+
+        // Single-line comments (//)
+        if (c == '/' && i + 1 < input.size() && input[i + 1] == '/') {
+            result += COMMENT;
+            while (i < input.size() && input[i] != '\n') {
+                result += input[i++];
+            }
+            result += RESET;
+            continue;
+        }
+
+        // Numeric literals
+        if (std::isdigit(static_cast<unsigned char>(c))) {
+            result += NUMBER;
+            while (i < input.size() &&
+                   (std::isdigit(static_cast<unsigned char>(input[i])) || input[i] == '.')) {
+                result += input[i++];
+            }
+            result += RESET;
+            continue;
+        }
+
+        // Identifiers and keywords
+        if (std::isalpha(static_cast<unsigned char>(c)) || c == '_') {
+            std::string word;
+            while (i < input.size() &&
+                   (std::isalnum(static_cast<unsigned char>(input[i])) || input[i] == '_')) {
+                word += input[i++];
+            }
+            bool isKw = std::find(REPL_KEYWORDS.begin(), REPL_KEYWORDS.end(), word) !=
+                        REPL_KEYWORDS.end();
+            if (isKw) {
+                result += KEYWORD;
+                result += word;
+                result += RESET;
+            } else {
+                result += word;
+            }
+            continue;
+        }
+
+        // Operators
+        if (c == '+' || c == '-' || c == '*' || c == '/' || c == '=' ||
+            c == '<' || c == '>' || c == '!' || c == '%' || c == '&' || c == '|') {
+            result += OPERATOR;
+            result += c;
+            result += RESET;
+            ++i;
+            continue;
+        }
+
+        result += c;
+        ++i;
+    }
+    return result;
+}
+
+#ifdef HAVE_READLINE
+// Global interpreter/VM pointers used by readline callbacks
+static Interpreter* g_replInterp = nullptr;
+static VM*          g_replVm     = nullptr;
+static bool         g_replUseVM  = false;
+
+// readline redisplay callback: redraws the current input line with syntax highlighting
+static void replHighlightRedisplay() {
+    if (!rl_line_buffer) {
+        rl_redisplay();
+        return;
+    }
+
+    std::string input(rl_line_buffer, static_cast<size_t>(rl_end));
+    std::string highlighted = syntaxHighlight(input);
+
+    // Move to start of line and clear it, then redraw with colors
+    fputs("\r\033[K", stdout);
+    if (rl_display_prompt) fputs(rl_display_prompt, stdout);
+    fputs(highlighted.c_str(), stdout);
+
+    // Reposition cursor: move left by the number of chars after the cursor
+    int charsAfter = rl_end - rl_point;
+    if (charsAfter > 0) {
+        printf("\033[%dD", charsAfter);
+    }
+    fflush(stdout);
+}
+
+// readline completion generator: yields matching keywords and variable names
+static char* replCompletionGenerator(const char* text, int state) {
+    static std::vector<std::string> matches;
+    static size_t matchIndex = 0;
+
+    try {
+        if (state == 0) {
+            matches.clear();
+            matchIndex = 0;
+            std::string prefix(text);
+
+            // Language keywords
+            for (const auto& kw : REPL_KEYWORDS) {
+                if (kw.size() >= prefix.size() &&
+                    kw.compare(0, prefix.size(), prefix) == 0) {
+                    matches.push_back(kw);
+                }
+            }
+
+            // User-defined variables from the current session
+            if (!g_replUseVM && g_replInterp) {
+                auto globals = g_replInterp->getGlobals();
+                if (globals) {
+                    for (const auto& [name, _] : globals->getAll()) {
+                        if (name.size() >= prefix.size() &&
+                            name.compare(0, prefix.size(), prefix) == 0) {
+                            matches.push_back(name);
+                        }
+                    }
+                }
+            } else if (g_replUseVM && g_replVm) {
+                for (const auto& [name, _] : g_replVm->getGlobals()) {
+                    if (name.size() >= prefix.size() &&
+                        name.compare(0, prefix.size(), prefix) == 0) {
+                        matches.push_back(name);
+                    }
+                }
+            }
+
+            // Sort and deduplicate
+            std::sort(matches.begin(), matches.end());
+            matches.erase(std::unique(matches.begin(), matches.end()), matches.end());
+        }
+
+        if (matchIndex < matches.size()) {
+            return strdup(matches[matchIndex++].c_str());
+        }
+    } catch (...) {
+        // Exceptions must not propagate out of a C callback
+    }
+    return nullptr;
+}
+
+// readline attempted-completion callback
+static char** replCompletion(const char* text, int /*start*/, int /*end*/) {
+    rl_attempted_completion_over = 1;  // suppress default filename completion
+    return rl_completion_matches(text, replCompletionGenerator);
+}
+#endif  // HAVE_READLINE
+
 void runRepl(bool useVM, bool debug) {
     std::cout << IZILANG_VERSION << " REPL\n";
     std::cout << "Type 'exit()' or press Ctrl+D to quit\n";
@@ -178,12 +397,48 @@ void runRepl(bool useVM, bool debug) {
         registerVmNatives(*vm);
     }
 
+#ifdef HAVE_READLINE
+    // Register readline callbacks for completion and syntax highlighting
+    g_replInterp = interp;
+    g_replVm     = vm;
+    g_replUseVM  = useVM;
+    rl_attempted_completion_function = replCompletion;
+    rl_redisplay_function            = replHighlightRedisplay;
+    // Enable history
+    using_history();
+#endif
+
     std::string line;
     std::string multilineBuffer;
     bool inMultiline = false;
+    int openBraces = 0;  // track open { depth for multi-line blocks
+    // Keep all source strings and parsed AST nodes alive for the REPL session:
+    //  - Token::lexeme is a string_view into the source string, so sources must outlive tokens.
+    //  - UserFunction stores a raw FunctionStmt*, so AST nodes must outlive the interpreter.
+    std::deque<std::string> sourceHistory;
+    std::vector<StmtPtr> astAccumulator;
 
     while (true) {
-        // Show appropriate prompt
+        const char* prompt = inMultiline ? "... " : "> ";
+
+#ifdef HAVE_READLINE
+        char* rawLine = readline(prompt);
+        if (!rawLine) {
+            // EOF (Ctrl+D)
+            std::cout << "\n";
+            break;
+        }
+        line = rawLine;
+        free(rawLine);
+        // Add non-empty, non-duplicate lines to history
+        if (!line.empty()) {
+            HIST_ENTRY* prev = history_length > 0 ? history_get(history_length) : nullptr;
+            if (!prev || line != prev->line) {
+                add_history(line.c_str());
+            }
+        }
+#else
+        // Fallback when readline is not available
         if (inMultiline) {
             std::cout << "... ";
         } else {
@@ -196,6 +451,7 @@ void runRepl(bool useVM, bool debug) {
             std::cout << "\n";
             break;
         }
+#endif
 
         // Check for REPL special commands (only when not in multiline)
         if (!inMultiline && line.length() > 0 && line[0] == ':') {
@@ -283,28 +539,37 @@ void runRepl(bool useVM, bool debug) {
             break;
         }
 
-        // Handle multi-line input
-        // Simple heuristic: if line ends with { or (, expect more input
-        // Note: This is a simple approach and may incorrectly trigger for
-        // strings/comments containing these characters. A more robust solution
-        // would parse the line to check if the brace/paren is in code context.
-        bool lineEndsWithBrace = !line.empty() && (line.back() == '{' || line.back() == '(');
+        // Handle multi-line input using brace depth tracking.
+        // Count unquoted, non-commented { and } to determine when a block is complete.
+        bool inStr = false;
+        char strChar = 0;
+        for (size_t ci = 0; ci < line.size(); ++ci) {
+            char c = line[ci];
+            if (inStr) {
+                if (c == '\\' && ci + 1 < line.size()) { ++ci; continue; }
+                if (c == strChar) inStr = false;
+            } else if (c == '"' || c == '\'') {
+                inStr = true; strChar = c;
+            } else if (c == '/' && ci + 1 < line.size() && line[ci + 1] == '/') {
+                break;  // rest of line is a comment; ignore braces in it
+            } else if (c == '{') {
+                ++openBraces;
+            } else if (c == '}') {
+                --openBraces;
+            }
+        }
 
-        if (lineEndsWithBrace || inMultiline) {
-            if (!inMultiline) {
-                multilineBuffer = line + "\n";
-                inMultiline = true;
+        if (openBraces > 0 || inMultiline) {
+            multilineBuffer += line + "\n";
+            inMultiline = true;
+            if (openBraces <= 0) {
+                // Braces are balanced — execute the accumulated buffer
+                openBraces = 0;
+                inMultiline = false;
+                line = multilineBuffer;
+                multilineBuffer.clear();
             } else {
-                multilineBuffer += line + "\n";
-                // Check if we should exit multiline mode
-                // Simple heuristic: if line ends with } or ), try to execute
-                if (!line.empty() && (line.back() == '}' || line.back() == ')')) {
-                    inMultiline = false;
-                    line = multilineBuffer;
-                    multilineBuffer.clear();
-                } else {
-                    continue;
-                }
+                continue;
             }
         }
 
@@ -314,8 +579,14 @@ void runRepl(bool useVM, bool debug) {
         }
 
         try {
-            // Use the persistent interpreter/VM for the REPL via runReplLine()
-            runReplLine(line, interp, vm, useVM, debug, true, "<repl>");
+            // Store the source in the history so its backing memory stays alive
+            // for as long as the interpreter (Token lexemes are string_views into it).
+            sourceHistory.push_back(line);
+            const std::string& stableSrc = sourceHistory.back();
+            // Use the persistent interpreter/VM for the REPL via runReplLine().
+            // Pass astAccumulator so that parsed AST nodes (e.g. FunctionStmt)
+            // outlive this call and remain valid via UserFunction raw pointers.
+            runReplLine(stableSrc, interp, vm, useVM, debug, true, "<repl>", &astAccumulator);
         } catch (const std::exception& e) {
             // Most errors are already handled by runReplLine
             // This catch is for unexpected std::exception types
@@ -331,6 +602,10 @@ void runRepl(bool useVM, bool debug) {
     }
 
     // Cleanup
+#ifdef HAVE_READLINE
+    g_replInterp = nullptr;
+    g_replVm     = nullptr;
+#endif
     if (interp) delete interp;
     if (vm) delete vm;
 }
