@@ -304,7 +304,7 @@ Value ChunkSerializer::readValue(std::ifstream& in) {
                 }
             }
 
-            return std::make_shared<VmClass>(className, fieldNames, fieldDefaults, methods);
+            return std::make_shared<VmClass>(className, nullptr, fieldNames, fieldDefaults, methods);
         }
 
         case ValueType::ERROR: {

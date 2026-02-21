@@ -73,6 +73,7 @@ OBJECTS :=
 
 GENERATED += $(OBJDIR)/ast_printer.o
 GENERATED += $(OBJDIR)/chunk_serializer.o
+GENERATED += $(OBJDIR)/cli.o
 GENERATED += $(OBJDIR)/compiler.o
 GENERATED += $(OBJDIR)/diagnostics.o
 GENERATED += $(OBJDIR)/error_reporter.o
@@ -100,6 +101,7 @@ GENERATED += $(OBJDIR)/vm_native_ui.o
 GENERATED += $(OBJDIR)/vm_user_function.o
 OBJECTS += $(OBJDIR)/ast_printer.o
 OBJECTS += $(OBJDIR)/chunk_serializer.o
+OBJECTS += $(OBJDIR)/cli.o
 OBJECTS += $(OBJDIR)/compiler.o
 OBJECTS += $(OBJDIR)/diagnostics.o
 OBJECTS += $(OBJDIR)/error_reporter.o
@@ -194,6 +196,9 @@ $(OBJDIR)/type.o: src/ast/type.cpp
 $(OBJDIR)/ast_printer.o: src/ast/ast_printer.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+	@echo "$(notdir $<)"
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/chunk_serializer.o: src/bytecode/chunk_serializer.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/vm.o: src/bytecode/vm.cpp
