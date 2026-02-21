@@ -22,6 +22,21 @@ TEST_CASE("Native module system - math module", "[modules][math]") {
         REQUIRE_NOTHROW(interp.interpret(program));
     }
 
+    SECTION("Identifier import syntax (import math) creates module object") {
+        std::string source = R"(
+            import math;
+            var result = math.pow(2, 2);
+        )";
+
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+
+        Interpreter interp(source);
+        REQUIRE_NOTHROW(interp.interpret(program));
+    }
+
     SECTION("Named imports work") {
         std::string source = R"(
             import { sqrt, pi } from "math";

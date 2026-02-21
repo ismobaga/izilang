@@ -185,6 +185,13 @@ StmtPtr Parser::importStatement() {
         return std::make_unique<ImportStmt>(std::move(moduleName), std::move(namedImports));
     }
 
+    // Identifier import: import math;  (syntactic sugar for import "math";)
+    if (check(TokenType::IDENTIFIER)) {
+        Token nameToken = advance();
+        consumeSemicolonIfNeeded();
+        return std::make_unique<ImportStmt>(std::string(nameToken.lexeme));
+    }
+
     // Simple import: import "module.iz";
     Token moduleToken = consume(TokenType::STRING, "Expect module name as string.");
     consumeSemicolonIfNeeded();
