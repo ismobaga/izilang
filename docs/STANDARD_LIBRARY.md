@@ -796,6 +796,57 @@ make config=debug
 
 On Linux, the raylib build also links `GL` and `X11` automatically.
 
+## ipc - Inter-Process Communication
+
+Named-pipe (FIFO) based IPC primitives for passing messages between processes.
+See [docs/IPC.md](IPC.md) for the complete API reference.
+
+> **Platform Note**: The `std.ipc` module is supported on **Linux** and **macOS** only. Windows is not currently supported.
+
+### Module Import
+
+```izilang
+import * as ipc from "std.ipc";
+```
+
+Or import specific functions:
+```izilang
+import { createPipe, openRead, openWrite, send, recv, tryRecv, close, removePipe } from "std.ipc";
+```
+
+### Functions
+
+- `createPipe(name)` — Create a named pipe (FIFO) at `/tmp/izi_ipc_<name>`. Returns `true`.
+- `openRead(name)` — Open a pipe for reading. Returns a handle (number).
+- `openWrite(name)` — Open a pipe for writing (requires an active reader). Returns a handle (number).
+- `send(handle, message)` — Send a string message through a write handle. Returns `true`.
+- `recv(handle)` — **Blocking** receive from a read handle. Returns the message string.
+- `tryRecv(handle)` — **Non-blocking** receive. Returns the message string, or `nil` if none is ready.
+- `close(handle)` — Close an IPC handle and release resources.
+- `removePipe(name)` — Remove the named pipe from the filesystem.
+
+### Example
+
+```izilang
+import * as ipc from "std.ipc";
+
+var ch = "my_channel";
+ipc.createPipe(ch);
+
+var reader = ipc.openRead(ch);
+var writer = ipc.openWrite(ch);
+
+ipc.send(writer, "Hello, IPC!");
+var msg = ipc.recv(reader);
+print(msg);  // "Hello, IPC!"
+
+ipc.close(writer);
+ipc.close(reader);
+ipc.removePipe(ch);
+```
+
+See also: [`examples/demo_ipc.iz`](../examples/demo_ipc.iz) and [`docs/IPC.md`](IPC.md).
+
 ## Additional Built-in Functions
 
 These functions are available globally without imports:
