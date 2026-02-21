@@ -220,6 +220,23 @@ TEST_CASE("Native module system - math module", "[modules][math]") {
         Interpreter interp(source);
         REQUIRE_NOTHROW(interp.interpret(program));
     }
+
+    SECTION("std.math import syntax works") {
+        std::string source = R"(
+            import * as math from "std.math";
+            var pi_val = math.pi;
+            var sqrt_val = math.sqrt(16);
+            var pow_val = math.pow(2, 3);
+        )";
+
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+
+        Interpreter interp(source);
+        REQUIRE_NOTHROW(interp.interpret(program));
+    }
 }
 
 TEST_CASE("Native module system - string module", "[modules][string]") {
@@ -228,6 +245,22 @@ TEST_CASE("Native module system - string module", "[modules][string]") {
             import "string";
             var upper = string.toUpper("hello");
             var parts = string.split("a,b,c", ",");
+        )";
+
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+
+        Interpreter interp(source);
+        REQUIRE_NOTHROW(interp.interpret(program));
+    }
+
+    SECTION("std.string import syntax works") {
+        std::string source = R"(
+            import * as str from "std.string";
+            var upper = str.toUpper("hello");
+            var parts = str.split("a,b,c", ",");
         )";
 
         Lexer lexer(source);
@@ -257,6 +290,23 @@ TEST_CASE("Native module system - array module", "[modules][array]") {
         Interpreter interp(source);
         REQUIRE_NOTHROW(interp.interpret(program));
     }
+
+    SECTION("std.array import syntax works") {
+        std::string source = R"(
+            import * as arr from "std.array";
+            var nums = [1, 2, 3, 4, 5];
+            fn double(x) { return x * 2; }
+            var doubled = arr.map(nums, double);
+        )";
+
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+
+        Interpreter interp(source);
+        REQUIRE_NOTHROW(interp.interpret(program));
+    }
 }
 
 TEST_CASE("Native module system - io module", "[modules][io]") {
@@ -265,6 +315,22 @@ TEST_CASE("Native module system - io module", "[modules][io]") {
             import "io";
             io.writeFile("/tmp/test_modules.txt", "test");
             var exists = io.exists("/tmp/test_modules.txt");
+        )";
+
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+
+        Interpreter interp(source);
+        REQUIRE_NOTHROW(interp.interpret(program));
+    }
+
+    SECTION("std.io import syntax works") {
+        std::string source = R"(
+            import * as io from "std.io";
+            io.writeFile("/tmp/test_std_io.txt", "hello");
+            var exists = io.exists("/tmp/test_std_io.txt");
         )";
 
         Lexer lexer(source);
