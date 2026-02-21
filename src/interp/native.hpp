@@ -150,6 +150,16 @@ auto nativeHttpGet(Interpreter& interp, const std::vector<Value>& arguments) -> 
 auto nativeHttpPost(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 auto nativeHttpRequest(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 
+// std.ipc functions
+auto nativeIpcCreatePipe(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeIpcOpenRead(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeIpcOpenWrite(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeIpcSend(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeIpcRecv(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeIpcTryRecv(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeIpcClose(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeIpcRemovePipe(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+
 void registerNativeFunctions(Interpreter& interpreter);
 
 }  // namespace izi

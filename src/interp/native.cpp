@@ -8,6 +8,7 @@
 #include <iomanip>
 #include <cctype>
 #include <cstdlib>
+#include <cstring>
 #include <sys/stat.h>
 #include <thread>
 #include <regex>
@@ -16,6 +17,12 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#ifndef _WIN32
+#include <fcntl.h>
+#include <sys/types.h>
+#endif
+#include <mutex>
+#include <unordered_map>
 
 namespace izi {
 auto nativePrint(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
@@ -2156,6 +2163,261 @@ auto nativeAwait(Interpreter& interp, const std::vector<Value>& arguments) -> Va
         throw std::runtime_error("Task failed: " + task->errorMessage);
     }
     return task->result;
+}
+
+// ============ std.ipc functions ============
+
+namespace {
+
+struct IpcHandle {
+    int fd;
+    bool is_read;
+    std::string path;
+};
+
+static std::mutex ipcMutex;
+static std::unordered_map<int, IpcHandle> ipcHandleMap;
+static int nextIpcHandle = 1;
+
+static std::string ipcPipePath(const std::string& name) {
+    return "/tmp/izi_ipc_" + name;
+}
+
+static int ipcAllocHandle(int fd, bool is_read, const std::string& path) {
+    std::lock_guard<std::mutex> lock(ipcMutex);
+    int id = nextIpcHandle++;
+    ipcHandleMap[id] = {fd, is_read, path};
+    return id;
+}
+
+static IpcHandle ipcGetHandle(int id) {
+    std::lock_guard<std::mutex> lock(ipcMutex);
+    auto it = ipcHandleMap.find(id);
+    if (it == ipcHandleMap.end()) {
+        throw std::runtime_error("Invalid IPC handle: " + std::to_string(id));
+    }
+    return it->second;
+}
+
+static void ipcFreeHandle(int id) {
+    std::lock_guard<std::mutex> lock(ipcMutex);
+    ipcHandleMap.erase(id);
+}
+
+}  // anonymous namespace
+
+// ipc.createPipe(name) - creates a named pipe (FIFO) for IPC
+auto nativeIpcCreatePipe(Interpreter& /*interp*/, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 1 || !std::holds_alternative<std::string>(arguments[0])) {
+        throw std::runtime_error("ipc.createPipe() takes exactly one string argument (pipe name).");
+    }
+#ifdef _WIN32
+    throw std::runtime_error("ipc.createPipe() is not supported on Windows.");
+#else
+    const std::string& name = std::get<std::string>(arguments[0]);
+    std::string path = ipcPipePath(name);
+    if (mkfifo(path.c_str(), 0600) != 0 && errno != EEXIST) {
+        throw std::runtime_error("ipc.createPipe() failed to create pipe '" + name + "': " + strerror(errno));
+    }
+    return true;
+#endif
+}
+
+// ipc.openRead(name) - opens a named pipe for reading; returns a handle number
+auto nativeIpcOpenRead(Interpreter& /*interp*/, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 1 || !std::holds_alternative<std::string>(arguments[0])) {
+        throw std::runtime_error("ipc.openRead() takes exactly one string argument (pipe name).");
+    }
+#ifdef _WIN32
+    throw std::runtime_error("ipc.openRead() is not supported on Windows.");
+#else
+    const std::string& name = std::get<std::string>(arguments[0]);
+    std::string path = ipcPipePath(name);
+    int fd = open(path.c_str(), O_RDONLY | O_NONBLOCK);
+    if (fd < 0) {
+        throw std::runtime_error("ipc.openRead() failed to open pipe '" + name + "': " + strerror(errno));
+    }
+    // Remove O_NONBLOCK for blocking reads by default
+    int flags = fcntl(fd, F_GETFL, 0);
+    fcntl(fd, F_SETFL, flags & ~O_NONBLOCK);
+    int handle = ipcAllocHandle(fd, true, path);
+    return static_cast<double>(handle);
+#endif
+}
+
+// ipc.openWrite(name) - opens a named pipe for writing; returns a handle number
+auto nativeIpcOpenWrite(Interpreter& /*interp*/, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 1 || !std::holds_alternative<std::string>(arguments[0])) {
+        throw std::runtime_error("ipc.openWrite() takes exactly one string argument (pipe name).");
+    }
+#ifdef _WIN32
+    throw std::runtime_error("ipc.openWrite() is not supported on Windows.");
+#else
+    const std::string& name = std::get<std::string>(arguments[0]);
+    std::string path = ipcPipePath(name);
+    int fd = open(path.c_str(), O_WRONLY | O_NONBLOCK);
+    if (fd < 0) {
+        throw std::runtime_error("ipc.openWrite() failed to open pipe '" + name +
+                                 "': " + strerror(errno) +
+                                 " (ensure a reader has opened the pipe first)");
+    }
+    // Remove O_NONBLOCK for blocking writes by default
+    int flags = fcntl(fd, F_GETFL, 0);
+    fcntl(fd, F_SETFL, flags & ~O_NONBLOCK);
+    int handle = ipcAllocHandle(fd, false, path);
+    return static_cast<double>(handle);
+#endif
+}
+
+// ipc.send(handle, message) - sends a length-prefixed message through a pipe handle
+auto nativeIpcSend(Interpreter& /*interp*/, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 2 || !std::holds_alternative<double>(arguments[0]) ||
+        !std::holds_alternative<std::string>(arguments[1])) {
+        throw std::runtime_error("ipc.send() takes a handle (number) and a message (string).");
+    }
+#ifdef _WIN32
+    throw std::runtime_error("ipc.send() is not supported on Windows.");
+#else
+    int handle = static_cast<int>(std::get<double>(arguments[0]));
+    const std::string& message = std::get<std::string>(arguments[1]);
+    IpcHandle h = ipcGetHandle(handle);
+    if (h.is_read) {
+        throw std::runtime_error("ipc.send() called on a read-only handle.");
+    }
+    uint32_t len = static_cast<uint32_t>(message.size());
+    uint8_t lenBuf[4] = {
+        static_cast<uint8_t>((len >> 24) & 0xFF),
+        static_cast<uint8_t>((len >> 16) & 0xFF),
+        static_cast<uint8_t>((len >> 8) & 0xFF),
+        static_cast<uint8_t>(len & 0xFF)
+    };
+    if (write(h.fd, lenBuf, 4) != 4) {
+        throw std::runtime_error("ipc.send() failed to write message length: " + std::string(strerror(errno)));
+    }
+    ssize_t written = write(h.fd, message.data(), message.size());
+    if (written < 0 || static_cast<size_t>(written) != message.size()) {
+        throw std::runtime_error("ipc.send() failed to write message: " + std::string(strerror(errno)));
+    }
+    return true;
+#endif
+}
+
+// ipc.recv(handle) - blocking receive of a length-prefixed message
+auto nativeIpcRecv(Interpreter& /*interp*/, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 1 || !std::holds_alternative<double>(arguments[0])) {
+        throw std::runtime_error("ipc.recv() takes exactly one handle (number) argument.");
+    }
+#ifdef _WIN32
+    throw std::runtime_error("ipc.recv() is not supported on Windows.");
+#else
+    int handle = static_cast<int>(std::get<double>(arguments[0]));
+    IpcHandle h = ipcGetHandle(handle);
+    if (!h.is_read) {
+        throw std::runtime_error("ipc.recv() called on a write-only handle.");
+    }
+    uint8_t lenBuf[4];
+    ssize_t n = read(h.fd, lenBuf, 4);
+    if (n == 0) {
+        throw std::runtime_error("ipc.recv() pipe closed (EOF).");
+    }
+    if (n != 4) {
+        throw std::runtime_error("ipc.recv() failed to read message length: " + std::string(strerror(errno)));
+    }
+    uint32_t len = (static_cast<uint32_t>(lenBuf[0]) << 24) |
+                   (static_cast<uint32_t>(lenBuf[1]) << 16) |
+                   (static_cast<uint32_t>(lenBuf[2]) << 8)  |
+                    static_cast<uint32_t>(lenBuf[3]);
+    std::string message(len, '\0');
+    ssize_t total = 0;
+    while (static_cast<uint32_t>(total) < len) {
+        ssize_t r = read(h.fd, &message[total], len - static_cast<uint32_t>(total));
+        if (r <= 0) {
+            throw std::runtime_error("ipc.recv() failed to read message body: " + std::string(strerror(errno)));
+        }
+        total += r;
+    }
+    return message;
+#endif
+}
+
+// ipc.tryRecv(handle) - non-blocking receive; returns nil if no message is ready
+auto nativeIpcTryRecv(Interpreter& /*interp*/, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 1 || !std::holds_alternative<double>(arguments[0])) {
+        throw std::runtime_error("ipc.tryRecv() takes exactly one handle (number) argument.");
+    }
+#ifdef _WIN32
+    throw std::runtime_error("ipc.tryRecv() is not supported on Windows.");
+#else
+    int handle = static_cast<int>(std::get<double>(arguments[0]));
+    IpcHandle h = ipcGetHandle(handle);
+    if (!h.is_read) {
+        throw std::runtime_error("ipc.tryRecv() called on a write-only handle.");
+    }
+    // Check if data is available using select with zero timeout
+    fd_set readfds;
+    FD_ZERO(&readfds);
+    FD_SET(h.fd, &readfds);
+    struct timeval tv = {0, 0};
+    int ready = select(h.fd + 1, &readfds, nullptr, nullptr, &tv);
+    if (ready <= 0) {
+        return Nil{};
+    }
+    uint8_t lenBuf[4];
+    ssize_t n = read(h.fd, lenBuf, 4);
+    if (n == 0) {
+        return Nil{};
+    }
+    if (n != 4) {
+        throw std::runtime_error("ipc.tryRecv() failed to read message length: " + std::string(strerror(errno)));
+    }
+    uint32_t len = (static_cast<uint32_t>(lenBuf[0]) << 24) |
+                   (static_cast<uint32_t>(lenBuf[1]) << 16) |
+                   (static_cast<uint32_t>(lenBuf[2]) << 8)  |
+                    static_cast<uint32_t>(lenBuf[3]);
+    std::string message(len, '\0');
+    ssize_t total = 0;
+    while (static_cast<uint32_t>(total) < len) {
+        ssize_t r = read(h.fd, &message[total], len - static_cast<uint32_t>(total));
+        if (r <= 0) {
+            throw std::runtime_error("ipc.tryRecv() failed to read message body: " + std::string(strerror(errno)));
+        }
+        total += r;
+    }
+    return message;
+#endif
+}
+
+// ipc.close(handle) - closes an IPC pipe handle
+auto nativeIpcClose(Interpreter& /*interp*/, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 1 || !std::holds_alternative<double>(arguments[0])) {
+        throw std::runtime_error("ipc.close() takes exactly one handle (number) argument.");
+    }
+#ifdef _WIN32
+    throw std::runtime_error("ipc.close() is not supported on Windows.");
+#else
+    int handle = static_cast<int>(std::get<double>(arguments[0]));
+    IpcHandle h = ipcGetHandle(handle);
+    close(h.fd);
+    ipcFreeHandle(handle);
+    return Nil{};
+#endif
+}
+
+// ipc.removePipe(name) - removes a named pipe from the filesystem
+auto nativeIpcRemovePipe(Interpreter& /*interp*/, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 1 || !std::holds_alternative<std::string>(arguments[0])) {
+        throw std::runtime_error("ipc.removePipe() takes exactly one string argument (pipe name).");
+    }
+#ifdef _WIN32
+    throw std::runtime_error("ipc.removePipe() is not supported on Windows.");
+#else
+    const std::string& name = std::get<std::string>(arguments[0]);
+    std::string path = ipcPipePath(name);
+    if (unlink(path.c_str()) != 0 && errno != ENOENT) {
+        throw std::runtime_error("ipc.removePipe() failed to remove pipe '" + name + "': " + strerror(errno));
+    }
+    return true;
+#endif
 }
 
 // sleep(ms): pause execution for the given number of milliseconds

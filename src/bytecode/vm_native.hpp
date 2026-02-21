@@ -105,6 +105,16 @@ Value vmNativeRegexMatch(VM& vm, const std::vector<Value>& arguments);
 Value vmNativeRegexReplace(VM& vm, const std::vector<Value>& arguments);
 Value vmNativeRegexTest(VM& vm, const std::vector<Value>& arguments);
 
+// std.ipc native functions
+Value vmNativeIpcCreatePipe(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeIpcOpenRead(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeIpcOpenWrite(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeIpcSend(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeIpcRecv(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeIpcTryRecv(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeIpcClose(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeIpcRemovePipe(VM& vm, const std::vector<Value>& arguments);
+
 void registerVmNatives(VM& vm);
 
 }  // namespace izi
