@@ -41,6 +41,18 @@ struct ThrowSignal {
     ThrowSignal(Value ex, Token tok) : exception(std::move(ex)), token(std::move(tok)) {}
 };
 
+// Debug hook interface: implement to receive execution events from the interpreter.
+// Used by the Debug Adapter Protocol (DAP) server for breakpoints and stepping.
+struct DebugHook {
+    virtual ~DebugHook() = default;
+    // Called before each statement is executed (line is the source line number, 0 if unknown)
+    virtual void onStatement(int line, const std::string& file) = 0;
+    // Called when entering a named function (used to build the call stack)
+    virtual void onFunctionEnter(const std::string& name, int line, const std::string& file) = 0;
+    // Called when exiting a function
+    virtual void onFunctionExit() = 0;
+};
+
 class Interpreter : public ExprVisitor, public StmtVisitor {
    public:
     explicit Interpreter(std::string_view source = "");
@@ -55,6 +67,22 @@ class Interpreter : public ExprVisitor, public StmtVisitor {
     // Get global environment (for REPL :vars command).
     // Returns a non-owning pointer; the environment is owned by arena_.
     const Environment* getGlobals() const { return globals; }
+
+    // Set a debug hook to receive execution events (for DAP support).
+    // The hook must outlive the interpreter. Pass nullptr to disable.
+    void setDebugHook(DebugHook* hook) { debugHook_ = hook; }
+
+    // Get the current environment (for variable inspection during debugging).
+    const Environment* getCurrentEnv() const { return env; }
+
+    // Notify the debug hook of a function entry (called by UserFunction).
+    void notifyFunctionEnter(const std::string& name, int line) {
+        if (debugHook_) debugHook_->onFunctionEnter(name, line, currentFile);
+    }
+    // Notify the debug hook of a function exit (called by UserFunction).
+    void notifyFunctionExit() {
+        if (debugHook_) debugHook_->onFunctionExit();
+    }
 
     // ExprVisitor
     Value visit(BinaryExpr& expr) override;
@@ -109,6 +137,9 @@ class Interpreter : public ExprVisitor, public StmtVisitor {
     std::string_view source_;
     Environment* globals;  // Non-owning; owned by arena_
     Environment* env;      // Non-owning; owned by arena_
+
+    // Debug hook (optional, not owned)
+    DebugHook* debugHook_ = nullptr;
 
     Value evaluate(Expr& expr);
     void execute(Stmt& expr);
