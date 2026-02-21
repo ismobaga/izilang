@@ -94,6 +94,9 @@ class SemanticAnalyzer : public ExprVisitor, public StmtVisitor {
 
     // Symbol table for type tracking
     struct Scope {
+        enum class Type { Global, Function, Block };
+
+        Type type = Type::Block;
         std::unordered_map<std::string, TypePtr> variables;
         std::unordered_set<std::string> usedVariables;
         std::shared_ptr<Scope> parent;
@@ -116,7 +119,7 @@ class SemanticAnalyzer : public ExprVisitor, public StmtVisitor {
     void addWarning(const std::string& message, int line, int column);
     void addInfo(const std::string& message, int line, int column);
 
-    void enterScope();
+    void enterScope(Scope::Type type = Scope::Type::Block);
     void exitScope();
     void defineVariable(const std::string& name, TypePtr type, int line, int column);
     void markVariableUsed(const std::string& name);

@@ -758,7 +758,8 @@ TypePtr Parser::parseTypeAnnotation() {
         } else if (typeName == "Void" || typeName == "void") {
             return TypeAnnotation::simple(TypeAnnotation::Kind::Void);
         } else {
-            throw error(previous(), "Unknown type '" + typeName + "'.");
+            // User-defined type (e.g., class name) — treat as Any for gradual typing
+            return TypeAnnotation::simple(TypeAnnotation::Kind::Any);
         }
     }
 
