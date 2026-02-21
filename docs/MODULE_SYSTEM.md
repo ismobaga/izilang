@@ -2,7 +2,7 @@
 
 ## Overview
 
-IziLang supports a comprehensive module system with `export` and `import` statements, allowing code organization across multiple files with relative imports and circular dependency detection.
+IziLang supports a comprehensive module system with `export` and `import` statements, allowing code organization across multiple files with relative imports, namespace isolation, and circular dependency detection.
 
 ## Features
 
@@ -44,7 +44,22 @@ export var PI = 3.14159;
 export var E = 2.71828;
 ```
 
-**Note**: Function exports are partially implemented. Variables work correctly.
+#### Default Exports
+
+Export a default value using `export default`:
+
+```izilang
+// Export a default function
+export default fn greet(name) {
+    return "Hello " + name;
+}
+
+// Export a default expression
+export default 42;
+
+// Export a default variable
+export default var CONFIG = { debug: true };
+```
 
 ### Import Statements
 
@@ -52,39 +67,87 @@ export var E = 2.71828;
 Import all exports from a module (they become globally available):
 
 ```izilang
-import "math.iz";
+import "./math";
 
 print(add(5, 3));
 print(PI);
-```
-
-#### Relative Import
-Import using relative paths:
-
-```izilang
-import "./lib/math";
-
-print(add(5, 3));
 ```
 
 #### Named Imports
 Import specific exports from a module:
 
 ```izilang
-import { add, PI } from "math.iz";
+import { add, PI } from "./math";
 
 print(add(5, 3));
 print(PI);
 ```
 
-#### Wildcard Import (Syntax Supported)
-The syntax for wildcard imports is supported but namespace objects are not yet fully implemented:
+#### Named Import with Alias
+Import an export under a different local name:
 
 ```izilang
-import * as math from "math.iz";
+import { add as sum, PI as pi } from "./math";
+import { default as greet } from "./greeter";
+
+print(sum(5, 3));
+print(greet("World"));
 ```
 
-**Note**: Currently, all imports make exports globally available rather than creating separate namespaces.
+#### Wildcard Import (Namespace Object)
+Import all exports into a namespace object:
+
+```izilang
+import * as math from "./math";
+var result = math.add(5, 3);
+var pi_val = math.PI;
+```
+
+Wildcard imports create a proper namespace object. Only **exported** names are accessible through the namespace.
+
+### Re-Export Syntax
+
+Re-export symbols from another module:
+
+```izilang
+// Re-export all exports from a module
+export * from "./utils";
+
+// Re-export specific named exports
+export { add, subtract } from "./arithmetic";
+```
+
+This is useful for creating "barrel" index files:
+
+```izilang
+// lib/index.izi
+export * from "./math";
+export * from "./string";
+export { format } from "./io";
+```
+
+## Module Scope Isolation
+
+When using **wildcard** (`import * as name`) or **named** (`import { a, b }`) imports from file modules, the module runs in an **isolated scope**:
+
+- Variables and functions **without** `export` are private to the module
+- Only `export`-ed names are accessible through the namespace object or named bindings
+- Prevents accidental name collisions between modules
+
+```izilang
+// config.izi
+var SECRET_KEY = "abc123";       // private — not exported
+export var APP_NAME = "MyApp";   // public — exported
+export var VERSION = "1.0.0";    // public — exported
+```
+
+```izilang
+// main.izi
+import * as config from "./config";
+print(config.APP_NAME);   // "MyApp" — OK
+print(config.VERSION);    // "1.0.0" — OK
+// config.SECRET_KEY is not accessible — isolation working
+```
 
 ## Module Resolution
 
@@ -115,98 +178,78 @@ Error: Circular import detected: /path/to/a.izi -> /path/to/b.izi -> /path/to/a.
 
 This prevents infinite recursion and helps identify problematic dependencies.
 
+## Export Validation
+
+When using named imports (`import { a, b } from "./module"`), the runtime validates that each requested name was actually exported by the module. Importing a non-exported name throws an error:
+
+```
+Error: Module './utils' does not export 'notExported'
+```
+
 ## Examples
 
 ### Example 1: Simple Multi-File Project
 
-**Project structure:**
-```
-my_app/
-  main.izi
-  config.izi
-```
-
-**config.izi**:
-```izilang
-var APP_NAME = "My App";
-var VERSION = "1.0.0";
-```
-
-**main.izi**:
-```izilang
-import "./config";
-
-print(APP_NAME);  // Prints: My App
-print(VERSION);   // Prints: 1.0.0
-```
-
-### Example 2: Nested Modules
-
-**Project structure:**
-```
-my_app/
-  main.izi
-  lib/
-    math.izi
-    utils.izi
-```
-
 **lib/math.izi**:
 ```izilang
-var PI = 3.14159;
-```
-
-**lib/utils.izi**:
-```izilang
-import "./math";  // Relative to lib/ directory
-
-var CIRCLE_AREA = PI * 10 * 10;
+export var PI = 3.14159;
+export fn area(r) { return PI * r * r; }
+var internalHelper = 42;   // private
 ```
 
 **main.izi**:
 ```izilang
-import "./lib/utils";
+import * as math from "./lib/math";
 
-print(CIRCLE_AREA);  // Uses PI from math.izi
+print(math.PI);          // 3.14159
+print(math.area(5));     // 78.53975
 ```
 
-### Example 3: Creating a Module
+### Example 2: Named Imports
 
-**utils.iz**:
+**utils.izi**:
 ```izilang
-export fn square(n) {
-    return n * n;
-}
-
-export fn cube(n) {
-    return n * n * n;
-}
-
+export fn square(n) { return n * n; }
+export fn cube(n)   { return n * n * n; }
 export var MAX_SIZE = 100;
 ```
 
-### Using a Module
-
-**main.iz**:
+**main.izi**:
 ```izilang
-import { square, cube, MAX_SIZE } from "utils.iz";
+import { square, MAX_SIZE } from "./utils";
 
-print("Square of 5:", square(5));
-print("Cube of 3:", cube(3));
-print("Max size:", MAX_SIZE);
+print(square(5));     // 25
+print(MAX_SIZE);      // 100
 ```
 
-Or with simple import:
+### Example 3: Default Export
 
+**greeter.izi**:
 ```izilang
-import "utils.iz";
-
-print("Square of 5:", square(5));
-print("Cube of 3:", cube(3));
-print("Max size:", MAX_SIZE);
+export default fn(name) { return "Hello, " + name + "!"; }
 ```
 
-## Complete Example
+**main.izi**:
+```izilang
+import { default as greet } from "./greeter";
+print(greet("World"));   // Hello, World!
+```
+
+### Example 4: Re-Export Barrel
+
+**lib/index.izi**:
+```izilang
+export * from "./math";
+export { format } from "./io";
+```
+
+**main.izi**:
+```izilang
+import * as lib from "./lib/index";
+var result = lib.square(4);
+```
+
+### Example 5: Nested Module Project
 
 See [examples/multi_file_project/](examples/multi_file_project/) for a complete working example demonstrating:
 - Relative imports
@@ -216,21 +259,8 @@ See [examples/multi_file_project/](examples/multi_file_project/) for a complete 
 
 ## Limitations
 
-1. **No namespace isolation**: Currently all exports become global after import. Named imports accept any identifiers but don't restrict access to non-imported names.
+1. **Simple imports (`import "module"`)**: Still run in the global scope for backward compatibility. All variables in the module become globally accessible. Use wildcard or named imports for proper namespace isolation.
 
-2. **Function exports**: While function export syntax is supported, calling exported functions may have issues. Variable exports work correctly.
+2. **Bytecode compiler**: The bytecode VM (`--compile` mode) does not yet implement isolated module scope for re-exports.
 
-3. **Wildcard imports**: While `import * as name from "module"` syntax is parsed and dot notation (e.g., `obj.property`) is supported for maps, wildcard imports do not create namespace objects. Therefore, you cannot use `math.add()` after `import * as math from "module"`. The parser will accept the syntax but runtime will fail because no namespace object is created. This requires tracking module exports separately and creating a map object, which is planned for a future enhancement.
-
-4. **No re-exports**: You cannot re-export symbols from other modules yet.
-
-5. **Export placement**: `export` must directly precede a function or variable declaration. You cannot export existing names or export multiple items in one statement.
-
-## Future Enhancements
-
-- Namespace objects for wildcard imports
-- Module-level scope isolation
-- Default exports
-- Re-export syntax
-- Complete function export support
-- Private/public symbol visibility
+3. **Export placement**: `export` must directly precede a function, variable declaration, or `default` keyword. You cannot export existing names without re-export syntax.

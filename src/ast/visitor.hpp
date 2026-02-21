@@ -32,6 +32,7 @@ struct FunctionStmt;
 struct IfStmt;
 struct ImportStmt;
 struct ExportStmt;
+struct ReExportStmt;
 struct BreakStmt;
 struct ContinueStmt;
 struct TryStmt;
@@ -76,6 +77,7 @@ class StmtVisitor {
     virtual void visit(FunctionStmt&) = 0;
     virtual void visit(ImportStmt&) = 0;
     virtual void visit(ExportStmt&) = 0;
+    virtual void visit(ReExportStmt&) = 0;
     virtual void visit(BreakStmt&) = 0;
     virtual void visit(ContinueStmt&) = 0;
     virtual void visit(TryStmt&) = 0;

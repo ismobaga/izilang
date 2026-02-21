@@ -420,8 +420,27 @@ void Optimizer::visit(ImportStmt& stmt) {
 }
 
 void Optimizer::visit(ExportStmt& stmt) {
+    if (stmt.isDefault) {
+        if (stmt.declaration) {
+            stmt.declaration = optimizeStmt(std::move(stmt.declaration));
+            currentStmt = std::make_unique<ExportStmt>(std::move(stmt.declaration), true);
+        } else if (stmt.defaultExpr) {
+            stmt.defaultExpr = optimizeExpr(std::move(stmt.defaultExpr));
+            currentStmt = std::make_unique<ExportStmt>(std::move(stmt.defaultExpr));
+        }
+        return;
+    }
     stmt.declaration = optimizeStmt(std::move(stmt.declaration));
     currentStmt = std::make_unique<ExportStmt>(std::move(stmt.declaration));
+}
+
+void Optimizer::visit(ReExportStmt& stmt) {
+    // Re-exports have no sub-expressions to optimize
+    if (stmt.isWildcard) {
+        currentStmt = std::make_unique<ReExportStmt>(stmt.module);
+    } else {
+        currentStmt = std::make_unique<ReExportStmt>(stmt.module, stmt.names);
+    }
 }
 
 void Optimizer::visit(BreakStmt& stmt) {

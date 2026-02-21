@@ -432,7 +432,21 @@ void SemanticAnalyzer::visit(ImportStmt& stmt) {
 }
 
 void SemanticAnalyzer::visit(ExportStmt& stmt) {
-    stmt.declaration->accept(*this);
+    if (stmt.isDefault) {
+        if (stmt.declaration) {
+            stmt.declaration->accept(*this);
+        } else if (stmt.defaultExpr) {
+            stmt.defaultExpr->accept(*this);
+        }
+        return;
+    }
+    if (stmt.declaration) {
+        stmt.declaration->accept(*this);
+    }
+}
+
+void SemanticAnalyzer::visit(ReExportStmt& /*stmt*/) {
+    // Nothing to analyze for re-exports
 }
 
 void SemanticAnalyzer::visit(BreakStmt& stmt) {

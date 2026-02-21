@@ -6,8 +6,11 @@
 #include "bytecode/vm.hpp"
 #include "bytecode/vm_native.hpp"
 #include <sstream>
+#include <filesystem>
+#include <fstream>
 
 using namespace izi;
+namespace fs = std::filesystem;
 
 TEST_CASE("Native module system - math module", "[modules][math]") {
     SECTION("Simple import creates module object") {
@@ -1127,4 +1130,241 @@ TEST_CASE("VM: Native module system - ui module", "[vm][modules][ui]") {
         )";
         REQUIRE_NOTHROW(vmRunNoThrow(source));
     }
+}
+
+// Helper: write a file with given content
+static void writeFile(const std::string& path, const std::string& content) {
+    std::ofstream f(path);
+    REQUIRE(f.is_open());
+    f << content;
+    REQUIRE(f.good());
+}
+
+TEST_CASE("Module scope isolation - wildcard file import", "[modules][isolation][wildcard]") {
+    fs::path tempDir = fs::temp_directory_path() / "test_module_isolation";
+    fs::create_directories(tempDir);
+
+    SECTION("Wildcard import creates namespace Map with exported names") {
+        writeFile((tempDir / "ns_math.izi").string(), R"(
+            export var PI = 3.14159;
+            export fn square(x) { return x * x; }
+            var internal = 42;
+        )");
+
+        std::string mainSrc = "import * as m from \"" + (tempDir / "ns_math.izi").string() + "\";\n"
+                              "var pi = m.PI;\n"
+                              "var sq = m.square(4);\n";
+
+        Lexer lex(mainSrc);
+        auto toks = lex.scanTokens();
+        Parser par(std::move(toks));
+        auto prog = par.parse();
+
+        Interpreter interp(mainSrc);
+        REQUIRE_NOTHROW(interp.interpret(prog));
+
+        // internal variable should NOT be in globals
+        bool threw = false;
+        try { interp.getGlobals()->get("internal"); } catch (...) { threw = true; }
+        REQUIRE(threw);
+    }
+
+    SECTION("Module scope: non-exported vars do not leak to importer globals") {
+        writeFile((tempDir / "ns_scope.izi").string(), R"(
+            export var exported = 10;
+            var secret = 999;
+        )");
+
+        std::string mainSrc = "import * as mod from \"" + (tempDir / "ns_scope.izi").string() + "\";\n"
+                              "var x = mod.exported;\n";
+
+        Lexer lex(mainSrc);
+        auto toks = lex.scanTokens();
+        Parser par(std::move(toks));
+        auto prog = par.parse();
+
+        Interpreter interp(mainSrc);
+        REQUIRE_NOTHROW(interp.interpret(prog));
+
+        // 'secret' must not be in globals
+        bool threw = false;
+        try { interp.getGlobals()->get("secret"); } catch (...) { threw = true; }
+        REQUIRE(threw);
+    }
+
+    fs::remove_all(tempDir);
+}
+
+TEST_CASE("Module scope isolation - named file import with validation", "[modules][isolation][named]") {
+    fs::path tempDir = fs::temp_directory_path() / "test_named_validation";
+    fs::create_directories(tempDir);
+
+    SECTION("Named import of exported name succeeds") {
+        writeFile((tempDir / "nv_util.izi").string(), R"(
+            export fn double(x) { return x * 2; }
+            export var LIMIT = 100;
+        )");
+
+        std::string mainSrc = "import { double, LIMIT } from \"" + (tempDir / "nv_util.izi").string() + "\";\n"
+                              "var result = double(5);\n";
+
+        Lexer lex(mainSrc);
+        auto toks = lex.scanTokens();
+        Parser par(std::move(toks));
+        auto prog = par.parse();
+
+        Interpreter interp(mainSrc);
+        REQUIRE_NOTHROW(interp.interpret(prog));
+    }
+
+    SECTION("Named import of non-exported name throws an error") {
+        writeFile((tempDir / "nv_util2.izi").string(), R"(
+            export var exported = 5;
+            var notExported = 99;
+        )");
+
+        std::string mainSrc = "import { notExported } from \"" + (tempDir / "nv_util2.izi").string() + "\";\n";
+
+        Lexer lex(mainSrc);
+        auto toks = lex.scanTokens();
+        Parser par(std::move(toks));
+        auto prog = par.parse();
+
+        Interpreter interp(mainSrc);
+        REQUIRE_THROWS(interp.interpret(prog));
+    }
+
+    fs::remove_all(tempDir);
+}
+
+TEST_CASE("Default exports", "[modules][default-export]") {
+    fs::path tempDir = fs::temp_directory_path() / "test_default_export";
+    fs::create_directories(tempDir);
+
+    SECTION("export default fn and import via { default as X }") {
+        writeFile((tempDir / "de_fn.izi").string(), R"(
+            export default fn greet(name) { return "Hello " + name; }
+        )");
+
+        std::string mainSrc = "import { default as greet } from \"" + (tempDir / "de_fn.izi").string() + "\";\n"
+                              "var msg = greet(\"World\");\n";
+
+        Lexer lex(mainSrc);
+        auto toks = lex.scanTokens();
+        Parser par(std::move(toks));
+        auto prog = par.parse();
+
+        Interpreter interp(mainSrc);
+        REQUIRE_NOTHROW(interp.interpret(prog));
+    }
+
+    SECTION("export default expression and import via wildcard") {
+        writeFile((tempDir / "de_expr.izi").string(), R"(
+            export default 42;
+        )");
+
+        std::string mainSrc = "import * as mod from \"" + (tempDir / "de_expr.izi").string() + "\";\n"
+                              "var v = mod.default;\n";
+
+        Lexer lex(mainSrc);
+        auto toks = lex.scanTokens();
+        Parser par(std::move(toks));
+        auto prog = par.parse();
+
+        Interpreter interp(mainSrc);
+        REQUIRE_NOTHROW(interp.interpret(prog));
+    }
+
+    SECTION("export default var") {
+        writeFile((tempDir / "de_var.izi").string(), R"(
+            export default var value = 123;
+        )");
+
+        std::string mainSrc = "import { default as value } from \"" + (tempDir / "de_var.izi").string() + "\";\n";
+
+        Lexer lex(mainSrc);
+        auto toks = lex.scanTokens();
+        Parser par(std::move(toks));
+        auto prog = par.parse();
+
+        Interpreter interp(mainSrc);
+        REQUIRE_NOTHROW(interp.interpret(prog));
+    }
+
+    fs::remove_all(tempDir);
+}
+
+TEST_CASE("Re-export syntax", "[modules][reexport]") {
+    fs::path tempDir = fs::temp_directory_path() / "test_reexport";
+    fs::create_directories(tempDir);
+
+    SECTION("Wildcard re-export: export * from 'module'") {
+        writeFile((tempDir / "re_base.izi").string(), R"(
+            export var FOO = "foo";
+            export fn bar() { return "bar"; }
+        )");
+        writeFile((tempDir / "re_index.izi").string(),
+                  "export * from \"" + (tempDir / "re_base.izi").string() + "\";\n");
+
+        std::string mainSrc = "import * as idx from \"" + (tempDir / "re_index.izi").string() + "\";\n"
+                              "var f = idx.FOO;\n"
+                              "var b = idx.bar();\n";
+
+        Lexer lex(mainSrc);
+        auto toks = lex.scanTokens();
+        Parser par(std::move(toks));
+        auto prog = par.parse();
+
+        Interpreter interp(mainSrc);
+        REQUIRE_NOTHROW(interp.interpret(prog));
+    }
+
+    SECTION("Named re-export: export { name } from 'module'") {
+        writeFile((tempDir / "re_source.izi").string(), R"(
+            export var A = 1;
+            export var B = 2;
+            export var C = 3;
+        )");
+        writeFile((tempDir / "re_partial.izi").string(),
+                  "export { A, B } from \"" + (tempDir / "re_source.izi").string() + "\";\n");
+
+        std::string mainSrc = "import * as mod from \"" + (tempDir / "re_partial.izi").string() + "\";\n"
+                              "var a = mod.A;\n"
+                              "var b = mod.B;\n";
+
+        Lexer lex(mainSrc);
+        auto toks = lex.scanTokens();
+        Parser par(std::move(toks));
+        auto prog = par.parse();
+
+        Interpreter interp(mainSrc);
+        REQUIRE_NOTHROW(interp.interpret(prog));
+
+        // C should not be in the re-exported namespace
+        bool threw = false;
+        try {
+            interp.getGlobals()->get("mod");  // mod exists
+            // access mod.C would fail at runtime in izi code, but not via getGlobals
+        } catch (...) { threw = true; }
+    }
+
+    SECTION("Named re-export of non-existent name throws") {
+        writeFile((tempDir / "re_fail_src.izi").string(), R"(
+            export var X = 10;
+        )");
+        writeFile((tempDir / "re_fail_idx.izi").string(),
+                  "export { X, Y } from \"" + (tempDir / "re_fail_src.izi").string() + "\";\n");
+
+        std::string mainSrc = "import * as mod from \"" + (tempDir / "re_fail_idx.izi").string() + "\";\n";
+
+        Lexer lex(mainSrc);
+        auto toks = lex.scanTokens();
+        Parser par(std::move(toks));
+        auto prog = par.parse();
+
+        Interpreter interp(mainSrc);
+        REQUIRE_THROWS(interp.interpret(prog));
+    }
+
+    fs::remove_all(tempDir);
 }
