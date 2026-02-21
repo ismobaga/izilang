@@ -20,7 +20,7 @@ void CliOptions::printHelp() {
     std::cout << "  test [pattern]      Run test files (searches for *.iz in tests/)\n";
     std::cout << "  repl                Start interactive REPL\n";
     std::cout << "  bench <file>        Run performance benchmark\n";
-    std::cout << "  fmt <file>          Format source code (coming soon)\n";
+    std::cout << "  fmt <file>          Format source code\n";
     std::cout << "  version             Show version information\n";
     std::cout << "  help [command]      Show help for a specific command\n";
     std::cout << "\n";
@@ -326,6 +326,12 @@ CliOptions CliOptions::parse(int argc, char** argv) {
         } else if (arg == "--memory-stats") {
             options.memoryStats = true;
             i++;
+        } else if (arg == "--write" && options.command == Command::Fmt) {
+            options.write = true;
+            i++;
+        } else if (arg == "--check" && options.command == Command::Fmt) {
+            options.check = true;
+            i++;
         } else if (arg == "-o" && (options.command == Command::Compile || options.command == Command::Chunk)) {
             // Output file for compile or chunk command
             if (i + 1 < argc) {
@@ -435,14 +441,6 @@ CliOptions CliOptions::parse(int argc, char** argv) {
             if (!cmdName.empty()) {
                 std::cerr << "Use 'izi help " << cmdName << "' for usage information\n";
             }
-            std::exit(1);
-        }
-    }
-
-    if (options.command == Command::Fmt) {
-        if (options.input.empty()) {
-            std::cerr << "Error: 'fmt' command not yet implemented\n";
-            std::cerr << "This feature is planned for v0.2\n";
             std::exit(1);
         }
     }

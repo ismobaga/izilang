@@ -200,11 +200,11 @@ IziLang aims to be a **modern, expressive, and developer-friendly programming la
 - Timeline: 1 week
 
 #### Code Formatter
-- [ ] `izi fmt <file>` command
+- [x] `izi fmt <file>` command
 - [ ] Format entire directory: `izi fmt src/`
-- [ ] Check mode: `izi fmt --check`
+- [x] Check mode: `izi fmt --check`
 - [ ] Configurable style (`.izifmt.toml`)
-- [ ] Auto-indent, spacing rules
+- [x] Auto-indent, spacing rules
 - Timeline: 2 weeks
 
 #### LSP Server
@@ -418,7 +418,7 @@ IziLang aims to be a **modern, expressive, and developer-friendly programming la
 
 ### Tooling
 
-- [ ] **Code Formatter** - `izi fmt` command with configurable style
+- [x] **Code Formatter** - `izi fmt` command with configurable style
 - [ ] **LSP Server** - Diagnostics, auto-completion, hover, go-to-definition
 - [ ] **VS Code Extension** - Connect to LSP, debugger support, marketplace
 - [ ] **Package Manager** - `izi-pkg init/install/publish` with registry

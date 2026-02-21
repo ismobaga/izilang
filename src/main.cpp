@@ -24,6 +24,7 @@
 #include "parse/lexer.hpp"
 #include "parse/parser.hpp"
 #include "compile/compiler.hpp"
+#include "compile/formatter.hpp"
 #include "compile/optimizer.hpp"
 #include "compile/native_compiler.hpp"
 #include "bytecode/vm.hpp"
@@ -844,9 +845,79 @@ int main(int argc, char** argv) {
 
     // Handle fmt command
     if (options.command == CliOptions::Command::Fmt) {
-        std::cerr << "Error: 'fmt' command not yet implemented\n";
-        std::cerr << "This feature is planned for v0.2\n";
-        return 1;
+        if (options.input.empty()) {
+            std::cerr << "Error: No input file specified\n";
+            std::cerr << "Use 'izi help fmt' for usage information\n";
+            return 1;
+        }
+
+        // Read source file
+        std::ifstream file(options.input);
+        if (!file.is_open()) {
+            std::cerr << "Error: Cannot open file '" << options.input << "'\n";
+            return 1;
+        }
+        std::ostringstream buf;
+        buf << file.rdbuf();
+        std::string src = buf.str();
+
+        // Parse source into AST
+        try {
+            Lexer lex(src);
+            auto tokens = lex.scanTokens();
+            Parser parser(std::move(tokens), src);
+            auto program = parser.parse();
+
+            // Format the AST
+            Formatter formatter;
+            std::string formatted = formatter.format(program);
+
+            if (options.check) {
+                // --check mode: report whether the file needs formatting
+                if (formatted == src) {
+                    std::cout << options.input << ": already formatted\n";
+                    return 0;
+                } else {
+                    std::cout << options.input << ": would be reformatted\n";
+                    return 1;
+                }
+            }
+
+            if (!options.output.empty()) {
+                // -o <file>: write to specified output file
+                std::ofstream out(options.output);
+                if (!out.is_open()) {
+                    std::cerr << "Error: Cannot write to file '" << options.output << "'\n";
+                    return 1;
+                }
+                out << formatted;
+            } else if (options.write) {
+                // --write: overwrite source file in-place
+                std::ofstream out(options.input);
+                if (!out.is_open()) {
+                    std::cerr << "Error: Cannot write to file '" << options.input << "'\n";
+                    return 1;
+                }
+                out << formatted;
+                if (options.debug) {
+                    std::cout << "Formatted: " << options.input << "\n";
+                }
+            } else {
+                // Default: print formatted output to stdout
+                std::cout << formatted;
+            }
+        } catch (const LexerError& e) {
+            ErrorReporter reporter(src);
+            std::cerr << "In file '" << options.input << "':\n";
+            std::cerr << reporter.formatError(e.line, e.column, e.what(), "Lexer Error") << '\n';
+            return 1;
+        } catch (const ParserError& e) {
+            ErrorReporter reporter(src);
+            std::cerr << "In file '" << options.input << "':\n";
+            std::cerr << reporter.formatError(e.token, e.what(), "Parse Error") << '\n';
+            return 1;
+        }
+        return 0;
     }
 
     // Handle compile command
