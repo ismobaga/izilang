@@ -399,18 +399,59 @@ Type ':help' for REPL commands
 
 ### `fmt` - Format Source Code
 
-*(Coming in v0.4 - not yet implemented)*
-
 Format IziLang source code according to standard style.
 
 **Usage:**
 ```bash
-izi fmt [options] <file>
+izi fmt [options] <file|dir>
 ```
 
+**Arguments:**
+- `<file>` - IziLang source file to format
+- `<dir>` - Directory to format (all `.iz` files are formatted recursively)
+
 **Options:**
-- `--check` - Check if file needs formatting (no changes)
-- `--write` - Write changes to file (default: print to stdout)
+- `--check` - Check if file(s) need formatting (no changes made, exit code 1 if reformatting is needed)
+- `--write` - Write formatted output back to file(s) in-place (default: print to stdout)
+
+**Examples:**
+```bash
+# Print formatted output to stdout
+izi fmt script.iz
+
+# Format a file in-place
+izi fmt --write script.iz
+
+# Check if a file is already formatted
+izi fmt --check script.iz
+
+# Format all .iz files in a directory
+izi fmt src/
+
+# Format all .iz files in-place
+izi fmt --write src/
+```
+
+**Exit Codes:**
+- `0` - Success (or all files already formatted in `--check` mode)
+- `1` - Error, or files would be reformatted (in `--check` mode)
+
+**Configuration (`.izifmt.toml`):**
+
+Place a `.izifmt.toml` file in the current working directory (or the target's
+parent directory) to customize formatting style:
+
+```toml
+indent_size = 4       # spaces per indent level (default: 4)
+max_line_length = 100 # informational max line length (default: 100)
+```
+
+**Style rules:**
+- Configurable indentation (default: 4 spaces)
+- Spaces around binary operators
+- Space after commas in argument lists
+- Opening brace on the same line (K&R style)
+- Blank line between top-level function and class declarations
 
 ---
 
@@ -477,14 +518,15 @@ Currently, IziLang doesn't use environment variables. This may change in future 
 
 ## Configuration Files
 
-### `.izifmt.toml` *(Coming in v0.4)*
+### `.izifmt.toml`
 
-Configuration file for the code formatter.
+Configuration file for the code formatter. Place in the current working
+directory or the parent directory of the files being formatted.
 
 Example:
 ```toml
 indent_size = 4
-line_length = 100
+max_line_length = 100
 ```
 
 ---

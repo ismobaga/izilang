@@ -224,3 +224,30 @@ TEST_CASE("Formatter: idempotent (formatting twice gives same result)", "[format
     std::string second = fmt(first);
     REQUIRE(first == second);
 }
+
+// ── FormatterConfig ───────────────────────────────────────────────────────────
+
+TEST_CASE("FormatterConfig: default values", "[formatter][config]") {
+    FormatterConfig cfg;
+    REQUIRE(cfg.indentSize == 4);
+    REQUIRE(cfg.maxLineLength == 100);
+}
+
+TEST_CASE("FormatterConfig: custom indent size", "[formatter][config]") {
+    FormatterConfig cfg;
+    cfg.indentSize = 2;
+
+    auto program = parse("fn add(a,b){return a+b;}");
+    Formatter formatter(cfg);
+    std::string result = formatter.format(program);
+
+    REQUIRE(result.find("  return") != std::string::npos);
+    REQUIRE(result.find("    return") == std::string::npos);
+}
+
+TEST_CASE("FormatterConfig: load from non-existent file returns defaults", "[formatter][config]") {
+    FormatterConfig cfg = FormatterConfig::load("/nonexistent/.izifmt.toml");
+    REQUIRE(cfg.indentSize == 4);
+    REQUIRE(cfg.maxLineLength == 100);
+}
+

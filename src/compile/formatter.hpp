@@ -12,10 +12,23 @@
 namespace izi {
 
 /**
+ * Style configuration for the IziLang formatter.
+ * Can be loaded from a `.izifmt.toml` file.
+ */
+struct FormatterConfig {
+    int indentSize = 4;      // Number of spaces per indent level
+    int maxLineLength = 100; // Maximum line length (informational)
+
+    // Load configuration from a TOML file.
+    // Returns a default-constructed config if the file cannot be opened.
+    static FormatterConfig load(const std::string& path);
+};
+
+/**
  * IziLang source code formatter.
  *
  * Traverses a parsed AST and emits canonical, consistently-styled source code:
- *   - 4-space indentation
+ *   - Configurable indentation (default: 4-space)
  *   - Spaces around binary operators
  *   - Space after commas
  *   - Opening brace on the same line (K&R style)
@@ -24,6 +37,7 @@ namespace izi {
 class Formatter : public ExprVisitor, public StmtVisitor {
    public:
     Formatter() = default;
+    explicit Formatter(FormatterConfig cfg);
 
     // Format a complete program and return the formatted source string.
     std::string format(const std::vector<StmtPtr>& program);
@@ -68,6 +82,7 @@ class Formatter : public ExprVisitor, public StmtVisitor {
     void visit(ClassStmt& stmt) override;
 
    private:
+    FormatterConfig config_;   // Style configuration
     std::string output_;       // Accumulated formatted output
     int indentLevel_ = 0;      // Current indentation depth
     std::string currentExpr_;  // Result of the most recent expression visit

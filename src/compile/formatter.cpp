@@ -1,8 +1,59 @@
 #include "formatter.hpp"
 #include <sstream>
 #include <cmath>
+#include <fstream>
+#include <cctype>
 
 namespace izi {
+
+// ── FormatterConfig ───────────────────────────────────────────────────────────
+
+static std::string trimStr(const std::string& s) {
+    size_t start = 0;
+    while (start < s.size() && std::isspace(static_cast<unsigned char>(s[start]))) ++start;
+    size_t end = s.size();
+    while (end > start && std::isspace(static_cast<unsigned char>(s[end - 1]))) --end;
+    return s.substr(start, end - start);
+}
+
+FormatterConfig FormatterConfig::load(const std::string& path) {
+    FormatterConfig config;
+    std::ifstream f(path);
+    if (!f.is_open()) return config;
+
+    std::string line;
+    while (std::getline(f, line)) {
+        // Strip inline comments
+        auto commentPos = line.find('#');
+        if (commentPos != std::string::npos) line = line.substr(0, commentPos);
+        auto eqPos = line.find('=');
+        if (eqPos == std::string::npos) continue;
+        std::string key = trimStr(line.substr(0, eqPos));
+        std::string val = trimStr(line.substr(eqPos + 1));
+        if (val.empty()) continue;
+
+        // Parse a positive integer option, storing in `dest` on success.
+        auto parsePositiveInt = [&](int& dest) {
+            try {
+                int v = std::stoi(val);
+                if (v > 0) dest = v;
+            } catch (...) {
+                // Ignore malformed values
+            }
+        };
+
+        if (key == "indent_size") {
+            parsePositiveInt(config.indentSize);
+        } else if (key == "max_line_length") {
+            parsePositiveInt(config.maxLineLength);
+        }
+    }
+    return config;
+}
+
+// ── Formatter constructor ─────────────────────────────────────────────────────
+
+Formatter::Formatter(FormatterConfig cfg) : config_(std::move(cfg)) {}
 
 // Helper: escape a raw string value for output as a quoted string literal
 static std::string escapeString(const std::string& s) {
@@ -50,7 +101,7 @@ std::string Formatter::format(const std::vector<StmtPtr>& program) {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 std::string Formatter::indent() const {
-    return std::string(static_cast<size_t>(indentLevel_) * 4, ' ');
+    return std::string(static_cast<size_t>(indentLevel_) * static_cast<size_t>(config_.indentSize), ' ');
 }
 
 std::string Formatter::formatExpr(Expr& expr) {

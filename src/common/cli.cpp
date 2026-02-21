@@ -20,7 +20,7 @@ void CliOptions::printHelp() {
     std::cout << "  test [pattern]      Run test files (searches for *.iz in tests/)\n";
     std::cout << "  repl                Start interactive REPL\n";
     std::cout << "  bench <file>        Run performance benchmark\n";
-    std::cout << "  fmt <file>          Format source code\n";
+    std::cout << "  fmt <file|dir>      Format source code\n";
     std::cout << "  version             Show version information\n";
     std::cout << "  help [command]      Show help for a specific command\n";
     std::cout << "\n";
@@ -170,18 +170,28 @@ void CliOptions::printCommandHelp(Command cmd) {
 
         case Command::Fmt:
             std::cout << "izi fmt - Format source code\n\n";
-            std::cout << "Usage: izi fmt [options] <file>\n\n";
+            std::cout << "Usage: izi fmt [options] <file|dir>\n\n";
             std::cout << "Description:\n";
             std::cout << "  Formats IziLang source code according to standard style.\n";
-            std::cout << "  (Coming in v0.2 - not yet implemented)\n";
+            std::cout << "  Accepts a single .iz file or a directory (all .iz files\n";
+            std::cout << "  are formatted recursively).\n";
+            std::cout << "  Style can be configured via a .izifmt.toml file in the\n";
+            std::cout << "  current directory.\n";
             std::cout << "\n";
             std::cout << "Options:\n";
-            std::cout << "  --check    Check if file needs formatting (no changes)\n";
-            std::cout << "  --write    Write changes to file (default: print to stdout)\n";
+            std::cout << "  --check    Check if file(s) need formatting (no changes, exit 1 if yes)\n";
+            std::cout << "  --write    Write changes to file(s) in-place (default: print to stdout)\n";
+            std::cout << "\n";
+            std::cout << "Configuration (.izifmt.toml):\n";
+            std::cout << "  indent_size = 4      # spaces per indent level\n";
+            std::cout << "  max_line_length = 100\n";
             std::cout << "\n";
             std::cout << "Examples:\n";
-            std::cout << "  izi fmt script.iz\n";
-            std::cout << "  izi fmt --write script.iz\n";
+            std::cout << "  izi fmt script.iz              # Print formatted output\n";
+            std::cout << "  izi fmt --write script.iz      # Format file in-place\n";
+            std::cout << "  izi fmt --check script.iz      # Check if formatting is needed\n";
+            std::cout << "  izi fmt src/                   # Format all .iz files in src/\n";
+            std::cout << "  izi fmt --write src/           # Format all .iz files in-place\n";
             break;
 
         case Command::Bench:
