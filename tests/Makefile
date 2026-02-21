@@ -94,6 +94,7 @@ GENERATED += $(OBJDIR)/test_http.o
 GENERATED += $(OBJDIR)/test_integration.o
 GENERATED += $(OBJDIR)/test_ipc.o
 GENERATED += $(OBJDIR)/test_lexer.o
+GENERATED += $(OBJDIR)/test_macros.o
 GENERATED += $(OBJDIR)/test_main.o
 GENERATED += $(OBJDIR)/test_modules.o
 GENERATED += $(OBJDIR)/test_net.o
@@ -141,6 +142,7 @@ OBJECTS += $(OBJDIR)/test_http.o
 OBJECTS += $(OBJDIR)/test_integration.o
 OBJECTS += $(OBJDIR)/test_ipc.o
 OBJECTS += $(OBJDIR)/test_lexer.o
+OBJECTS += $(OBJDIR)/test_macros.o
 OBJECTS += $(OBJDIR)/test_main.o
 OBJECTS += $(OBJDIR)/test_modules.o
 OBJECTS += $(OBJDIR)/test_net.o
@@ -322,6 +324,9 @@ $(OBJDIR)/test_ipc.o: test_ipc.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/test_lexer.o: test_lexer.cpp
+	@echo "$(notdir $<)"
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/test_macros.o: test_macros.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/test_main.o: test_main.cpp

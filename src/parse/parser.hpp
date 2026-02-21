@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include <unordered_map>
 
 #include "ast/stmt.hpp"
 #include "common/token.hpp"
@@ -15,6 +16,12 @@ class ParserError : public std::runtime_error {
     Token token;
 
     ParserError(const Token& token, const std::string& message) : std::runtime_error(message), token(token) {}
+};
+
+// Stores a macro definition: parameter names + body tokens
+struct MacroDefinition {
+    std::vector<std::string> params;
+    std::vector<Token> bodyTokens;
 };
 
 class Parser {
@@ -63,6 +70,15 @@ class Parser {
     StmtPtr throwStatement();
     StmtPtr classDeclaration();
 
+    // Macro support
+    StmtPtr macroDeclaration();
+    ExprPtr expandMacroExpr(const std::string& macroName);
+    StmtPtr expandMacroStmt();
+    std::vector<std::vector<Token>> collectMacroArgs(size_t expectedCount, const Token& callToken);
+    std::vector<Token> substituteBody(const MacroDefinition& macro,
+                                      const std::vector<std::vector<Token>>& args,
+                                      int line, int col);
+
     // Type annotation parsing (v0.3)
     TypePtr parseTypeAnnotation();
 
@@ -82,5 +98,8 @@ class Parser {
     std::vector<Token> tokens;
     size_t current = 0;
     std::string_view source_;
+
+    // Macro definitions accumulated during parsing
+    std::unordered_map<std::string, MacroDefinition> macros_;
 };
 }  // namespace izi
