@@ -486,17 +486,22 @@ StmtPtr Parser::classDeclaration() {
 
 // Type annotation parsing (v0.3)
 TypePtr Parser::parseTypeAnnotation() {
+    // Check for 'nil' keyword used as a type annotation
+    if (match({TokenType::NIL})) {
+        return TypeAnnotation::simple(TypeAnnotation::Kind::Nil);
+    }
+
     // Check for basic types
     if (match({TokenType::IDENTIFIER})) {
         std::string typeName = std::string(previous().lexeme);
 
         // Check for generic types (Array<T>, Map<K,V>)
         if (match({TokenType::LESS})) {
-            if (typeName == "Array") {
+            if (typeName == "Array" || typeName == "array") {
                 TypePtr elementType = parseTypeAnnotation();
                 consume(TokenType::GREATER, "Expect '>' after array element type.");
                 return TypeAnnotation::array(std::move(elementType));
-            } else if (typeName == "Map") {
+            } else if (typeName == "Map" || typeName == "map") {
                 TypePtr keyType = parseTypeAnnotation();
                 consume(TokenType::COMMA, "Expect ',' between map key and value types.");
                 TypePtr valueType = parseTypeAnnotation();
@@ -507,18 +512,18 @@ TypePtr Parser::parseTypeAnnotation() {
             }
         }
 
-        // Simple types
-        if (typeName == "Number") {
+        // Simple types (both capitalized and lowercase are accepted)
+        if (typeName == "Number" || typeName == "number") {
             return TypeAnnotation::simple(TypeAnnotation::Kind::Number);
-        } else if (typeName == "String") {
+        } else if (typeName == "String" || typeName == "string") {
             return TypeAnnotation::simple(TypeAnnotation::Kind::String);
-        } else if (typeName == "Bool") {
+        } else if (typeName == "Bool" || typeName == "bool") {
             return TypeAnnotation::simple(TypeAnnotation::Kind::Bool);
         } else if (typeName == "Nil") {
             return TypeAnnotation::simple(TypeAnnotation::Kind::Nil);
-        } else if (typeName == "Any") {
+        } else if (typeName == "Any" || typeName == "any") {
             return TypeAnnotation::simple(TypeAnnotation::Kind::Any);
-        } else if (typeName == "Void") {
+        } else if (typeName == "Void" || typeName == "void") {
             return TypeAnnotation::simple(TypeAnnotation::Kind::Void);
         } else {
             throw error(previous(), "Unknown type '" + typeName + "'.");
