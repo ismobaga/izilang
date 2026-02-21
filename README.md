@@ -140,6 +140,7 @@ izi hello.iz
 - **[Editor Setup](docs/EDITOR_SETUP.md)** - VS Code, Vim, Emacs integration
 - **[Troubleshooting](docs/ERRORS_TROUBLESHOOTING.md)** - Common errors and solutions
 - **[Roadmap](docs/ROADMAP.md)** - Development plans and milestones
+- **[Project Analysis](docs/ANALYSIS.md)** - Language identity, v1.0 scope, risks & trade-offs
 
 ## Language Examples
 
