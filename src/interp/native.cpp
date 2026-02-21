@@ -2420,6 +2420,271 @@ auto nativeIpcRemovePipe(Interpreter& /*interp*/, const std::vector<Value>& argu
 #endif
 }
 
+// ============ std.net functions ============
+
+namespace {
+
+struct NetSocket {
+    int fd;
+    bool is_server;  // true = server (listening) socket
+};
+
+static std::mutex netMutex;
+static std::unordered_map<int, NetSocket> netSocketMap;
+static int nextNetHandle = 1;
+
+static int netAllocHandle(int fd, bool is_server) {
+    std::lock_guard<std::mutex> lock(netMutex);
+    int id = nextNetHandle++;
+    netSocketMap[id] = {fd, is_server};
+    return id;
+}
+
+static NetSocket netGetHandle(int id) {
+    std::lock_guard<std::mutex> lock(netMutex);
+    auto it = netSocketMap.find(id);
+    if (it == netSocketMap.end()) {
+        throw std::runtime_error("net: invalid socket handle: " + std::to_string(id));
+    }
+    return it->second;
+}
+
+static void netFreeHandle(int id) {
+    std::lock_guard<std::mutex> lock(netMutex);
+    netSocketMap.erase(id);
+}
+
+}  // anonymous namespace
+
+// net.connect(host, port) - connects to a TCP server; returns a socket handle
+auto nativeNetConnect(Interpreter& /*interp*/, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 2 || !std::holds_alternative<std::string>(arguments[0]) ||
+        !std::holds_alternative<double>(arguments[1])) {
+        throw std::runtime_error("net.connect() takes a host (string) and port (number).");
+    }
+    const std::string& host = std::get<std::string>(arguments[0]);
+    int port = static_cast<int>(std::get<double>(arguments[1]));
+    if (port <= 0 || port > 65535) {
+        throw std::runtime_error("net.connect(): port must be between 1 and 65535.");
+    }
+
+    struct addrinfo hints{}, *res = nullptr;
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    std::string portStr = std::to_string(port);
+    int rc = getaddrinfo(host.c_str(), portStr.c_str(), &hints, &res);
+    if (rc != 0) {
+        throw std::runtime_error("net.connect(): failed to resolve host '" + host +
+                                 "': " + std::string(gai_strerror(rc)));
+    }
+
+    int sock = -1;
+    for (struct addrinfo* rp = res; rp != nullptr; rp = rp->ai_next) {
+        sock = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+        if (sock < 0) continue;
+        if (::connect(sock, rp->ai_addr, rp->ai_addrlen) == 0) break;
+        ::close(sock);
+        sock = -1;
+    }
+    freeaddrinfo(res);
+    if (sock < 0) {
+        throw std::runtime_error("net.connect(): failed to connect to '" + host + ":" + portStr + "'");
+    }
+
+    int handle = netAllocHandle(sock, false);
+    return static_cast<double>(handle);
+}
+
+// net.listen(port) - creates a TCP server socket bound to the given port; returns a server handle
+auto nativeNetListen(Interpreter& /*interp*/, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 1 || !std::holds_alternative<double>(arguments[0])) {
+        throw std::runtime_error("net.listen() takes exactly one numeric argument (port).");
+    }
+    int port = static_cast<int>(std::get<double>(arguments[0]));
+    if (port <= 0 || port > 65535) {
+        throw std::runtime_error("net.listen(): port must be between 1 and 65535.");
+    }
+
+    int sock = socket(AF_INET6, SOCK_STREAM, 0);
+    if (sock < 0) {
+        // Fallback to IPv4 if IPv6 unavailable
+        sock = socket(AF_INET, SOCK_STREAM, 0);
+        if (sock < 0) {
+            throw std::runtime_error("net.listen(): failed to create socket: " + std::string(strerror(errno)));
+        }
+        int opt = 1;
+        setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+        struct sockaddr_in addr{};
+        addr.sin_family = AF_INET;
+        addr.sin_addr.s_addr = INADDR_ANY;
+        addr.sin_port = htons(static_cast<uint16_t>(port));
+        if (bind(sock, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr)) < 0) {
+            ::close(sock);
+            throw std::runtime_error("net.listen(): failed to bind port " + std::to_string(port) +
+                                     ": " + strerror(errno));
+        }
+    } else {
+        int opt = 1;
+        setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+        // Dual-stack: allow both IPv4 and IPv6
+        int v6only = 0;
+        setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, &v6only, sizeof(v6only));
+        struct sockaddr_in6 addr{};
+        addr.sin6_family = AF_INET6;
+        addr.sin6_addr = in6addr_any;
+        addr.sin6_port = htons(static_cast<uint16_t>(port));
+        if (bind(sock, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr)) < 0) {
+            ::close(sock);
+            throw std::runtime_error("net.listen(): failed to bind port " + std::to_string(port) +
+                                     ": " + strerror(errno));
+        }
+    }
+
+    if (listen(sock, 128) < 0) {
+        ::close(sock);
+        throw std::runtime_error("net.listen(): failed to listen on port " + std::to_string(port) +
+                                 ": " + strerror(errno));
+    }
+
+    int handle = netAllocHandle(sock, true);
+    return static_cast<double>(handle);
+}
+
+// net.accept(serverHandle [, timeoutMs]) - accepts a TCP connection; returns client handle or nil on timeout
+auto nativeNetAccept(Interpreter& /*interp*/, const std::vector<Value>& arguments) -> Value {
+    if (arguments.empty() || !std::holds_alternative<double>(arguments[0])) {
+        throw std::runtime_error("net.accept() takes a server handle (number) and an optional timeout (number).");
+    }
+    int handle = static_cast<int>(std::get<double>(arguments[0]));
+    NetSocket srv = netGetHandle(handle);
+    if (!srv.is_server) {
+        throw std::runtime_error("net.accept(): handle is not a server socket.");
+    }
+
+    // Optional timeout in milliseconds
+    int timeoutMs = -1;
+    if (arguments.size() >= 2) {
+        if (!std::holds_alternative<double>(arguments[1])) {
+            throw std::runtime_error("net.accept(): timeout must be a number.");
+        }
+        timeoutMs = static_cast<int>(std::get<double>(arguments[1]));
+    }
+
+    if (timeoutMs >= 0) {
+        fd_set readfds;
+        FD_ZERO(&readfds);
+        FD_SET(srv.fd, &readfds);
+        struct timeval tv;
+        tv.tv_sec = timeoutMs / 1000;
+        tv.tv_usec = (timeoutMs % 1000) * 1000;
+        int ready = select(srv.fd + 1, &readfds, nullptr, nullptr, &tv);
+        if (ready == 0) return Nil{};
+        if (ready < 0) {
+            throw std::runtime_error("net.accept(): select() failed: " + std::string(strerror(errno)));
+        }
+    }
+
+    int client = ::accept(srv.fd, nullptr, nullptr);
+    if (client < 0) {
+        throw std::runtime_error("net.accept(): failed to accept connection: " + std::string(strerror(errno)));
+    }
+    int clientHandle = netAllocHandle(client, false);
+    return static_cast<double>(clientHandle);
+}
+
+// net.send(handle, data) - sends a string over a TCP socket
+auto nativeNetSend(Interpreter& /*interp*/, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 2 || !std::holds_alternative<double>(arguments[0]) ||
+        !std::holds_alternative<std::string>(arguments[1])) {
+        throw std::runtime_error("net.send() takes a socket handle (number) and data (string).");
+    }
+    int handle = static_cast<int>(std::get<double>(arguments[0]));
+    const std::string& data = std::get<std::string>(arguments[1]);
+    NetSocket sock = netGetHandle(handle);
+    if (sock.is_server) {
+        throw std::runtime_error("net.send(): cannot send on a server (listening) socket.");
+    }
+
+    size_t total = 0;
+    while (total < data.size()) {
+#ifdef MSG_NOSIGNAL
+        ssize_t n = ::send(sock.fd, data.data() + total, data.size() - total, MSG_NOSIGNAL);
+#else
+        ssize_t n = ::send(sock.fd, data.data() + total, data.size() - total, 0);
+#endif
+        if (n < 0) {
+            if (errno == EPIPE || errno == ECONNRESET) {
+                throw std::runtime_error("net.send(): connection closed by remote peer.");
+            }
+            throw std::runtime_error("net.send(): failed: " + std::string(strerror(errno)));
+        }
+        total += static_cast<size_t>(n);
+    }
+    return true;
+}
+
+// net.recv(handle [, bufsize]) - receives data from a TCP socket; returns empty string on connection close
+auto nativeNetRecv(Interpreter& /*interp*/, const std::vector<Value>& arguments) -> Value {
+    if (arguments.empty() || !std::holds_alternative<double>(arguments[0])) {
+        throw std::runtime_error("net.recv() takes a socket handle (number) and an optional buffer size (number).");
+    }
+    int handle = static_cast<int>(std::get<double>(arguments[0]));
+    int bufsize = 4096;
+    if (arguments.size() >= 2) {
+        if (!std::holds_alternative<double>(arguments[1])) {
+            throw std::runtime_error("net.recv(): buffer size must be a number.");
+        }
+        bufsize = static_cast<int>(std::get<double>(arguments[1]));
+        if (bufsize <= 0) throw std::runtime_error("net.recv(): buffer size must be positive.");
+    }
+    NetSocket sock = netGetHandle(handle);
+    if (sock.is_server) {
+        throw std::runtime_error("net.recv(): cannot recv on a server (listening) socket.");
+    }
+
+    std::string buf(static_cast<size_t>(bufsize), '\0');
+    ssize_t n = ::recv(sock.fd, &buf[0], static_cast<size_t>(bufsize), 0);
+    if (n < 0) {
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            return std::string{};
+        }
+        throw std::runtime_error("net.recv(): failed: " + std::string(strerror(errno)));
+    }
+    buf.resize(static_cast<size_t>(n));
+    return buf;
+}
+
+// net.close(handle) - closes a TCP socket handle
+auto nativeNetClose(Interpreter& /*interp*/, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 1 || !std::holds_alternative<double>(arguments[0])) {
+        throw std::runtime_error("net.close() takes exactly one socket handle (number).");
+    }
+    int handle = static_cast<int>(std::get<double>(arguments[0]));
+    NetSocket sock = netGetHandle(handle);
+    ::close(sock.fd);
+    netFreeHandle(handle);
+    return Nil{};
+}
+
+// net.setTimeout(handle, milliseconds) - sets send/recv timeout on a socket
+auto nativeNetSetTimeout(Interpreter& /*interp*/, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 2 || !std::holds_alternative<double>(arguments[0]) ||
+        !std::holds_alternative<double>(arguments[1])) {
+        throw std::runtime_error("net.setTimeout() takes a socket handle (number) and timeout in ms (number).");
+    }
+    int handle = static_cast<int>(std::get<double>(arguments[0]));
+    int ms = static_cast<int>(std::get<double>(arguments[1]));
+    if (ms < 0) throw std::runtime_error("net.setTimeout(): timeout must be non-negative.");
+    NetSocket sock = netGetHandle(handle);
+
+    struct timeval tv;
+    tv.tv_sec = ms / 1000;
+    tv.tv_usec = (ms % 1000) * 1000;
+    setsockopt(sock.fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+    setsockopt(sock.fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
+    return Nil{};
+}
+
 // sleep(ms): pause execution for the given number of milliseconds
 auto nativeSleep(Interpreter& /*interp*/, const std::vector<Value>& arguments) -> Value {
     if (arguments.size() != 1 || !std::holds_alternative<double>(arguments[0])) {

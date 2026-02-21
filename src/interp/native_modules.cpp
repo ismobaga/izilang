@@ -169,6 +169,21 @@ Value createHttpModule(Interpreter& interp) {
     return Value{module};
 }
 
+Value createNetModule(Interpreter& interp) {
+    auto module = std::make_shared<Map>();
+
+    // TCP client/server functions
+    module->entries["connect"]    = Value{std::make_shared<NativeFunction>("connect", 2, nativeNetConnect)};
+    module->entries["listen"]     = Value{std::make_shared<NativeFunction>("listen", 1, nativeNetListen)};
+    module->entries["accept"]     = Value{std::make_shared<NativeFunction>("accept", -1, nativeNetAccept)};
+    module->entries["send"]       = Value{std::make_shared<NativeFunction>("send", 2, nativeNetSend)};
+    module->entries["recv"]       = Value{std::make_shared<NativeFunction>("recv", -1, nativeNetRecv)};
+    module->entries["close"]      = Value{std::make_shared<NativeFunction>("close", 1, nativeNetClose)};
+    module->entries["setTimeout"] = Value{std::make_shared<NativeFunction>("setTimeout", 2, nativeNetSetTimeout)};
+
+    return Value{module};
+}
+
 Value createIpcModule(Interpreter& interp) {
     auto module = std::make_shared<Map>();
 
@@ -223,7 +238,8 @@ bool isNativeModule(const std::string& path) {
            path == "assert" || path == "std.assert" || path == "env" || path == "std.env" || path == "process" ||
            path == "std.process" || path == "path" || path == "std.path" || path == "fs" || path == "std.fs" ||
            path == "time" || path == "std.time" || path == "regex" || path == "std.regex" ||
-           path == "ui" || path == "std.ui" || path == "ipc" || path == "std.ipc";
+           path == "ui" || path == "std.ui" || path == "ipc" || path == "std.ipc" ||
+           path == "net" || path == "std.net";
 }
 
 Value getNativeModule(const std::string& name, Interpreter& interp) {
@@ -259,6 +275,8 @@ Value getNativeModule(const std::string& name, Interpreter& interp) {
         return createUiModule(interp);
     } else if (name == "ipc" || name == "std.ipc") {
         return createIpcModule(interp);
+    } else if (name == "net" || name == "std.net") {
+        return createNetModule(interp);
     }
 
     throw std::runtime_error("Unknown native module: " + name);

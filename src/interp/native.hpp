@@ -150,6 +150,15 @@ auto nativeHttpGet(Interpreter& interp, const std::vector<Value>& arguments) -> 
 auto nativeHttpPost(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 auto nativeHttpRequest(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 
+// std.net functions
+auto nativeNetConnect(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeNetListen(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeNetAccept(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeNetSend(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeNetRecv(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeNetClose(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeNetSetTimeout(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+
 // std.ipc functions
 auto nativeIpcCreatePipe(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 auto nativeIpcOpenRead(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
