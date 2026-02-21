@@ -3,6 +3,7 @@
 #include "value.hpp"
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
+#include <iostream>
 #include <string>
 #include <unordered_map>
 
@@ -24,6 +25,11 @@ inline int  g_nextWindowId    = 1;
 inline bool g_sdlInitialized  = false;
 inline bool g_ttfInitialized  = false;
 
+// Font cache: maps font size -> open TTF_Font*. Empty string key means "no font available".
+inline std::unordered_map<int, TTF_Font*> g_fontCache;
+inline bool g_fontSearchDone  = false;  // true once we've found (or failed to find) a system font
+inline std::string g_fontPath;          // empty if no font was found
+
 inline void ensureSdlInit() {
     if (!g_sdlInitialized) {
         if (SDL_Init(SDL_INIT_VIDEO) != 0) {
@@ -40,6 +46,59 @@ inline void ensureTtfInit() {
         }
         g_ttfInitialized = true;
     }
+}
+
+// Find a usable TrueType font path, caching the result after the first call.
+inline const std::string& findFontPath() {
+    if (g_fontSearchDone) return g_fontPath;
+    g_fontSearchDone = true;
+
+    static const char* candidates[] = {
+        // Linux (Debian/Ubuntu/Fedora/Arch)
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+        "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
+        "/usr/share/fonts/truetype/ubuntu/Ubuntu-R.ttf",
+        "/usr/share/fonts/TTF/DejaVuSans.ttf",
+        "/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",
+        // macOS
+        "/System/Library/Fonts/Helvetica.ttc",
+        "/System/Library/Fonts/Arial.ttf",
+        "/Library/Fonts/Arial.ttf",
+        // Windows
+        "C:\\Windows\\Fonts\\arial.ttf",
+        "C:\\Windows\\Fonts\\segoeui.ttf",
+        "C:\\Windows\\Fonts\\calibri.ttf",
+        nullptr
+    };
+
+    for (int i = 0; candidates[i] != nullptr; ++i) {
+        TTF_Font* probe = TTF_OpenFont(candidates[i], 12);
+        if (probe) {
+            TTF_CloseFont(probe);
+            g_fontPath = candidates[i];
+            return g_fontPath;
+        }
+    }
+
+    // No font found — emit a one-time warning to stderr
+    std::cerr << "[window] Warning: no TrueType font found; drawText() calls will be no-ops.\n"
+              << "         Install fonts (e.g. fonts-dejavu-core) to enable text rendering.\n";
+    return g_fontPath;  // empty string
+}
+
+// Get (or open) a cached font for the given size. Returns nullptr if unavailable.
+inline TTF_Font* getCachedFont(int fontSize) {
+    ensureTtfInit();
+    const std::string& path = findFontPath();
+    if (path.empty()) return nullptr;
+
+    auto it = g_fontCache.find(fontSize);
+    if (it != g_fontCache.end()) return it->second;
+
+    TTF_Font* font = TTF_OpenFont(path.c_str(), fontSize);
+    g_fontCache[fontSize] = font;  // cache even if nullptr
+    return font;
 }
 
 inline WindowEntry& getWindowEntry(int id) {
@@ -294,28 +353,14 @@ inline Value windowDrawText(const std::vector<Value>& args) {
 
     ensureTtfInit();
 
-    static const char* fontPaths[] = {
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
-        "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
-        "/usr/share/fonts/truetype/ubuntu/Ubuntu-R.ttf",
-        "/usr/share/fonts/TTF/DejaVuSans.ttf",
-        nullptr
-    };
-
-    TTF_Font* font = nullptr;
-    for (int i = 0; fontPaths[i] != nullptr; ++i) {
-        font = TTF_OpenFont(fontPaths[i], fontSize);
-        if (font) break;
-    }
+    TTF_Font* font = getCachedFont(fontSize);
     if (!font) {
-        // No font available – silently skip text rendering
         return Nil{};
     }
 
     SDL_Color color = {r, g, b, 255};
     SDL_Surface* surface = TTF_RenderUTF8_Blended(font, text.empty() ? " " : text.c_str(), color);
-    TTF_CloseFont(font);
+    // Note: font is NOT closed here — it is owned by the cache.
     if (!surface) {
         return Nil{};
     }
