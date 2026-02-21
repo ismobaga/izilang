@@ -130,15 +130,29 @@ izi hello.iz
 
 ## Documentation
 
+### Learning Resources
+
+- **[Tutorial](docs/TUTORIAL.md)** - Learn IziLang in Y minutes: guided tour with exercises
 - **[Getting Started](docs/GETTING_STARTED.md)** - Installation, basics, examples
+- **[Cookbook](docs/COOKBOOK.md)** - Practical patterns, best practices, real-world examples
+
+### Reference
+
+- **[Language Specification](docs/LANGUAGE_SPEC.md)** - Formal grammar (EBNF), type system, semantics
+- **[Standard Library](docs/STANDARD_LIBRARY.md)** - All built-in modules and functions with examples
 - **[CLI Reference](docs/CLI_REFERENCE.md)** - Complete command-line guide
-- **[Standard Library](docs/STANDARD_LIBRARY.md)** - Built-in modules and functions
+
+### Guides
+
 - **[IPC Module](docs/IPC.md)** - Inter-process communication via named pipes
 - **[Module System](docs/MODULE_SYSTEM.md)** - Import/export and module organisation
 - **[Error System](docs/ERROR_SYSTEM.md)** - Error types and handling
 - **[Testing](docs/TESTING.md)** - How to run and write tests
 - **[Editor Setup](docs/EDITOR_SETUP.md)** - VS Code, Vim, Emacs integration
 - **[Troubleshooting](docs/ERRORS_TROUBLESHOOTING.md)** - Common errors and solutions
+
+### Project
+
 - **[Roadmap](docs/ROADMAP.md)** - Development plans and milestones
 - **[Analysis](docs/ANALYSIS.md)** - Project analysis, feature inventory, and v1.0 scope
 

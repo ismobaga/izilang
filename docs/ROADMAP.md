@@ -246,28 +246,28 @@ IziLang aims to be a **modern, expressive, and developer-friendly programming la
 
 ### Documentation
 
-- [ ] **Language Specification** (formal)
+- [x] **Language Specification** (formal)
   - Grammar (EBNF)
   - Type system
   - Semantics
-  - Timeline: 2 weeks
+  - See [LANGUAGE_SPEC.md](LANGUAGE_SPEC.md)
 
-- [ ] **Tutorial** (interactive)
+- [x] **Tutorial** (interactive)
   - "Learn IziLang in Y minutes"
   - Step-by-step guide
   - Exercises
-  - Timeline: 1 week
+  - See [TUTORIAL.md](TUTORIAL.md)
 
-- [ ] **API Reference** (generated)
+- [x] **API Reference** (generated)
   - All stdlib functions documented
   - Examples for each function
-  - Timeline: 1 week
+  - See [STANDARD_LIBRARY.md](STANDARD_LIBRARY.md)
 
-- [ ] **Cookbook** (practical examples)
+- [x] **Cookbook** (practical examples)
   - Common patterns
   - Best practices
   - Real-world examples
-  - Timeline: 1 week
+  - See [COOKBOOK.md](COOKBOOK.md)
 
 ### Testing
 
