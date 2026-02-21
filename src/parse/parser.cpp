@@ -1,5 +1,6 @@
 #include "parser.hpp"
 
+#include <algorithm>
 #include <stdexcept>
 #include <utility>
 
@@ -1297,6 +1298,11 @@ void Parser::synchronize() {
 }
 
 ParserError Parser::error(const Token& token, const std::string& message) {
+    if (diags_) {
+        diags_->error("E100", message,
+                      SourceRange(token.line, token.column,
+                                  static_cast<int>(std::max(token.lexeme.size(), size_t(1)))));
+    }
     return ParserError(token, message);
 }
 

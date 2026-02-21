@@ -5,6 +5,7 @@
 #include <string_view>
 #include <vector>
 
+#include "common/diagnostics.hpp"
 #include "common/token.hpp"
 
 namespace izi {
@@ -20,7 +21,8 @@ class LexerError : public std::runtime_error {
 
 class Lexer {
    public:
-    explicit Lexer(std::string source) : source(std::move(source)) {}
+    explicit Lexer(std::string source, DiagnosticEngine* diags = nullptr)
+        : source(std::move(source)), diags_(diags) {}
 
     std::vector<Token> scanTokens();
 
@@ -55,8 +57,9 @@ class Lexer {
     int current = 0;
     int line = 1;
     int column = 1;
-    int startLine = 1;  // Line where current token starts
-    int startColumn = 1;  // Column where current token starts
+    int startLine = 1;   // Line where current token starts
+    int startColumn = 1; // Column where current token starts
+    DiagnosticEngine* diags_ = nullptr;  // optional, not owned
 };
 
 }  // namespace izi

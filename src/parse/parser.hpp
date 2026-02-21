@@ -7,6 +7,7 @@
 #include <unordered_map>
 
 #include "ast/stmt.hpp"
+#include "common/diagnostics.hpp"
 #include "common/token.hpp"
 
 namespace izi {
@@ -26,8 +27,9 @@ struct MacroDefinition {
 
 class Parser {
    public:
-    explicit Parser(std::vector<Token> tokens, std::string_view source = "")
-        : tokens(std::move(tokens)), source_(source) {}
+    explicit Parser(std::vector<Token> tokens, std::string_view source = "",
+                    DiagnosticEngine* diags = nullptr)
+        : tokens(std::move(tokens)), source_(source), diags_(diags) {}
 
     std::vector<StmtPtr> parse();
 
@@ -98,6 +100,7 @@ class Parser {
     std::vector<Token> tokens;
     size_t current = 0;
     std::string_view source_;
+    DiagnosticEngine* diags_ = nullptr;  // optional, not owned
 
     // Macro definitions accumulated during parsing
     std::unordered_map<std::string, MacroDefinition> macros_;
