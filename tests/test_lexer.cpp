@@ -361,3 +361,247 @@ TEST_CASE("Lexer handles comments with division operator", "[lexer]") {
         REQUIRE(tokens[4].type == TokenType::SLASH);
     }
 }
+
+TEST_CASE("Lexer tracks column numbers correctly", "[lexer]") {
+    SECTION("Tokens on first line have correct columns") {
+        Lexer lexer("var x = 42");
+        auto tokens = lexer.scanTokens();
+
+        REQUIRE(tokens[0].column == 1);   // var
+        REQUIRE(tokens[1].column == 5);   // x
+        REQUIRE(tokens[2].column == 7);   // =
+        REQUIRE(tokens[3].column == 9);   // 42
+    }
+
+    SECTION("Tokens on subsequent lines start at column 1") {
+        Lexer lexer("var x\nvar y");
+        auto tokens = lexer.scanTokens();
+
+        REQUIRE(tokens[0].column == 1);  // var (line 1)
+        REQUIRE(tokens[1].column == 5);  // x   (line 1)
+        REQUIRE(tokens[2].column == 1);  // var (line 2)
+        REQUIRE(tokens[3].column == 5);  // y   (line 2)
+    }
+
+    SECTION("Compound tokens report start column") {
+        Lexer lexer("x == y");
+        auto tokens = lexer.scanTokens();
+
+        REQUIRE(tokens[0].column == 1);  // x
+        REQUIRE(tokens[1].column == 3);  // ==
+        REQUIRE(tokens[2].column == 6);  // y
+    }
+
+    SECTION("Compound assignment operators report correct column") {
+        Lexer lexer("x += 1");
+        auto tokens = lexer.scanTokens();
+
+        REQUIRE(tokens[0].column == 1);  // x
+        REQUIRE(tokens[1].column == 3);  // +=
+        REQUIRE(tokens[2].column == 6);  // 1
+    }
+
+    SECTION("Arrow operator reports correct column") {
+        Lexer lexer("fn -> x");
+        auto tokens = lexer.scanTokens();
+
+        REQUIRE(tokens[0].column == 1);  // fn
+        REQUIRE(tokens[1].column == 4);  // ->
+        REQUIRE(tokens[2].column == 7);  // x
+    }
+}
+
+TEST_CASE("Lexer tokenizes remaining single-character tokens", "[lexer]") {
+    SECTION("Tokenizes colon") {
+        Lexer lexer("x : y");
+        auto tokens = lexer.scanTokens();
+
+        REQUIRE(tokens.size() == 4);
+        REQUIRE(tokens[1].type == TokenType::COLON);
+    }
+
+    SECTION("Tokenizes question mark") {
+        Lexer lexer("x ? y");
+        auto tokens = lexer.scanTokens();
+
+        REQUIRE(tokens.size() == 4);
+        REQUIRE(tokens[1].type == TokenType::QUESTION);
+    }
+
+    SECTION("Tokenizes spread operator") {
+        Lexer lexer("...");
+        auto tokens = lexer.scanTokens();
+
+        REQUIRE(tokens.size() == 2);
+        REQUIRE(tokens[0].type == TokenType::DOT_DOT_DOT);
+        REQUIRE(tokens[0].lexeme == "...");
+    }
+}
+
+TEST_CASE("Lexer tokenizes fat-arrow operator", "[lexer]") {
+    SECTION("Tokenizes => as ARROW") {
+        Lexer lexer("=> x");
+        auto tokens = lexer.scanTokens();
+
+        REQUIRE(tokens.size() == 3);
+        REQUIRE(tokens[0].type == TokenType::ARROW);
+        REQUIRE(tokens[0].lexeme == "=>");
+    }
+}
+
+TEST_CASE("Lexer tokenizes underscore wildcard", "[lexer]") {
+    SECTION("Standalone underscore is UNDERSCORE token") {
+        Lexer lexer("_");
+        auto tokens = lexer.scanTokens();
+
+        REQUIRE(tokens.size() == 2);
+        REQUIRE(tokens[0].type == TokenType::UNDERSCORE);
+        REQUIRE(tokens[0].lexeme == "_");
+    }
+
+    SECTION("Identifier starting with underscore is IDENTIFIER") {
+        Lexer lexer("_name");
+        auto tokens = lexer.scanTokens();
+
+        REQUIRE(tokens.size() == 2);
+        REQUIRE(tokens[0].type == TokenType::IDENTIFIER);
+        REQUIRE(tokens[0].lexeme == "_name");
+    }
+}
+
+TEST_CASE("Lexer tokenizes all keywords", "[lexer]") {
+    SECTION("Tokenizes OOP keywords") {
+        Lexer lexer("class extends this super");
+        auto tokens = lexer.scanTokens();
+
+        REQUIRE(tokens.size() == 5);
+        REQUIRE(tokens[0].type == TokenType::CLASS);
+        REQUIRE(tokens[1].type == TokenType::EXTENDS);
+        REQUIRE(tokens[2].type == TokenType::THIS);
+        REQUIRE(tokens[3].type == TokenType::SUPER);
+    }
+
+    SECTION("Tokenizes module keywords") {
+        Lexer lexer("import export from as");
+        auto tokens = lexer.scanTokens();
+
+        REQUIRE(tokens.size() == 5);
+        REQUIRE(tokens[0].type == TokenType::IMPORT);
+        REQUIRE(tokens[1].type == TokenType::EXPORT);
+        REQUIRE(tokens[2].type == TokenType::FROM);
+        REQUIRE(tokens[3].type == TokenType::AS);
+    }
+
+    SECTION("Tokenizes exception keywords") {
+        Lexer lexer("try catch finally throw");
+        auto tokens = lexer.scanTokens();
+
+        REQUIRE(tokens.size() == 5);
+        REQUIRE(tokens[0].type == TokenType::TRY);
+        REQUIRE(tokens[1].type == TokenType::CATCH);
+        REQUIRE(tokens[2].type == TokenType::FINALLY);
+        REQUIRE(tokens[3].type == TokenType::THROW);
+    }
+
+    SECTION("Tokenizes async/await keywords") {
+        Lexer lexer("async await");
+        auto tokens = lexer.scanTokens();
+
+        REQUIRE(tokens.size() == 3);
+        REQUIRE(tokens[0].type == TokenType::ASYNC);
+        REQUIRE(tokens[1].type == TokenType::AWAIT);
+    }
+
+    SECTION("Tokenizes match and default keywords") {
+        Lexer lexer("match default");
+        auto tokens = lexer.scanTokens();
+
+        REQUIRE(tokens.size() == 3);
+        REQUIRE(tokens[0].type == TokenType::MATCH);
+        REQUIRE(tokens[1].type == TokenType::DEFAULT);
+    }
+
+    SECTION("Tokenizes macro keyword") {
+        Lexer lexer("macro");
+        auto tokens = lexer.scanTokens();
+
+        REQUIRE(tokens.size() == 2);
+        REQUIRE(tokens[0].type == TokenType::MACRO);
+    }
+
+    SECTION("Tokenizes logical keywords") {
+        Lexer lexer("and or");
+        auto tokens = lexer.scanTokens();
+
+        REQUIRE(tokens.size() == 3);
+        REQUIRE(tokens[0].type == TokenType::AND);
+        REQUIRE(tokens[1].type == TokenType::OR);
+    }
+}
+
+TEST_CASE("Lexer handles unexpected characters gracefully", "[lexer]") {
+    SECTION("Throws LexerError for unexpected character") {
+        Lexer lexer("var x = @bad;");
+        REQUIRE_THROWS_AS(lexer.scanTokens(), LexerError);
+    }
+
+    SECTION("LexerError has correct line and column") {
+        Lexer lexer("var x = @;");
+        try {
+            lexer.scanTokens();
+            FAIL("Expected LexerError");
+        } catch (const LexerError& e) {
+            REQUIRE(e.line == 1);
+            REQUIRE(e.column == 9);
+        }
+    }
+
+    SECTION("Throws LexerError for unterminated string") {
+        Lexer lexer("\"unterminated");
+        REQUIRE_THROWS_AS(lexer.scanTokens(), LexerError);
+    }
+}
+
+TEST_CASE("Lexer tokenizes representative program", "[lexer]") {
+    SECTION("Full function declaration") {
+        Lexer lexer("fn add(x, y) { return x + y; }");
+        auto tokens = lexer.scanTokens();
+
+        REQUIRE(tokens[0].type == TokenType::FN);
+        REQUIRE(tokens[1].type == TokenType::IDENTIFIER);
+        REQUIRE(tokens[1].lexeme == "add");
+        REQUIRE(tokens[2].type == TokenType::LEFT_PAREN);
+        REQUIRE(tokens[3].type == TokenType::IDENTIFIER);
+        REQUIRE(tokens[3].lexeme == "x");
+        REQUIRE(tokens[4].type == TokenType::COMMA);
+        REQUIRE(tokens[5].type == TokenType::IDENTIFIER);
+        REQUIRE(tokens[5].lexeme == "y");
+        REQUIRE(tokens[6].type == TokenType::RIGHT_PAREN);
+        REQUIRE(tokens[7].type == TokenType::LEFT_BRACE);
+        REQUIRE(tokens[8].type == TokenType::RETURN);
+        REQUIRE(tokens[9].type == TokenType::IDENTIFIER);
+        REQUIRE(tokens[10].type == TokenType::PLUS);
+        REQUIRE(tokens[11].type == TokenType::IDENTIFIER);
+        REQUIRE(tokens[12].type == TokenType::SEMICOLON);
+        REQUIRE(tokens[13].type == TokenType::RIGHT_BRACE);
+        REQUIRE(tokens[14].type == TokenType::END_OF_FILE);
+    }
+
+    SECTION("Multi-line program with comments") {
+        Lexer lexer(
+            "// greeting\n"
+            "var name = \"world\";\n"
+            "/* say hello */\n"
+            "var msg = \"Hello, \" + name;\n");
+        auto tokens = lexer.scanTokens();
+
+        // Check key tokens
+        REQUIRE(tokens[0].type == TokenType::VAR);
+        REQUIRE(tokens[0].line == 2);
+        REQUIRE(tokens[0].column == 1);
+        REQUIRE(tokens[1].lexeme == "name");
+        REQUIRE(tokens[4].type == TokenType::SEMICOLON);
+        REQUIRE(tokens[5].type == TokenType::VAR);
+        REQUIRE(tokens[5].line == 4);
+    }
+}

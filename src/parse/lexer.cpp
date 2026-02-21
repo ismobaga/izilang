@@ -139,7 +139,7 @@ char Lexer::advance() {
     column++;
     if (c == '\n') {
         line++;
-        column = 0;
+        column = 1;
     }
     return c;
 }
@@ -147,6 +147,7 @@ char Lexer::advance() {
 bool Lexer::match(char expected) {
     if (isAtEnd() || source[current] != expected) return false;
     current++;
+    column++;
     return true;
 }
 

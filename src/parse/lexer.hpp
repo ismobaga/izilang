@@ -29,7 +29,6 @@ class Lexer {
    private:
     void scanToken();
     void addToken(TokenType type);
-    void addToken(TokenType type, std::string_view literal);
 
     bool isAtEnd() const;
     char advance();
