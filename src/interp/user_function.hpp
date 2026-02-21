@@ -1,6 +1,5 @@
 #pragma once
 
-#include <memory>
 #include <vector>
 #include "common/value.hpp"
 #include "common/callable.hpp"
@@ -11,15 +10,21 @@
 namespace izi {
 class Interpreter;
 
-class UserFunction : public Callable, public std::enable_shared_from_this<UserFunction> {
+// Ownership note:
+//   UserFunction holds a non-owning raw pointer to its closure Environment.
+//   The Environment is owned by the EnvironmentArena inside the Interpreter
+//   and therefore outlives the UserFunction for the duration of any given
+//   interpreter session.  This avoids the shared_ptr reference cycle that
+//   would otherwise exist between UserFunction and Environment.
+class UserFunction : public Callable {
    public:
     // Constructor for function statements (named functions)
-    UserFunction(FunctionStmt* declaration, std::shared_ptr<Environment> closure)
-        : decl(declaration), closure(std::move(closure)), funcExpr(nullptr) {}
+    UserFunction(FunctionStmt* declaration, Environment* closure)
+        : decl(declaration), closure(closure), funcExpr(nullptr) {}
 
     // Constructor for function expressions (anonymous functions)
-    UserFunction(FunctionExpr* expression, std::shared_ptr<Environment> closure)
-        : decl(nullptr), closure(std::move(closure)), funcExpr(expression) {}
+    UserFunction(FunctionExpr* expression, Environment* closure)
+        : decl(nullptr), closure(closure), funcExpr(expression) {}
 
     std::string name() const override {
         if (decl) return decl->name.empty() ? "<anonymous>" : decl->name;
@@ -35,7 +40,7 @@ class UserFunction : public Callable, public std::enable_shared_from_this<UserFu
     Value call(Interpreter& interp, const std::vector<Value>& arguments) override;
 
     // Get the closure (needed for binding methods)
-    std::shared_ptr<Environment> getClosure() const { return closure; }
+    Environment* getClosure() const { return closure; }
 
     // Get the function declaration (needed for creating bound methods)
     FunctionStmt* getDecl() const { return decl; }
@@ -44,7 +49,7 @@ class UserFunction : public Callable, public std::enable_shared_from_this<UserFu
    private:
     FunctionStmt* decl;  // For named functions (from statements)
     FunctionExpr* funcExpr;  // For anonymous functions (from expressions)
-    std::shared_ptr<Environment> closure;
+    Environment* closure;  // Non-owning; owned by EnvironmentArena
 };
 
 }  // namespace izi

@@ -25,7 +25,7 @@ namespace izi {
 
 // Constructor needs to be defined to call registerNativeFunctions
 Interpreter::Interpreter(std::string_view source)
-    : source_(source), globals(std::make_shared<Environment>()), env(globals) {
+    : source_(source), globals(arena_.create()), env(globals) {
     registerNativeFunctions(*this);
 }
 
@@ -51,8 +51,8 @@ double Interpreter::toNumber(const Value& v, const Token& token) {
     return std::get<double>(v);
 }
 
-void Interpreter::executeBlock(const std::vector<StmtPtr>& statements, std::shared_ptr<Environment> newEnv) {
-    std::shared_ptr<Environment> previous = env;
+void Interpreter::executeBlock(const std::vector<StmtPtr>& statements, Environment* newEnv) {
+    Environment* previous = env;
     env = newEnv;
 
     try {
@@ -344,7 +344,7 @@ Value Interpreter::visit(MatchExpr& expr) {
         // If pattern matched, check guard condition if present
         if (matched && matchCase.guard) {
             // Create a new environment for guard evaluation
-            auto guardEnv = std::make_shared<Environment>(env);
+            auto guardEnv = arena_.create(env);
 
             // If variable pattern, bind the variable in guard scope
             if (!varName.empty()) {
@@ -366,7 +366,7 @@ Value Interpreter::visit(MatchExpr& expr) {
         // If everything matched, evaluate and return the result
         if (matched) {
             // Create a new environment for result evaluation
-            auto resultEnv = std::make_shared<Environment>(env);
+            auto resultEnv = arena_.create(env);
 
             // If variable pattern, bind the variable in result scope
             if (!varName.empty()) {
@@ -445,7 +445,7 @@ void Interpreter::visit(VarStmt& stmt) {
 }
 
 void Interpreter::visit(BlockStmt& stmt) {
-    auto blockEnv = std::make_shared<Environment>(env);
+    auto blockEnv = arena_.create(env);
     executeBlock(stmt.statements, blockEnv);
 }
 
@@ -633,7 +633,7 @@ std::unordered_map<std::string, Value> Interpreter::loadModuleWithExports(const 
     cachedProgram = parser.parse();
 
     // Execute in isolated module scope
-    auto moduleEnv = std::make_shared<Environment>(globals);
+    auto moduleEnv = arena_.create(globals);
     std::unordered_map<std::string, Value> exports;
 
     auto prevEnv = env;
@@ -775,7 +775,7 @@ void Interpreter::visit(TryStmt& stmt) {
             auto* blockPtr = dynamic_cast<BlockStmt*>(stmt.catchBlock.get());
             if (blockPtr) {
                 // Create new environment for catch block with exception variable
-                auto catchEnv = std::make_shared<Environment>(env);
+                auto catchEnv = arena_.create(env);
 
                 // Bind exception to catch variable
                 if (!stmt.catchVariable.empty()) {
@@ -835,11 +835,11 @@ void Interpreter::visit(ClassStmt& stmt) {
     // If we have a superclass, we need to define 'super' in the method's environment
     std::unordered_map<std::string, Value> methods;
     for (const auto& method : stmt.methods) {
-        std::shared_ptr<Environment> methodEnv = env;
+        Environment* methodEnv = env;
 
         // If there's a superclass, create a new environment with 'super' defined
         if (superclass) {
-            methodEnv = std::make_shared<Environment>(env);
+            methodEnv = arena_.create(env);
             methodEnv->define("super", superclass);
         }
 

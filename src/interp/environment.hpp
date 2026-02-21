@@ -1,6 +1,5 @@
 #pragma once
 
-#include <memory>
 #include <string>
 #include <unordered_map>
 #include <stdexcept>
@@ -8,11 +7,17 @@
 
 namespace izi {
 
-class Environment : public std::enable_shared_from_this<Environment> {
+// Ownership note:
+//   Environment instances are owned exclusively by an EnvironmentArena.
+//   The `parent` pointer is therefore a non-owning raw pointer – the arena
+//   guarantees that parent environments outlive their children for the
+//   duration of interpreter execution.  Do not delete Environment objects
+//   directly; let the arena manage their lifetime.
+class Environment {
    public:
     Environment() = default;
 
-    explicit Environment(std::shared_ptr<Environment> enclosing) : parent(std::move(enclosing)) {}
+    explicit Environment(Environment* enclosing) : parent(enclosing) {}
 
     void define(const std::string& name, const Value& value) { values[name] = value; }
 
@@ -47,11 +52,11 @@ class Environment : public std::enable_shared_from_this<Environment> {
     // Get all variables in this environment (for REPL :vars command)
     const std::unordered_map<std::string, Value>& getAll() const { return values; }
 
-    std::shared_ptr<Environment> getParent() const { return parent; }
+    Environment* getParent() const { return parent; }
 
    private:
     std::unordered_map<std::string, Value> values;
-    std::shared_ptr<Environment> parent;
+    Environment* parent = nullptr;
 };
 
 }  // namespace izi
