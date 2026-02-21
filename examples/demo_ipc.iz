@@ -1,0 +1,86 @@
+print("===========================================");
+print("    std.ipc Module Demonstration");
+print("===========================================");
+print("");
+
+import * as ipc from "std.ipc";
+import * as assert from "std.assert";
+
+print("1. Creating a Named Pipe");
+print("----------------------------------------");
+var pipeName = "demo_ipc_example";
+ipc.createPipe(pipeName);
+print("Created pipe: " + pipeName);
+print("");
+
+print("2. Opening Read and Write Ends");
+print("----------------------------------------");
+var reader = ipc.openRead(pipeName);
+var writer = ipc.openWrite(pipeName);
+print("Opened reader handle: " + str(reader));
+print("Opened writer handle: " + str(writer));
+print("");
+
+print("3. Sending and Receiving a Message (blocking recv)");
+print("----------------------------------------");
+ipc.send(writer, "Hello, IPC!");
+var msg = ipc.recv(reader);
+print("Sent:     'Hello, IPC!'");
+print("Received: '" + msg + "'");
+assert.eq(msg, "Hello, IPC!");
+print("");
+
+print("4. Non-Blocking Receive (tryRecv)");
+print("----------------------------------------");
+var noMsg = ipc.tryRecv(reader);
+if (noMsg == nil) {
+    print("tryRecv returned nil (no message pending) - as expected");
+} else {
+    print("Unexpected message: " + noMsg);
+}
+
+ipc.send(writer, "tryRecv message");
+var gotMsg = ipc.tryRecv(reader);
+print("After send, tryRecv returned: '" + str(gotMsg) + "'");
+assert.eq(gotMsg, "tryRecv message");
+print("");
+
+print("5. Sending Multiple Messages");
+print("----------------------------------------");
+ipc.send(writer, "message 1");
+ipc.send(writer, "message 2");
+ipc.send(writer, "message 3");
+
+var m1 = ipc.recv(reader);
+var m2 = ipc.recv(reader);
+var m3 = ipc.recv(reader);
+print("Message 1: " + m1);
+print("Message 2: " + m2);
+print("Message 3: " + m3);
+assert.eq(m1, "message 1");
+assert.eq(m2, "message 2");
+assert.eq(m3, "message 3");
+print("");
+
+print("6. Messages with Special Characters");
+print("----------------------------------------");
+ipc.send(writer, "hello world!");
+var special = ipc.recv(reader);
+print("Received message: '" + special + "' (length: " + str(len(special)) + ")");
+assert.eq(special, "hello world!");
+print("");
+
+print("7. Cleanup");
+print("----------------------------------------");
+ipc.close(writer);
+ipc.close(reader);
+ipc.removePipe(pipeName);
+print("Closed handles and removed pipe.");
+print("");
+
+print("===========================================");
+print("    Demonstration Complete!");
+print("===========================================");
+print("");
+print("See docs/IPC.md for the full API reference.");
+print("For two-process IPC, run sender and receiver scripts separately.");

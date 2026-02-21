@@ -191,7 +191,7 @@ bool isVmNativeModule(const std::string& path) {
            path == "std.assert" || path == "env" || path == "std.env" || path == "process" || path == "std.process" ||
            path == "path" || path == "std.path" || path == "fs" || path == "std.fs" || path == "time" ||
            path == "std.time" || path == "regex" || path == "std.regex" ||
-           path == "ui" || path == "std.ui";
+           path == "ui" || path == "std.ui" || path == "ipc" || path == "std.ipc";
 }
 
 Value getVmNativeModule(const std::string& name, VM& vm) {
@@ -227,6 +227,17 @@ Value getVmNativeModule(const std::string& name, VM& vm) {
         return Value{module};
     } else if (name == "ui" || name == "std.ui") {
         return createVmUiModule(vm);
+    } else if (name == "ipc" || name == "std.ipc") {
+        auto module = std::make_shared<Map>();
+        module->entries["createPipe"] = Value{std::make_shared<VmNativeFunction>("createPipe", 1, vmNativeIpcCreatePipe)};
+        module->entries["openRead"]   = Value{std::make_shared<VmNativeFunction>("openRead", 1, vmNativeIpcOpenRead)};
+        module->entries["openWrite"]  = Value{std::make_shared<VmNativeFunction>("openWrite", 1, vmNativeIpcOpenWrite)};
+        module->entries["send"]       = Value{std::make_shared<VmNativeFunction>("send", 2, vmNativeIpcSend)};
+        module->entries["recv"]       = Value{std::make_shared<VmNativeFunction>("recv", 1, vmNativeIpcRecv)};
+        module->entries["tryRecv"]    = Value{std::make_shared<VmNativeFunction>("tryRecv", 1, vmNativeIpcTryRecv)};
+        module->entries["close"]      = Value{std::make_shared<VmNativeFunction>("close", 1, vmNativeIpcClose)};
+        module->entries["removePipe"] = Value{std::make_shared<VmNativeFunction>("removePipe", 1, vmNativeIpcRemovePipe)};
+        return Value{module};
     }
 
     throw std::runtime_error("Unknown native module: " + name);

@@ -22,6 +22,7 @@ Value createPathModule(Interpreter& interp);
 Value createFsModule(Interpreter& interp);
 Value createHttpModule(Interpreter& interp);
 Value createUiModule(Interpreter& interp);
+Value createIpcModule(Interpreter& interp);
 
 // Check if a module path refers to a native module
 bool isNativeModule(const std::string& path);

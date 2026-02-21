@@ -169,6 +169,22 @@ Value createHttpModule(Interpreter& interp) {
     return Value{module};
 }
 
+Value createIpcModule(Interpreter& interp) {
+    auto module = std::make_shared<Map>();
+
+    // IPC functions
+    module->entries["createPipe"] = Value{std::make_shared<NativeFunction>("createPipe", 1, nativeIpcCreatePipe)};
+    module->entries["openRead"]   = Value{std::make_shared<NativeFunction>("openRead", 1, nativeIpcOpenRead)};
+    module->entries["openWrite"]  = Value{std::make_shared<NativeFunction>("openWrite", 1, nativeIpcOpenWrite)};
+    module->entries["send"]       = Value{std::make_shared<NativeFunction>("send", 2, nativeIpcSend)};
+    module->entries["recv"]       = Value{std::make_shared<NativeFunction>("recv", 1, nativeIpcRecv)};
+    module->entries["tryRecv"]    = Value{std::make_shared<NativeFunction>("tryRecv", 1, nativeIpcTryRecv)};
+    module->entries["close"]      = Value{std::make_shared<NativeFunction>("close", 1, nativeIpcClose)};
+    module->entries["removePipe"] = Value{std::make_shared<NativeFunction>("removePipe", 1, nativeIpcRemovePipe)};
+
+    return Value{module};
+}
+
 Value createTimeModule(Interpreter& interp) {
     auto module = std::make_shared<Map>();
 
@@ -207,7 +223,7 @@ bool isNativeModule(const std::string& path) {
            path == "assert" || path == "std.assert" || path == "env" || path == "std.env" || path == "process" ||
            path == "std.process" || path == "path" || path == "std.path" || path == "fs" || path == "std.fs" ||
            path == "time" || path == "std.time" || path == "regex" || path == "std.regex" ||
-           path == "ui" || path == "std.ui";
+           path == "ui" || path == "std.ui" || path == "ipc" || path == "std.ipc";
 }
 
 Value getNativeModule(const std::string& name, Interpreter& interp) {
@@ -241,6 +257,8 @@ Value getNativeModule(const std::string& name, Interpreter& interp) {
         return createHttpModule(interp);
     } else if (name == "ui" || name == "std.ui") {
         return createUiModule(interp);
+    } else if (name == "ipc" || name == "std.ipc") {
+        return createIpcModule(interp);
     }
 
     throw std::runtime_error("Unknown native module: " + name);
