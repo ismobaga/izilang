@@ -115,6 +115,15 @@ Value vmNativeIpcTryRecv(VM& vm, const std::vector<Value>& arguments);
 Value vmNativeIpcClose(VM& vm, const std::vector<Value>& arguments);
 Value vmNativeIpcRemovePipe(VM& vm, const std::vector<Value>& arguments);
 
+// std.net native functions
+Value vmNativeNetConnect(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeNetListen(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeNetAccept(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeNetSend(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeNetRecv(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeNetClose(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeNetSetTimeout(VM& vm, const std::vector<Value>& arguments);
+
 void registerVmNatives(VM& vm);
 
 }  // namespace izi

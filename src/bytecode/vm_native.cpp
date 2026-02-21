@@ -19,6 +19,10 @@
 #endif
 #include <mutex>
 #include <unordered_map>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
 
 namespace izi {
 
@@ -1616,6 +1620,261 @@ Value vmNativeIpcRemovePipe(VM& /*vm*/, const std::vector<Value>& arguments) {
     }
     return true;
 #endif
+}
+
+// ============ std.net functions ============
+
+namespace {
+
+struct VmNetSocket {
+    int fd;
+    bool is_server;
+};
+
+static std::mutex vmNetMutex;
+static std::unordered_map<int, VmNetSocket> vmNetSocketMap;
+static int vmNextNetHandle = 1;
+
+static int vmNetAllocHandle(int fd, bool is_server) {
+    std::lock_guard<std::mutex> lock(vmNetMutex);
+    int id = vmNextNetHandle++;
+    vmNetSocketMap[id] = {fd, is_server};
+    return id;
+}
+
+static VmNetSocket vmNetGetHandle(int id) {
+    std::lock_guard<std::mutex> lock(vmNetMutex);
+    auto it = vmNetSocketMap.find(id);
+    if (it == vmNetSocketMap.end()) {
+        throw std::runtime_error("net: invalid socket handle: " + std::to_string(id));
+    }
+    return it->second;
+}
+
+static void vmNetFreeHandle(int id) {
+    std::lock_guard<std::mutex> lock(vmNetMutex);
+    vmNetSocketMap.erase(id);
+}
+
+}  // anonymous namespace
+
+Value vmNativeNetConnect(VM& /*vm*/, const std::vector<Value>& arguments) {
+    if (arguments.size() != 2 || !std::holds_alternative<std::string>(arguments[0]) ||
+        !std::holds_alternative<double>(arguments[1])) {
+        throw std::runtime_error("net.connect() takes a host (string) and port (number).");
+    }
+    const std::string& host = std::get<std::string>(arguments[0]);
+    int port = static_cast<int>(std::get<double>(arguments[1]));
+    if (port <= 0 || port > 65535) {
+        throw std::runtime_error("net.connect(): port must be between 1 and 65535.");
+    }
+
+    struct addrinfo hints{}, *res = nullptr;
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    std::string portStr = std::to_string(port);
+    int rc = getaddrinfo(host.c_str(), portStr.c_str(), &hints, &res);
+    if (rc != 0) {
+        throw std::runtime_error("net.connect(): failed to resolve host '" + host +
+                                 "': " + std::string(gai_strerror(rc)));
+    }
+
+    int sock = -1;
+    for (struct addrinfo* rp = res; rp != nullptr; rp = rp->ai_next) {
+        sock = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+        if (sock < 0) continue;
+        if (::connect(sock, rp->ai_addr, rp->ai_addrlen) == 0) break;
+        ::close(sock);
+        sock = -1;
+    }
+    freeaddrinfo(res);
+    if (sock < 0) {
+        throw std::runtime_error("net.connect(): failed to connect to '" + host + ":" + portStr + "'");
+    }
+
+    int handle = vmNetAllocHandle(sock, false);
+    return static_cast<double>(handle);
+}
+
+Value vmNativeNetListen(VM& /*vm*/, const std::vector<Value>& arguments) {
+    if (arguments.size() != 1 || !std::holds_alternative<double>(arguments[0])) {
+        throw std::runtime_error("net.listen() takes exactly one numeric argument (port).");
+    }
+    int port = static_cast<int>(std::get<double>(arguments[0]));
+    if (port <= 0 || port > 65535) {
+        throw std::runtime_error("net.listen(): port must be between 1 and 65535.");
+    }
+
+    int sock = socket(AF_INET6, SOCK_STREAM, 0);
+    if (sock < 0) {
+        sock = socket(AF_INET, SOCK_STREAM, 0);
+        if (sock < 0) {
+            throw std::runtime_error("net.listen(): failed to create socket: " + std::string(strerror(errno)));
+        }
+        int opt = 1;
+        setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+        struct sockaddr_in addr{};
+        addr.sin_family = AF_INET;
+        addr.sin_addr.s_addr = INADDR_ANY;
+        addr.sin_port = htons(static_cast<uint16_t>(port));
+        if (bind(sock, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr)) < 0) {
+            ::close(sock);
+            throw std::runtime_error("net.listen(): failed to bind port " + std::to_string(port) +
+                                     ": " + strerror(errno));
+        }
+    } else {
+        int opt = 1;
+        setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+        int v6only = 0;
+        setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, &v6only, sizeof(v6only));
+        struct sockaddr_in6 addr{};
+        addr.sin6_family = AF_INET6;
+        addr.sin6_addr = in6addr_any;
+        addr.sin6_port = htons(static_cast<uint16_t>(port));
+        if (bind(sock, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr)) < 0) {
+            ::close(sock);
+            throw std::runtime_error("net.listen(): failed to bind port " + std::to_string(port) +
+                                     ": " + strerror(errno));
+        }
+    }
+
+    if (listen(sock, 128) < 0) {
+        ::close(sock);
+        throw std::runtime_error("net.listen(): failed to listen on port " + std::to_string(port) +
+                                 ": " + strerror(errno));
+    }
+
+    int handle = vmNetAllocHandle(sock, true);
+    return static_cast<double>(handle);
+}
+
+Value vmNativeNetAccept(VM& /*vm*/, const std::vector<Value>& arguments) {
+    if (arguments.empty() || !std::holds_alternative<double>(arguments[0])) {
+        throw std::runtime_error("net.accept() takes a server handle (number) and an optional timeout (number).");
+    }
+    int handle = static_cast<int>(std::get<double>(arguments[0]));
+    VmNetSocket srv = vmNetGetHandle(handle);
+    if (!srv.is_server) {
+        throw std::runtime_error("net.accept(): handle is not a server socket.");
+    }
+
+    int timeoutMs = -1;
+    if (arguments.size() >= 2) {
+        if (!std::holds_alternative<double>(arguments[1])) {
+            throw std::runtime_error("net.accept(): timeout must be a number.");
+        }
+        timeoutMs = static_cast<int>(std::get<double>(arguments[1]));
+    }
+
+    if (timeoutMs >= 0) {
+        fd_set readfds;
+        FD_ZERO(&readfds);
+        FD_SET(srv.fd, &readfds);
+        struct timeval tv;
+        tv.tv_sec = timeoutMs / 1000;
+        tv.tv_usec = (timeoutMs % 1000) * 1000;
+        int ready = select(srv.fd + 1, &readfds, nullptr, nullptr, &tv);
+        if (ready == 0) return Nil{};
+        if (ready < 0) {
+            throw std::runtime_error("net.accept(): select() failed: " + std::string(strerror(errno)));
+        }
+    }
+
+    int client = ::accept(srv.fd, nullptr, nullptr);
+    if (client < 0) {
+        throw std::runtime_error("net.accept(): failed to accept connection: " + std::string(strerror(errno)));
+    }
+    int clientHandle = vmNetAllocHandle(client, false);
+    return static_cast<double>(clientHandle);
+}
+
+Value vmNativeNetSend(VM& /*vm*/, const std::vector<Value>& arguments) {
+    if (arguments.size() != 2 || !std::holds_alternative<double>(arguments[0]) ||
+        !std::holds_alternative<std::string>(arguments[1])) {
+        throw std::runtime_error("net.send() takes a socket handle (number) and data (string).");
+    }
+    int handle = static_cast<int>(std::get<double>(arguments[0]));
+    const std::string& data = std::get<std::string>(arguments[1]);
+    VmNetSocket sock = vmNetGetHandle(handle);
+    if (sock.is_server) {
+        throw std::runtime_error("net.send(): cannot send on a server (listening) socket.");
+    }
+
+    size_t total = 0;
+    while (total < data.size()) {
+#ifdef MSG_NOSIGNAL
+        ssize_t n = ::send(sock.fd, data.data() + total, data.size() - total, MSG_NOSIGNAL);
+#else
+        ssize_t n = ::send(sock.fd, data.data() + total, data.size() - total, 0);
+#endif
+        if (n < 0) {
+            if (errno == EPIPE || errno == ECONNRESET) {
+                throw std::runtime_error("net.send(): connection closed by remote peer.");
+            }
+            throw std::runtime_error("net.send(): failed: " + std::string(strerror(errno)));
+        }
+        total += static_cast<size_t>(n);
+    }
+    return true;
+}
+
+Value vmNativeNetRecv(VM& /*vm*/, const std::vector<Value>& arguments) {
+    if (arguments.empty() || !std::holds_alternative<double>(arguments[0])) {
+        throw std::runtime_error("net.recv() takes a socket handle (number) and an optional buffer size (number).");
+    }
+    int handle = static_cast<int>(std::get<double>(arguments[0]));
+    int bufsize = 4096;
+    if (arguments.size() >= 2) {
+        if (!std::holds_alternative<double>(arguments[1])) {
+            throw std::runtime_error("net.recv(): buffer size must be a number.");
+        }
+        bufsize = static_cast<int>(std::get<double>(arguments[1]));
+        if (bufsize <= 0) throw std::runtime_error("net.recv(): buffer size must be positive.");
+    }
+    VmNetSocket sock = vmNetGetHandle(handle);
+    if (sock.is_server) {
+        throw std::runtime_error("net.recv(): cannot recv on a server (listening) socket.");
+    }
+
+    std::string buf(static_cast<size_t>(bufsize), '\0');
+    ssize_t n = ::recv(sock.fd, &buf[0], static_cast<size_t>(bufsize), 0);
+    if (n < 0) {
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            return std::string{};
+        }
+        throw std::runtime_error("net.recv(): failed: " + std::string(strerror(errno)));
+    }
+    buf.resize(static_cast<size_t>(n));
+    return buf;
+}
+
+Value vmNativeNetClose(VM& /*vm*/, const std::vector<Value>& arguments) {
+    if (arguments.size() != 1 || !std::holds_alternative<double>(arguments[0])) {
+        throw std::runtime_error("net.close() takes exactly one socket handle (number).");
+    }
+    int handle = static_cast<int>(std::get<double>(arguments[0]));
+    VmNetSocket sock = vmNetGetHandle(handle);
+    ::close(sock.fd);
+    vmNetFreeHandle(handle);
+    return Nil{};
+}
+
+Value vmNativeNetSetTimeout(VM& /*vm*/, const std::vector<Value>& arguments) {
+    if (arguments.size() != 2 || !std::holds_alternative<double>(arguments[0]) ||
+        !std::holds_alternative<double>(arguments[1])) {
+        throw std::runtime_error("net.setTimeout() takes a socket handle (number) and timeout in ms (number).");
+    }
+    int handle = static_cast<int>(std::get<double>(arguments[0]));
+    int ms = static_cast<int>(std::get<double>(arguments[1]));
+    if (ms < 0) throw std::runtime_error("net.setTimeout(): timeout must be non-negative.");
+    VmNetSocket sock = vmNetGetHandle(handle);
+
+    struct timeval tv;
+    tv.tv_sec = ms / 1000;
+    tv.tv_usec = (ms % 1000) * 1000;
+    setsockopt(sock.fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+    setsockopt(sock.fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
+    return Nil{};
 }
 
 void registerVmNatives(VM& vm) {

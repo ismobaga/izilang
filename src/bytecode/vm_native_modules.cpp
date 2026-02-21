@@ -191,7 +191,8 @@ bool isVmNativeModule(const std::string& path) {
            path == "std.assert" || path == "env" || path == "std.env" || path == "process" || path == "std.process" ||
            path == "path" || path == "std.path" || path == "fs" || path == "std.fs" || path == "time" ||
            path == "std.time" || path == "regex" || path == "std.regex" ||
-           path == "ui" || path == "std.ui" || path == "ipc" || path == "std.ipc";
+           path == "ui" || path == "std.ui" || path == "ipc" || path == "std.ipc" ||
+           path == "net" || path == "std.net";
 }
 
 Value getVmNativeModule(const std::string& name, VM& vm) {
@@ -237,6 +238,16 @@ Value getVmNativeModule(const std::string& name, VM& vm) {
         module->entries["tryRecv"]    = Value{std::make_shared<VmNativeFunction>("tryRecv", 1, vmNativeIpcTryRecv)};
         module->entries["close"]      = Value{std::make_shared<VmNativeFunction>("close", 1, vmNativeIpcClose)};
         module->entries["removePipe"] = Value{std::make_shared<VmNativeFunction>("removePipe", 1, vmNativeIpcRemovePipe)};
+        return Value{module};
+    } else if (name == "net" || name == "std.net") {
+        auto module = std::make_shared<Map>();
+        module->entries["connect"]    = Value{std::make_shared<VmNativeFunction>("connect", 2, vmNativeNetConnect)};
+        module->entries["listen"]     = Value{std::make_shared<VmNativeFunction>("listen", 1, vmNativeNetListen)};
+        module->entries["accept"]     = Value{std::make_shared<VmNativeFunction>("accept", -1, vmNativeNetAccept)};
+        module->entries["send"]       = Value{std::make_shared<VmNativeFunction>("send", 2, vmNativeNetSend)};
+        module->entries["recv"]       = Value{std::make_shared<VmNativeFunction>("recv", -1, vmNativeNetRecv)};
+        module->entries["close"]      = Value{std::make_shared<VmNativeFunction>("close", 1, vmNativeNetClose)};
+        module->entries["setTimeout"] = Value{std::make_shared<VmNativeFunction>("setTimeout", 2, vmNativeNetSetTimeout)};
         return Value{module};
     }
 
