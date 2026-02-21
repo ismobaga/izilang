@@ -16,6 +16,7 @@ namespace izi {
 struct Stmt {
     virtual ~Stmt() = default;
     virtual void accept(StmtVisitor& visitor) = 0;
+    int line = 0;  // Source line number (set by parser for debug support)
 };
 
 using StmtPtr = std::unique_ptr<Stmt>;

@@ -41,6 +41,9 @@ Value Interpreter::evaluate(Expr& expr) {
     return expr.accept(*this);
 }
 void Interpreter::execute(Stmt& stmt) {
+    if (debugHook_ && stmt.line > 0) {
+        debugHook_->onStatement(stmt.line, currentFile);
+    }
     stmt.accept(*this);
 }
 

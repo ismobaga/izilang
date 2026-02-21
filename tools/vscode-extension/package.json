@@ -8,7 +8,8 @@
     "vscode": "^1.80.0"
   },
   "categories": [
-    "Programming Languages"
+    "Programming Languages",
+    "Debuggers"
   ],
   "keywords": [
     "izilang",
@@ -17,7 +18,8 @@
   ],
   "main": "./out/extension.js",
   "activationEvents": [
-    "onLanguage:izilang"
+    "onLanguage:izilang",
+    "onDebug"
   ],
   "contributes": {
     "languages": [
@@ -40,6 +42,63 @@
         "path": "./syntaxes/izilang.tmLanguage.json"
       }
     ],
+    "debuggers": [
+      {
+        "type": "izilang",
+        "label": "IziLang Debug",
+        "languages": ["izilang"],
+        "configurationAttributes": {
+          "launch": {
+            "required": ["program"],
+            "properties": {
+              "program": {
+                "type": "string",
+                "description": "Absolute path to the IziLang source file to debug.",
+                "default": "${workspaceFolder}/${command:AskForProgramName}"
+              },
+              "stopOnEntry": {
+                "type": "boolean",
+                "description": "Automatically stop after launch.",
+                "default": false
+              },
+              "args": {
+                "type": "array",
+                "description": "Command line arguments passed to the program.",
+                "items": { "type": "string" },
+                "default": []
+              },
+              "debugAdapterPath": {
+                "type": "string",
+                "description": "Absolute path to the izilang-dap executable (overrides PATH lookup).",
+                "default": ""
+              }
+            }
+          }
+        },
+        "initialConfigurations": [
+          {
+            "type": "izilang",
+            "request": "launch",
+            "name": "Debug IziLang File",
+            "program": "${file}",
+            "stopOnEntry": false
+          }
+        ],
+        "configurationSnippets": [
+          {
+            "label": "IziLang: Launch",
+            "description": "A new configuration for debugging an IziLang program.",
+            "body": {
+              "type": "izilang",
+              "request": "launch",
+              "name": "Debug IziLang File",
+              "program": "^\"\\${file}\"",
+              "stopOnEntry": false
+            }
+          }
+        ]
+      }
+    ],
     "configuration": {
       "title": "IziLang",
       "properties": {
@@ -57,6 +116,11 @@
           ],
           "default": "off",
           "description": "Traces the communication between VS Code and the language server"
+        },
+        "izilang.dap.adapterPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the izilang-dap executable. Leave empty to use the one from PATH."
         }
       }
     }
@@ -74,6 +138,8 @@
     "@vscode/vsce": "^2.19.0"
   },
   "dependencies": {
-    "vscode-languageclient": "^9.0.1"
+    "vscode-languageclient": "^9.0.1",
+    "@vscode/debugadapter": "^1.64.0",
+    "@vscode/debugprotocol": "^1.64.0"
   }
 }

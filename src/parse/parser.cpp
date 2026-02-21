@@ -18,19 +18,24 @@ std::vector<StmtPtr> Parser::parse() {
 
 // Statement parsing
 StmtPtr Parser::declaration() {
+    int stmtLine = peek().line;
     try {
-        if (match({TokenType::MACRO})) return macroDeclaration();
-        if (match({TokenType::VAR})) return varDeclaration();
-        if (match({TokenType::FN})) return functionDeclaration();
-        if (match({TokenType::CLASS})) return classDeclaration();
-        if (match({TokenType::IMPORT})) return importStatement();
-        if (match({TokenType::EXPORT})) return exportStatement();
+        StmtPtr stmt;
+        if (match({TokenType::MACRO})) stmt = macroDeclaration();
+        else if (match({TokenType::VAR})) stmt = varDeclaration();
+        else if (match({TokenType::FN})) stmt = functionDeclaration();
+        else if (match({TokenType::CLASS})) stmt = classDeclaration();
+        else if (match({TokenType::IMPORT})) stmt = importStatement();
+        else if (match({TokenType::EXPORT})) stmt = exportStatement();
         // Check for statement-level macro invocation: name!( ... )
-        if (check(TokenType::IDENTIFIER) && current + 1 < tokens.size() &&
+        else if (check(TokenType::IDENTIFIER) && current + 1 < tokens.size() &&
             tokens[current + 1].type == TokenType::BANG && macros_.count(tokens[current].lexeme)) {
-            return expandMacroStmt();
+            stmt = expandMacroStmt();
+        } else {
+            stmt = statement();
         }
-        return statement();
+        if (stmt) stmt->line = stmtLine;
+        return stmt;
     } catch (const std::runtime_error& e) {
         synchronize();
         return nullptr;
