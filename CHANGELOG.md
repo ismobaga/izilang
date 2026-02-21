@@ -68,11 +68,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added - Classes and OOP
 - **Class Declarations**: Define classes with fields and methods
-- **Constructor Method**: Special `constructor()` method for initialization
+- **Constructor Method**: Special `constructor()` or `init()` method for initialization
 - **This Binding**: `this` keyword refers to current instance in methods
 - **Property Access**: `obj.field` and `obj.method()` syntax
 - **Property Assignment**: `obj.field = value` syntax
 - **Type Annotations in Classes**: Fields and methods support type hints
+- **Inheritance**: Single inheritance via `class Dog extends Animal { ... }` syntax
+- **Method Overriding**: Subclasses can override parent class methods
+- **Super Calls**: `super.method()` calls parent class method; supports calling parent constructors via `super.init(...)` or `super.constructor(...)`
+- **Multi-level Inheritance**: Classes can inherit through multiple levels (e.g., `C extends B extends A`)
+- **Field Inheritance**: Subclass instances include all fields from parent classes
 
 ### Added - Semantic Analysis
 - **Static Analysis**: Analyze code without executing via `izi check`
