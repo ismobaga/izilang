@@ -12,4 +12,7 @@ bool isVmNativeModule(const std::string& path);
 // Get a native module by name
 Value getVmNativeModule(const std::string& name, VM& vm);
 
+// Create the ui native module for the bytecode VM
+Value createVmUiModule(VM& vm);
+
 }  // namespace izi

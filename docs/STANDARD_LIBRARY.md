@@ -658,6 +658,144 @@ try {
 - DNS resolution failures or connection refused errors also throw a runtime error.
 - The `Connection: close` header is sent automatically; persistent connections are not supported.
 
+## ui - Window Library
+
+The `ui` module provides a graphical window and drawing API backed by [raylib](https://www.raylib.com/). It enables the creation of interactive GUI applications directly from IziLang scripts.
+
+> **Note**: The `ui` module requires raylib. Build the interpreter with `--raylib=<path>` passed to `premake5` to enable full functionality. Without raylib, the module can be imported and constants/color values work, but calling window-creation or drawing functions will throw a runtime error.
+
+### Module Import
+
+```izilang
+import ui
+
+var win = ui.createWindow("My App", 800, 600)
+while win.isOpen() {
+    if ui.keyPressed(ui.key.escape) { win.close() }
+    win.beginDrawing()
+    win.clear(ui.color(20, 20, 24))
+    win.drawText(20, 20, "Hello IZI", 24, ui.color(240, 240, 240))
+    win.endDrawing()
+}
+```
+
+Or with an alias:
+```izilang
+import * as ui from "std.ui";
+```
+
+### Window Creation
+
+- `ui.createWindow(title, width, height)` — Open a new OS window and return a `Window` object. Only one window can be open at a time.
+
+### Window Methods
+
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `isOpen` | `() -> bool` | Returns `true` while the window has not been closed |
+| `close` | `()` | Close the window |
+| `beginDrawing` | `()` | Begin a render frame |
+| `endDrawing` | `()` | End the render frame and present it on screen |
+| `clear` | `(color)` | Clear the background with the given color |
+| `setTitle` | `(title)` | Change the window title |
+| `getSize` | `() -> {width, height}` | Return current window dimensions |
+| `getFps` | `() -> number` | Return current frames per second |
+| `drawText` | `(x, y, text, fontSize, color)` | Draw text at window coordinates |
+| `fillRect` | `(x, y, w, h, color)` | Draw a filled rectangle |
+| `drawRect` | `(x, y, w, h, color)` | Draw a rectangle outline |
+| `drawLine` | `(x1, y1, x2, y2, thickness, color)` | Draw a line |
+| `drawCircle` | `(x, y, radius, color)` | Draw a filled circle |
+| `createPanel` | `(x, y, w, h) -> Panel` | Create a scissor-clipped sub-region |
+
+### Panel Methods
+
+Panels are virtual sub-regions of the window. All coordinate arguments are **panel-local** (relative to the panel's top-left corner).
+
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `begin` | `()` | Activate scissor clipping for this panel |
+| `end` | `()` | Deactivate scissor clipping |
+| `getMousePosition` | `() -> {x, y}` | Mouse position in panel-local coordinates |
+| `containsMouse` | `() -> bool` | `true` when the mouse cursor is inside this panel |
+| `drawText` | `(x, y, text, fontSize, color)` | Draw text in panel-local coordinates |
+| `fillRect` | `(x, y, w, h, color)` | Draw a filled rectangle in panel-local coordinates |
+| `drawRect` | `(x, y, w, h, color)` | Draw a rectangle outline in panel-local coordinates |
+| `drawLine` | `(x1, y1, x2, y2, thickness, color)` | Draw a line in panel-local coordinates |
+| `drawCircle` | `(x, y, radius, color)` | Draw a filled circle in panel-local coordinates |
+
+### Colors
+
+- `ui.color(r, g, b)` — Create a color value with full opacity (alpha = 255).
+- `ui.color(r, g, b, a)` — Create a color value with a custom alpha (0–255).
+
+Colors are map values with `r`, `g`, `b`, `a` fields.
+
+### Keyboard Input
+
+- `ui.keyDown(key)` — Returns `true` while the key is held down.
+- `ui.keyPressed(key)` — Returns `true` on the frame the key was first pressed.
+- `ui.getCharPressed()` — Returns the Unicode codepoint of the last character pressed (0 if none).
+
+**Key constants** (`ui.key.*`):
+
+| Constant | Description |
+|----------|-------------|
+| `escape` | Escape key |
+| `enter` | Enter / Return key |
+| `space` | Space bar |
+| `left` | Left arrow |
+| `right` | Right arrow |
+| `up` | Up arrow |
+| `down` | Down arrow |
+| `a`–`d`, `s`, `w` | Letter keys |
+
+### Mouse Input
+
+- `ui.mouseDown(button)` — Returns `true` while the mouse button is held.
+- `ui.mousePressed(button)` — Returns `true` on the frame the button was first pressed.
+- `ui.getMousePosition()` — Returns a map `{x, y}` with the current cursor position.
+- `ui.getMouseWheelMove()` — Returns the mouse wheel scroll delta for the current frame.
+
+**Mouse button constants** (`ui.mouse.*`): `left`, `right`, `middle`.
+
+### Full Example
+
+```izilang
+import ui
+
+win = ui.createWindow("IZI + raylib", 900, 600)
+
+while win.isOpen() {
+  if ui.keyPressed(ui.key.escape) { win.close() }
+
+  win.beginDrawing()
+  win.clear(ui.color(20, 20, 24))
+
+  pos = ui.getMousePosition()
+  win.fillRect(pos.x - 50, pos.y - 20, 100, 40, ui.color(80, 140, 255))
+
+  win.drawText(20, 20, "Hello IZI", 24, ui.color(240, 240, 240))
+  win.drawCircle(450, 300, 40, ui.color(255, 80, 80))
+
+  fps = win.getFps()
+  win.drawText(20, 570, "FPS: " + str(fps), 14, ui.color(120, 120, 120))
+
+  win.endDrawing()
+}
+```
+
+See also: [`examples/demo_ui.iz`](../examples/demo_ui.iz) and [`examples/ui_panels.izi`](../examples/ui_panels.izi).
+
+### Building with raylib
+
+```bash
+premake5 gmake --raylib=/path/to/raylib
+make config=debug
+./bin/Debug/izi/izi examples/demo_ui.iz
+```
+
+On Linux, the raylib build also links `GL` and `X11` automatically.
+
 ## Additional Built-in Functions
 
 These functions are available globally without imports:

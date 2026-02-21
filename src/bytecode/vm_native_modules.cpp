@@ -1,5 +1,6 @@
 #include "vm_native_modules.hpp"
 #include "vm_native.hpp"
+#include "vm_native_ui.hpp"
 #include "vm.hpp"
 #include <cmath>
 
@@ -189,7 +190,8 @@ bool isVmNativeModule(const std::string& path) {
            path == "std.json" || path == "http" || path == "log" || path == "std.log" || path == "assert" ||
            path == "std.assert" || path == "env" || path == "std.env" || path == "process" || path == "std.process" ||
            path == "path" || path == "std.path" || path == "fs" || path == "std.fs" || path == "time" ||
-           path == "std.time" || path == "regex" || path == "std.regex";
+           path == "std.time" || path == "regex" || path == "std.regex" ||
+           path == "ui" || path == "std.ui";
 }
 
 Value getVmNativeModule(const std::string& name, VM& vm) {
@@ -223,6 +225,8 @@ Value getVmNativeModule(const std::string& name, VM& vm) {
         // Placeholder for future implementation
         auto module = std::make_shared<Map>();
         return Value{module};
+    } else if (name == "ui" || name == "std.ui") {
+        return createVmUiModule(vm);
     }
 
     throw std::runtime_error("Unknown native module: " + name);
