@@ -57,10 +57,11 @@ This is a prototype implementation following the redesigned specification.
 | Feature                        | Status |
 |-------------------------------|--------|
 | `izi-pkg new` (scaffold)       | ✅ Implemented |
-| `izi-pkg add` (add dependency) | ✅ Implemented (manifest edit only) |
+| `izi-pkg add` (add dependency) | ✅ Implemented (version, local-path, and git-URL) |
 | `izi-pkg drop` (remove dep)    | ✅ Implemented |
 | `izi-pkg show` (list libs/)    | ✅ Implemented |
-| `izi-pkg sync` (fetch deps)    | ⬜ Phase 2/3 — registry not yet live |
+| `izi-pkg sync` (local/git deps + lock file) | ✅ Implemented |
+| `izi-pkg sync` (registry deps) | ⬜ Phase 3 — registry not yet live |
 | `izi-pkg find` (search hub)    | ⬜ Phase 3 — hub not yet live |
 | `izi-pkg ship` (publish)       | ⬜ Phase 3 — hub not yet live |
 | `izi-pkg upgrade`              | ⬜ Phase 4 |

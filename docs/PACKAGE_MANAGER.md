@@ -216,7 +216,7 @@ token = "your-api-token"
 - [x] `izi-pkg add` with local-path and git-URL support
 - [x] `izi-pkg drop` command
 - [x] `libs/` directory management
-- [ ] `izi.lock` generation (version + SHA-256)
+- [x] `izi.lock` generation (version + SHA-256)
 
 ### Phase 3 — Registry (v0.3)
 - [ ] Official hub backend (HTTPS + JSON metadata)

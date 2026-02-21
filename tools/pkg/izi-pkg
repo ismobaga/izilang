@@ -44,6 +44,80 @@ toml_get() {
     ' "$file"
 }
 
+# Parse all key=value pairs from a TOML section.
+# Prints one "name|value" line per dependency (pipe-delimited).
+parse_section_deps() {
+    local file="$1" section="$2"
+    awk -v sec="[$section]" '
+        /^\[/ { in_sec = ($0 == sec); next }
+        !in_sec { next }
+        /^[[:space:]]*$/ || /^[[:space:]]*#/ { next }
+        /=/ {
+            eq = index($0, "=")
+            key = substr($0, 1, eq - 1)
+            val = substr($0, eq + 1)
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "", key)
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "", val)
+            if (key != "") print key "|" val
+        }
+    ' "$file"
+}
+
+# Compute a deterministic SHA-256 of all .izi files under a directory.
+sha256_dir() {
+    local dir="$1"
+    find "$dir" -type f -name "*.izi" | sort | xargs sha256sum 2>/dev/null \
+        | sha256sum | awk '{print $1}'
+}
+
+# Copy a local-path dependency into libs/ and return "name|version|source|sha256".
+resolve_local() {
+    local name="$1" src_path="$2"
+    local ver="local"
+    if [ -f "${src_path}/izi.toml" ]; then
+        ver="$(toml_get "${src_path}/izi.toml" pack version)"
+        ver="${ver:-local}"
+    fi
+    local dest="${LIBS_DIR}/${name}-${ver}"
+    echo -e "${BLUE}[izi-pkg]${NC}   Installing local dep: $name ($src_path) → $dest" >&2
+    rm -rf "$dest"
+    cp -r "$src_path" "$dest"
+    local hash; hash="$(sha256_dir "$dest")"
+    printf '%s|%s|%s|%s' "$name" "$ver" "$src_path" "$hash"
+}
+
+# Clone/update a git dependency into libs/ and return "name|version|source|sha256".
+resolve_git() {
+    local name="$1" url="$2" ref="${3:-}"
+    local dest="${LIBS_DIR}/${name}"
+    if [ -d "${dest}/.git" ]; then
+        echo -e "${BLUE}[izi-pkg]${NC}   Updating git dep: $name ($url)" >&2
+        (cd "$dest" && git fetch --quiet 2>/dev/null)
+        if [ -n "$ref" ]; then
+            (cd "$dest" && git checkout --quiet "$ref" 2>/dev/null)
+        else
+            (cd "$dest" && git pull --quiet 2>/dev/null)
+        fi
+    else
+        echo -e "${BLUE}[izi-pkg]${NC}   Cloning git dep: $name ($url${ref:+ @ $ref}) → $dest" >&2
+        rm -rf "$dest"
+        if ! git clone --quiet "$url" "$dest" 2>/dev/null; then
+            error "Failed to clone $url"
+        fi
+        [ -n "$ref" ] && (cd "$dest" && git checkout --quiet "$ref" 2>/dev/null)
+    fi
+    local ver="${ref:-HEAD}"
+    local hash; hash="$(sha256_dir "$dest")"
+    printf '%s|%s|%s|%s' "$name" "$ver" "$url" "$hash"
+}
+
+# Append one entry to the lock file.
+write_lock_entry() {
+    local name="$1" ver="$2" source="$3" sha="$4"
+    printf '[%s]\nversion = "%s"\nsource  = "%s"\nsha256  = "%s"\n\n' \
+        "$name" "$ver" "$source" "$sha" >> "$LOCK_FILE"
+}
+
 # ── commands ──────────────────────────────────────────────────────────────────
 
 show_help() {
@@ -116,42 +190,122 @@ cmd_sync() {
     mkdir -p "$LIBS_DIR"
 
     info "Syncing dependencies from $MANIFEST..."
-    warn "Registry fetch not yet implemented — placeholder for Phase 3."
-    warn "Local-path and git-URL resolution is planned for Phase 2."
 
-    success "libs/ is up to date"
+    # (Re)create the lock file
+    : > "$LOCK_FILE"
+
+    local sections="deps"
+    [ $include_dev -eq 1 ] && sections="deps dev-deps"
+
+    local resolved=0 skipped=0
+
+    for section in $sections; do
+        while IFS='|' read -r name val; do
+            [ -z "$name" ] && continue
+
+            if [[ "$val" == *'path'*'='* ]]; then
+                # Inline-table local path: { path = "../my-lib" }
+                local src_path
+                src_path="$(echo "$val" | sed -n 's/.*path[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p')"
+                if [ -z "$src_path" ]; then
+                    warn "  Cannot parse path for $name, skipping."
+                    continue
+                fi
+                if [ ! -d "$src_path" ]; then
+                    error "Local path for $name not found: $src_path"
+                fi
+                local result; result="$(resolve_local "$name" "$src_path")"
+                IFS='|' read -r rname rver rsrc rhash <<< "$result"
+                write_lock_entry "$rname" "$rver" "$rsrc" "$rhash"
+                resolved=$((resolved + 1))
+
+            elif [[ "$val" == *'git'*'='* ]]; then
+                # Inline-table git URL: { git = "https://...", ref = "v1.2.3" }
+                local git_url git_ref
+                git_url="$(echo "$val" | sed -n 's/.*\bgit\b[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p')"
+                git_ref="$(echo "$val" | sed -n 's/.*\bref\b[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p')"
+                if [ -z "$git_url" ]; then
+                    warn "  Cannot parse git URL for $name, skipping."
+                    continue
+                fi
+                if ! command -v git &>/dev/null; then
+                    error "git is required for git dependencies but was not found."
+                fi
+                local result; result="$(resolve_git "$name" "$git_url" "$git_ref")"
+                IFS='|' read -r rname rver rsrc rhash <<< "$result"
+                write_lock_entry "$rname" "$rver" "$rsrc" "$rhash"
+                resolved=$((resolved + 1))
+
+            else
+                # Plain version string: "1.0.0" or "latest"
+                local ver
+                ver="$(echo "$val" | tr -d '"')"
+                warn "  $name@$ver — registry fetch not yet implemented (Phase 3)."
+                write_lock_entry "$name" "$ver" "" ""
+                skipped=$((skipped + 1))
+            fi
+        done < <(parse_section_deps "$MANIFEST" "$section")
+    done
+
+    success "libs/ is up to date ($resolved installed, $skipped pending registry)"
+    success "Lock file written to $LOCK_FILE"
 }
 
 # ── add ───────────────────────────────────────────────────────────────────────
 
 cmd_add() {
     local spec="${1:-}"
-    [ -z "$spec" ] && error "Usage: izi-pkg add <package[@version]>"
+    [ -z "$spec" ] && error "Usage: izi-pkg add <package[@version]> | path=<dir> | git=<url>[@ref]"
     require_manifest
 
-    # Split name and optional version
-    local pkg_name pkg_ver
-    if [[ "$spec" == *"@"* ]]; then
+    local pkg_name entry
+
+    if [[ "$spec" == path=* ]]; then
+        # Local path dependency: path=../my-lib
+        local src_path="${spec#path=}"
+        pkg_name="$(basename "$src_path")"
+        entry="${pkg_name} = { path = \"${src_path}\" }"
+
+    elif [[ "$spec" == git=* ]]; then
+        # Git dependency: git=https://github.com/user/pkg.git[@ref]
+        local git_spec="${spec#git=}"
+        local git_url git_ref=""
+        if [[ "$git_spec" == *"@"* ]]; then
+            git_url="${git_spec%%@*}"
+            git_ref="${git_spec##*@}"
+        else
+            git_url="$git_spec"
+        fi
+        pkg_name="$(basename "$git_url" .git)"
+        if [ -n "$git_ref" ]; then
+            entry="${pkg_name} = { git = \"${git_url}\", ref = \"${git_ref}\" }"
+        else
+            entry="${pkg_name} = { git = \"${git_url}\" }"
+        fi
+
+    elif [[ "$spec" == *"@"* ]]; then
+        # Versioned registry dep: std-math@1.2.0
         pkg_name="${spec%%@*}"
-        pkg_ver="${spec##*@}"
+        local pkg_ver="${spec##*@}"
+        entry="${pkg_name} = \"${pkg_ver}\""
+
     else
+        # Unversioned registry dep: std-math
         pkg_name="$spec"
-        pkg_ver="latest"
+        entry="${pkg_name} = \"latest\""
     fi
 
-    info "Adding $pkg_name (${pkg_ver}) to [deps] in $MANIFEST..."
+    info "Adding $pkg_name to [deps] in $MANIFEST..."
 
-    # Append to [deps] section if key is not already present
     if grep -q "^${pkg_name}[[:space:]]*=" "$MANIFEST" 2>/dev/null; then
         warn "$pkg_name is already listed in $MANIFEST"
     else
-        # Insert after the [deps] header
         local tmp; tmp="$(mktemp)"
-        awk -v pkg="$pkg_name" -v ver="$pkg_ver" '
-            /^\[deps\]/ { print; print pkg " = \"" ver "\""; next }
+        awk -v entry="$entry" '
+            /^\[deps\]/ { print; print entry; next }
             { print }
         ' "$MANIFEST" > "$tmp" && mv "$tmp" "$MANIFEST"
-        success "Added $pkg_name = \"$pkg_ver\" to [deps]"
+        success "Added $entry to [deps]"
     fi
 
     cmd_sync
@@ -181,6 +335,7 @@ cmd_drop() {
         info "$pkg was not present in libs/"
     fi
     success "Dropped $pkg"
+    cmd_sync
 }
 
 # ── show ──────────────────────────────────────────────────────────────────────

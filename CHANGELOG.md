@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Package Manager MVP
+- **`izi-pkg sync`**: Resolves local-path and git-URL dependencies into `libs/`, generating a
+  content-hash lock file (`izi.lock`) with version and SHA-256 for every resolved package.
+  Registry dependencies (plain version strings) are recorded in the lock file with a placeholder
+  pending Phase 3 registry implementation.
+- **`izi-pkg add path=<dir>`**: Add a local filesystem dependency; writes a TOML inline-table
+  entry `name = { path = "..." }` to `[deps]` and immediately syncs.
+- **`izi-pkg add git=<url>[@ref]`**: Add a git repository dependency; writes
+  `name = { git = "...", ref = "..." }` to `[deps]` and immediately syncs.
+- **`izi-pkg drop`**: Now regenerates `izi.lock` after removing a dependency so the lock file
+  stays consistent with the manifest.
+- **Test suite**: `tests/test_pkg.sh` provides 30 shell-level tests covering all implemented
+  commands.
+
 ### Added - IPC (Inter-Process Communication)
 - **`std.ipc` module**: Named-pipe (FIFO) based IPC primitives for passing messages between processes
   - `createPipe(name)` — Create a named pipe (FIFO) identified by a logical name
