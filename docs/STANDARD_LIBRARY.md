@@ -2,6 +2,9 @@
 
 The IziLang standard library provides essential functionality for common programming tasks through native functions implemented in C++.
 
+> **Per-module reference pages** are available in [`docs/stdlib/`](stdlib/README.md):
+> [math](stdlib/math.md) · [string](stdlib/string.md) · [array](stdlib/array.md) · [io](stdlib/io.md) · [assert](stdlib/assert.md) · [env](stdlib/env.md) · [time](stdlib/time.md) · [json](stdlib/json.md) · [regex](stdlib/regex.md) · [http](stdlib/http.md) · [ui](stdlib/ui.md) · [ipc](stdlib/ipc.md)
+
 ## Overview
 
 IziLang now supports a **modular standard library system**. You can import modules in three ways:
