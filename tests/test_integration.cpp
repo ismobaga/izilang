@@ -1526,3 +1526,71 @@ TEST_CASE("Concurrency: sleep", "[concurrency]") {
         REQUIRE(capture.getOutput() == "true\n");
     }
 }
+
+// ---- RuntimeError stack trace -----------------------------------------------
+
+TEST_CASE("RuntimeError: call stack frames are populated on error", "[integration][stack_trace]") {
+    SECTION("Error thrown directly at top level has no call stack frames") {
+        std::string source = "var x = 1 % 0;";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+
+        Interpreter interp(source);
+        try {
+            interp.interpret(program);
+            FAIL("Expected RuntimeError");
+        } catch (const RuntimeError& e) {
+            REQUIRE(e.callStack.empty());
+        }
+    }
+
+    SECTION("Error thrown inside a function includes that function in the call stack") {
+        std::string source = R"(
+fn modulo(a, b) {
+    return a % b;
+}
+modulo(10, 0);
+)";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+
+        Interpreter interp(source);
+        try {
+            interp.interpret(program);
+            FAIL("Expected RuntimeError");
+        } catch (const RuntimeError& e) {
+            REQUIRE(!e.callStack.empty());
+            REQUIRE(e.callStack[0].first == "modulo");
+        }
+    }
+
+    SECTION("Nested function calls build a stack trace with all frames") {
+        std::string source = R"(
+fn inner() {
+    return 1 % 0;
+}
+fn outer() {
+    return inner();
+}
+outer();
+)";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+
+        Interpreter interp(source);
+        try {
+            interp.interpret(program);
+            FAIL("Expected RuntimeError");
+        } catch (const RuntimeError& e) {
+            REQUIRE(e.callStack.size() == 2);
+            REQUIRE(e.callStack[0].first == "inner");
+            REQUIRE(e.callStack[1].first == "outer");
+        }
+    }
+}

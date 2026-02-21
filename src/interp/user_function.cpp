@@ -84,6 +84,11 @@ Value UserFunction::call(Interpreter& interp, const std::vector<Value>& argument
         interp.callDepth--;  // Restore call depth on return
         interp.notifyFunctionExit();
         return returnValue.value;
+    } catch (RuntimeError& e) {
+        interp.callDepth--;  // Restore call depth on exception
+        interp.notifyFunctionExit();
+        e.addFrame(funcName, funcLine);
+        throw;
     } catch (...) {
         interp.callDepth--;  // Restore call depth on exception
         interp.notifyFunctionExit();

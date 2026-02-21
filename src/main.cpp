@@ -106,6 +106,11 @@ void runCode(const std::string& src, bool useVM, bool debug, bool optimize, cons
         ErrorReporter reporter(src);
         std::cerr << "In file '" << filename << "':\n";
         std::cerr << reporter.formatError(e.token, e.what()) << '\n';
+        if (!e.callStack.empty()) {
+            for (const auto& [name, line] : e.callStack) {
+                std::cerr << "  at " << name << "() [line " << line << "]\n";
+            }
+        }
         throw;
     } catch (const ThrowSignal& e) {
         ErrorReporter reporter(src);
@@ -186,6 +191,11 @@ void runReplLine(const std::string& src, Interpreter* interp, VM* vm, bool useVM
         ErrorReporter reporter(src);
         std::cerr << "In file '" << filename << "':\n";
         std::cerr << reporter.formatError(e.token, e.what()) << '\n';
+        if (!e.callStack.empty()) {
+            for (const auto& [name, line] : e.callStack) {
+                std::cerr << "  at " << name << "() [line " << line << "]\n";
+            }
+        }
         // Don't rethrow in REPL, just continue
     } catch (const ThrowSignal& e) {
         ErrorReporter reporter(src);

@@ -22,8 +22,11 @@ constexpr size_t MAX_CALL_DEPTH = 256;
 class RuntimeError : public std::runtime_error {
    public:
     Token token;
+    std::vector<std::pair<std::string, int>> callStack;  // function name, line
 
     RuntimeError(const Token& token, const std::string& message) : std::runtime_error(message), token(token) {}
+
+    void addFrame(const std::string& name, int line) { callStack.emplace_back(name, line); }
 };
 
 struct ReturnSignal {
