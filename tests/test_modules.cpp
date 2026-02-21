@@ -874,4 +874,119 @@ TEST_CASE("Native module system - ui module", "[modules][ui]") {
         Interpreter interp(source);
         REQUIRE_THROWS(interp.interpret(program));
     }
+
+    SECTION("win.createPanel() returns a panel object with expected methods") {
+        std::string source = R"(
+            import ui;
+            var win = ui.createWindow("Test", 800, 600);
+            var panel = win.createPanel(0, 0, 400, 600);
+            var b   = panel.begin;
+            var e   = panel.end;
+            var gmp = panel.getMousePosition;
+            var cm  = panel.containsMouse;
+        )";
+
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+
+        Interpreter interp(source);
+        REQUIRE_NOTHROW(interp.interpret(program));
+    }
+
+    SECTION("win.createPanel() with wrong arg count throws") {
+        std::string source = R"(
+            import ui;
+            var win = ui.createWindow("Test", 800, 600);
+            var panel = win.createPanel(0, 0, 400);
+        )";
+
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+
+        Interpreter interp(source);
+        REQUIRE_THROWS(interp.interpret(program));
+    }
+
+    SECTION("panel.getMousePosition() returns a map with x and y") {
+        std::string source = R"(
+            import * as assert from "std.assert";
+            import ui;
+            var win = ui.createWindow("Test", 800, 600);
+            var panel = win.createPanel(100, 50, 400, 300);
+            var pos = panel.getMousePosition();
+            var x = pos.x;
+            var y = pos.y;
+        )";
+
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+
+        Interpreter interp(source);
+        REQUIRE_NOTHROW(interp.interpret(program));
+    }
+
+    SECTION("panel.containsMouse() returns a bool") {
+        std::string source = R"(
+            import * as assert from "std.assert";
+            import ui;
+            var win = ui.createWindow("Test", 800, 600);
+            var panel = win.createPanel(100, 50, 400, 300);
+            var inside = panel.containsMouse();
+            assert.eq(inside, false);
+        )";
+
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+
+        Interpreter interp(source);
+        REQUIRE_NOTHROW(interp.interpret(program));
+    }
+
+    SECTION("panel exposes drawing methods") {
+        std::string source = R"(
+            import ui;
+            var win = ui.createWindow("Test", 800, 600);
+            var panel = win.createPanel(0, 0, 400, 600);
+            var dt = panel.drawText;
+            var fr = panel.fillRect;
+            var dr = panel.drawRect;
+            var dl = panel.drawLine;
+            var dc = panel.drawCircle;
+        )";
+
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+
+        Interpreter interp(source);
+        REQUIRE_NOTHROW(interp.interpret(program));
+    }
+
+    SECTION("multiple panels can be created from the same window") {
+        std::string source = R"(
+            import ui;
+            var win   = ui.createWindow("Test", 1200, 800);
+            var left  = win.createPanel(0, 0, 600, 800);
+            var right = win.createPanel(600, 0, 600, 800);
+            var glmp = left.getMousePosition;
+            var grmp = right.getMousePosition;
+        )";
+
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens));
+        auto program = parser.parse();
+
+        Interpreter interp(source);
+        REQUIRE_NOTHROW(interp.interpret(program));
+    }
 }

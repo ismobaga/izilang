@@ -1,0 +1,76 @@
+// IZI ui panels demo
+// Demonstrates the single-window + panels strategy:
+//   two virtual panels side-by-side inside one OS window.
+//
+// Requires raylib: build with --raylib=<path> passed to premake5
+//
+// Usage:
+//   ./izi examples/ui_panels.izi
+
+import ui
+
+win = ui.createWindow("IZI Panels Demo", 1200, 800)
+
+// Create two side-by-side panels
+left  = win.createPanel(0,   0, 600, 800)
+right = win.createPanel(600, 0, 600, 800)
+
+while win.isOpen() {
+  if ui.keyPressed(ui.key.escape) { win.close() }
+
+  win.beginDrawing()
+  win.clear(ui.color(15, 15, 20))
+
+  // --- Left panel ---
+  left.begin()
+  left.fillRect(0, 0, 600, 800, ui.color(25, 30, 45))
+
+  // Highlight panel if mouse is inside
+  if left.containsMouse() {
+    left.drawRect(2, 2, 596, 796, ui.color(80, 140, 255))
+  }
+
+  left.drawText(20, 20, "Left Panel", 24, ui.color(240, 240, 240))
+  left.drawText(20, 56, "Mouse inside: " + str(left.containsMouse()), 16, ui.color(180, 180, 180))
+
+  // Show mouse position relative to this panel
+  lpos = left.getMousePosition()
+  left.drawText(20, 80, "Local mouse: " + str(lpos.x) + ", " + str(lpos.y), 14, ui.color(140, 200, 140))
+
+  // Draw a filled circle that follows the mouse within this panel
+  if left.containsMouse() {
+    left.drawCircle(lpos.x, lpos.y, 18, ui.color(80, 140, 255))
+  }
+
+  left.drawLine(20, 120, 580, 120, 1, ui.color(60, 70, 90))
+  left.drawText(20, 134, "Click here to interact", 14, ui.color(120, 120, 160))
+  left.end()
+
+  // --- Right panel ---
+  right.begin()
+  right.fillRect(0, 0, 600, 800, ui.color(35, 25, 40))
+
+  if right.containsMouse() {
+    right.drawRect(2, 2, 596, 796, ui.color(255, 100, 150))
+  }
+
+  right.drawText(20, 20, "Right Panel", 24, ui.color(240, 240, 240))
+  right.drawText(20, 56, "Mouse inside: " + str(right.containsMouse()), 16, ui.color(180, 180, 180))
+
+  rpos = right.getMousePosition()
+  right.drawText(20, 80, "Local mouse: " + str(rpos.x) + ", " + str(rpos.y), 14, ui.color(200, 140, 140))
+
+  if right.containsMouse() {
+    right.drawCircle(rpos.x, rpos.y, 18, ui.color(255, 100, 150))
+  }
+
+  right.drawLine(20, 120, 580, 120, 1, ui.color(80, 60, 70))
+  right.drawText(20, 134, "Coordinates are panel-local", 14, ui.color(160, 120, 120))
+  right.end()
+
+  // HUD drawn directly on the window (no panel)
+  fps = win.getFps()
+  win.drawText(10, 780, "FPS: " + str(fps) + "  |  ESC to quit", 13, ui.color(80, 80, 80))
+
+  win.endDrawing()
+}

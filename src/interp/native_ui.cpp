@@ -18,6 +18,14 @@ struct UiWindow {
     std::string title;
 };
 
+// Internal panel state (virtual window / scissor region inside a UiWindow)
+struct UiPanel {
+    int x = 0;
+    int y = 0;
+    int width = 0;
+    int height = 0;
+};
+
 // ---------------------------------------------------------------------------
 // Color helpers
 // ---------------------------------------------------------------------------
@@ -160,6 +168,166 @@ static Value nativeUiGetCharPressed(Interpreter& /*interp*/, const std::vector<V
 #else
     throw std::runtime_error("ui module requires raylib (build with -DHAVE_RAYLIB).");
 #endif
+}
+
+// ---------------------------------------------------------------------------
+// Panel helper (virtual scissor region inside a single OS window)
+// ---------------------------------------------------------------------------
+
+static Value buildPanelObject(std::shared_ptr<UiPanel> panel) {
+    auto obj = std::make_shared<Map>();
+
+    // panel.begin() - activate scissor clipping for this panel
+    obj->entries["begin"] = Value{std::make_shared<NativeFunction>("begin", 0,
+        [panel](Interpreter&, const std::vector<Value>&) -> Value {
+#ifdef HAVE_RAYLIB
+            BeginScissorMode(panel->x, panel->y, panel->width, panel->height);
+#endif
+            return Nil{};
+        })};
+
+    // panel.end() - deactivate scissor clipping
+    obj->entries["end"] = Value{std::make_shared<NativeFunction>("end", 0,
+        [](Interpreter&, const std::vector<Value>&) -> Value {
+#ifdef HAVE_RAYLIB
+            EndScissorMode();
+#endif
+            return Nil{};
+        })};
+
+    // panel.getMousePosition() -> Map {x, y} in panel-local coordinates
+    obj->entries["getMousePosition"] = Value{std::make_shared<NativeFunction>("getMousePosition", 0,
+        [panel](Interpreter&, const std::vector<Value>&) -> Value {
+            auto m = std::make_shared<Map>();
+#ifdef HAVE_RAYLIB
+            ::Vector2 pos = GetMousePosition();
+            m->entries["x"] = static_cast<double>(pos.x - panel->x);
+            m->entries["y"] = static_cast<double>(pos.y - panel->y);
+#else
+            m->entries["x"] = 0.0;
+            m->entries["y"] = 0.0;
+#endif
+            return Value{m};
+        })};
+
+    // panel.containsMouse() -> bool
+    obj->entries["containsMouse"] = Value{std::make_shared<NativeFunction>("containsMouse", 0,
+        [panel](Interpreter&, const std::vector<Value>&) -> Value {
+#ifdef HAVE_RAYLIB
+            ::Vector2 pos = GetMousePosition();
+            return static_cast<bool>(pos.x >= panel->x &&
+                                     pos.x < panel->x + panel->width &&
+                                     pos.y >= panel->y &&
+                                     pos.y < panel->y + panel->height);
+#else
+            return false;
+#endif
+        })};
+
+    // panel.drawText(x, y, text, fontSize, color) - panel-local coordinates
+    obj->entries["drawText"] = Value{std::make_shared<NativeFunction>("drawText", 5,
+        [panel](Interpreter&, const std::vector<Value>& args) -> Value {
+            if (args.size() != 5) {
+                throw std::runtime_error(
+                    "panel.drawText() takes 5 arguments (x, y, text, fontSize, color).");
+            }
+#ifdef HAVE_RAYLIB
+            int x = static_cast<int>(asNumber(args[0])) + panel->x;
+            int y = static_cast<int>(asNumber(args[1])) + panel->y;
+            std::string text = std::holds_alternative<std::string>(args[2])
+                                   ? std::get<std::string>(args[2])
+                                   : valueToString(args[2]);
+            int fontSize = static_cast<int>(asNumber(args[3]));
+            ::Color color = extractRaylibColor(args[4]);
+            DrawText(text.c_str(), x, y, fontSize, color);
+#else
+            throw std::runtime_error("ui module requires raylib (build with -DHAVE_RAYLIB).");
+#endif
+            return Nil{};
+        })};
+
+    // panel.fillRect(x, y, width, height, color) - panel-local coordinates
+    obj->entries["fillRect"] = Value{std::make_shared<NativeFunction>("fillRect", 5,
+        [panel](Interpreter&, const std::vector<Value>& args) -> Value {
+            if (args.size() != 5) {
+                throw std::runtime_error(
+                    "panel.fillRect() takes 5 arguments (x, y, width, height, color).");
+            }
+#ifdef HAVE_RAYLIB
+            int x = static_cast<int>(asNumber(args[0])) + panel->x;
+            int y = static_cast<int>(asNumber(args[1])) + panel->y;
+            int w = static_cast<int>(asNumber(args[2]));
+            int h = static_cast<int>(asNumber(args[3]));
+            ::Color color = extractRaylibColor(args[4]);
+            DrawRectangle(x, y, w, h, color);
+#else
+            throw std::runtime_error("ui module requires raylib (build with -DHAVE_RAYLIB).");
+#endif
+            return Nil{};
+        })};
+
+    // panel.drawRect(x, y, width, height, color) - panel-local coordinates
+    obj->entries["drawRect"] = Value{std::make_shared<NativeFunction>("drawRect", 5,
+        [panel](Interpreter&, const std::vector<Value>& args) -> Value {
+            if (args.size() != 5) {
+                throw std::runtime_error(
+                    "panel.drawRect() takes 5 arguments (x, y, width, height, color).");
+            }
+#ifdef HAVE_RAYLIB
+            int x = static_cast<int>(asNumber(args[0])) + panel->x;
+            int y = static_cast<int>(asNumber(args[1])) + panel->y;
+            int w = static_cast<int>(asNumber(args[2]));
+            int h = static_cast<int>(asNumber(args[3]));
+            ::Color color = extractRaylibColor(args[4]);
+            DrawRectangleLines(x, y, w, h, color);
+#else
+            throw std::runtime_error("ui module requires raylib (build with -DHAVE_RAYLIB).");
+#endif
+            return Nil{};
+        })};
+
+    // panel.drawLine(x1, y1, x2, y2, thickness, color) - panel-local coordinates
+    obj->entries["drawLine"] = Value{std::make_shared<NativeFunction>("drawLine", 6,
+        [panel](Interpreter&, const std::vector<Value>& args) -> Value {
+            if (args.size() != 6) {
+                throw std::runtime_error(
+                    "panel.drawLine() takes 6 arguments (x1, y1, x2, y2, thickness, color).");
+            }
+#ifdef HAVE_RAYLIB
+            int x1 = static_cast<int>(asNumber(args[0])) + panel->x;
+            int y1 = static_cast<int>(asNumber(args[1])) + panel->y;
+            int x2 = static_cast<int>(asNumber(args[2])) + panel->x;
+            int y2 = static_cast<int>(asNumber(args[3])) + panel->y;
+            float thickness = static_cast<float>(asNumber(args[4]));
+            ::Color color = extractRaylibColor(args[5]);
+            DrawLineEx({static_cast<float>(x1), static_cast<float>(y1)},
+                       {static_cast<float>(x2), static_cast<float>(y2)}, thickness, color);
+#else
+            throw std::runtime_error("ui module requires raylib (build with -DHAVE_RAYLIB).");
+#endif
+            return Nil{};
+        })};
+
+    // panel.drawCircle(x, y, radius, color) - panel-local coordinates
+    obj->entries["drawCircle"] = Value{std::make_shared<NativeFunction>("drawCircle", 4,
+        [panel](Interpreter&, const std::vector<Value>& args) -> Value {
+            if (args.size() != 4) {
+                throw std::runtime_error(
+                    "panel.drawCircle() takes 4 arguments (x, y, radius, color).");
+            }
+#ifdef HAVE_RAYLIB
+            int x = static_cast<int>(asNumber(args[0])) + panel->x;
+            int y = static_cast<int>(asNumber(args[1])) + panel->y;
+            float radius = static_cast<float>(asNumber(args[2]));
+            ::Color color = extractRaylibColor(args[3]);
+            DrawCircle(x, y, radius, color);
+#else
+            throw std::runtime_error("ui module requires raylib (build with -DHAVE_RAYLIB).");
+#endif
+            return Nil{};
+        })};
+
+    return Value{obj};
 }
 
 // ---------------------------------------------------------------------------
@@ -363,6 +531,21 @@ static Value buildWindowObject(std::shared_ptr<UiWindow> win) {
             return Nil{};
         })};
 
+    // win.createPanel(x, y, width, height) -> Panel
+    obj->entries["createPanel"] = Value{std::make_shared<NativeFunction>("createPanel", 4,
+        [](Interpreter&, const std::vector<Value>& args) -> Value {
+            if (args.size() != 4) {
+                throw std::runtime_error(
+                    "win.createPanel() takes 4 arguments (x, y, width, height).");
+            }
+            auto p = std::make_shared<UiPanel>();
+            p->x = static_cast<int>(asNumber(args[0]));
+            p->y = static_cast<int>(asNumber(args[1]));
+            p->width = static_cast<int>(asNumber(args[2]));
+            p->height = static_cast<int>(asNumber(args[3]));
+            return buildPanelObject(p);
+        })};
+
     return Value{obj};
 }
 
@@ -376,24 +559,22 @@ static Value nativeUiCreateWindow(Interpreter& /*interp*/, const std::vector<Val
     if (!std::holds_alternative<std::string>(args[0])) {
         throw std::runtime_error("ui.createWindow(): title must be a string.");
     }
+    std::string title = std::get<std::string>(args[0]);
+    int width = static_cast<int>(asNumber(args[1]));
+    int height = static_cast<int>(asNumber(args[2]));
+    auto win = std::make_shared<UiWindow>();
+    win->width = width;
+    win->height = height;
+    win->title = title;
 #ifdef HAVE_RAYLIB
     if (IsWindowReady()) {
         throw std::runtime_error("ui.createWindow(): only one window is supported at a time.");
     }
-    std::string title = std::get<std::string>(args[0]);
-    int width = static_cast<int>(asNumber(args[1]));
-    int height = static_cast<int>(asNumber(args[2]));
     InitWindow(width, height, title.c_str());
     SetTargetFPS(60);
-    auto win = std::make_shared<UiWindow>();
     win->open = true;
-    win->width = width;
-    win->height = height;
-    win->title = title;
-    return buildWindowObject(win);
-#else
-    throw std::runtime_error("ui module requires raylib (build with -DHAVE_RAYLIB).");
 #endif
+    return buildWindowObject(win);
 }
 
 // ---------------------------------------------------------------------------
