@@ -77,6 +77,9 @@ enum class TokenType {
     UNDERSCORE,
     DEFAULT,
 
+    // Macro keyword
+    MACRO,
+
     // Special
     END_OF_FILE,
     ERROR
@@ -220,6 +223,8 @@ inline const char* tokenTypeToString(TokenType type) {
             return "MATCH";
         case TokenType::UNDERSCORE:
             return "UNDERSCORE";
+        case TokenType::MACRO:
+            return "MACRO";
         case TokenType::END_OF_FILE:
             return "END_OF_FILE";
         case TokenType::ERROR:

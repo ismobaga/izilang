@@ -19,11 +19,17 @@ std::vector<StmtPtr> Parser::parse() {
 // Statement parsing
 StmtPtr Parser::declaration() {
     try {
+        if (match({TokenType::MACRO})) return macroDeclaration();
         if (match({TokenType::VAR})) return varDeclaration();
         if (match({TokenType::FN})) return functionDeclaration();
         if (match({TokenType::CLASS})) return classDeclaration();
         if (match({TokenType::IMPORT})) return importStatement();
         if (match({TokenType::EXPORT})) return exportStatement();
+        // Check for statement-level macro invocation: name!( ... )
+        if (check(TokenType::IDENTIFIER) && current + 1 < tokens.size() &&
+            tokens[current + 1].type == TokenType::BANG && macros_.count(tokens[current].lexeme)) {
+            return expandMacroStmt();
+        }
         return statement();
     } catch (const std::runtime_error& e) {
         synchronize();
@@ -551,6 +557,147 @@ StmtPtr Parser::classDeclaration() {
                                        std::move(methods));
 }
 
+StmtPtr Parser::macroDeclaration() {
+    Token name = consume(TokenType::IDENTIFIER, "Expect macro name.");
+    consume(TokenType::LEFT_PAREN, "Expect '(' after macro name.");
+
+    std::vector<std::string> params;
+    if (!check(TokenType::RIGHT_PAREN)) {
+        do {
+            Token param = consume(TokenType::IDENTIFIER, "Expect parameter name.");
+            params.push_back(std::string(param.lexeme));
+        } while (match({TokenType::COMMA}));
+    }
+    consume(TokenType::RIGHT_PAREN, "Expect ')' after macro parameters.");
+    consume(TokenType::LEFT_BRACE, "Expect '{' before macro body.");
+
+    // Capture all tokens until the matching closing '}'
+    std::vector<Token> bodyTokens;
+    int depth = 1;
+    while (!isAtEnd() && depth > 0) {
+        Token t = tokens[current];
+        if (t.type == TokenType::LEFT_BRACE) {
+            depth++;
+        } else if (t.type == TokenType::RIGHT_BRACE) {
+            depth--;
+            if (depth == 0) {
+                advance();  // consume closing '}'
+                break;
+            }
+        }
+        bodyTokens.push_back(t);
+        advance();
+    }
+
+    if (depth != 0) {
+        throw error(previous(), "Unterminated macro body.");
+    }
+
+    macros_[std::string(name.lexeme)] = MacroDefinition{std::move(params), std::move(bodyTokens)};
+    // Macro definitions have no runtime representation
+    return std::make_unique<BlockStmt>(std::vector<StmtPtr>{});
+}
+
+std::vector<std::vector<Token>> Parser::collectMacroArgs(size_t expectedCount, const Token& callToken) {
+    std::vector<std::vector<Token>> args;
+
+    if (!check(TokenType::RIGHT_PAREN)) {
+        std::vector<Token> currentArg;
+        int depth = 0;
+
+        while (!isAtEnd()) {
+            if (check(TokenType::RIGHT_PAREN) && depth == 0) break;
+            if (check(TokenType::COMMA) && depth == 0) {
+                args.push_back(std::move(currentArg));
+                currentArg.clear();
+                advance();  // consume ','
+                continue;
+            }
+            Token t = tokens[current];
+            if (t.type == TokenType::LEFT_PAREN || t.type == TokenType::LEFT_BRACKET ||
+                t.type == TokenType::LEFT_BRACE) {
+                depth++;
+            } else if (t.type == TokenType::RIGHT_PAREN || t.type == TokenType::RIGHT_BRACKET ||
+                       t.type == TokenType::RIGHT_BRACE) {
+                depth--;
+            }
+            currentArg.push_back(t);
+            advance();
+        }
+        if (!currentArg.empty()) args.push_back(std::move(currentArg));
+    }
+    consume(TokenType::RIGHT_PAREN, "Expect ')' after macro arguments.");
+
+    if (args.size() != expectedCount) {
+        throw error(callToken, "Macro '" + callToken.lexeme + "' expects " + std::to_string(expectedCount) +
+                                   " argument(s), got " + std::to_string(args.size()) + ".");
+    }
+    return args;
+}
+
+std::vector<Token> Parser::substituteBody(const MacroDefinition& macro,
+                                           const std::vector<std::vector<Token>>& args, int line, int col) {
+    std::vector<Token> result;
+    for (const auto& tok : macro.bodyTokens) {
+        if (tok.type == TokenType::IDENTIFIER) {
+            bool substituted = false;
+            for (size_t i = 0; i < macro.params.size(); i++) {
+                if (tok.lexeme == macro.params[i]) {
+                    result.insert(result.end(), args[i].begin(), args[i].end());
+                    substituted = true;
+                    break;
+                }
+            }
+            if (!substituted) result.push_back(tok);
+        } else {
+            result.push_back(tok);
+        }
+    }
+    return result;
+}
+
+ExprPtr Parser::expandMacroExpr(const std::string& macroName) {
+    auto& macro = macros_[macroName];
+    Token bangToken = peek();
+    advance();  // consume '!'
+    consume(TokenType::LEFT_PAREN, "Expect '(' after '!' in macro invocation.");
+
+    auto args = collectMacroArgs(macro.params.size(), bangToken);
+    auto expanded = substituteBody(macro, args, bangToken.line, bangToken.column);
+
+    // Insert expanded tokens at the current position in the token stream
+    tokens.insert(tokens.begin() + static_cast<std::ptrdiff_t>(current), expanded.begin(), expanded.end());
+
+    // Parse the now-inserted tokens as an expression
+    return expression();
+}
+
+StmtPtr Parser::expandMacroStmt() {
+    Token nameToken = tokens[current];
+    advance();  // consume identifier
+    advance();  // consume '!'
+    consume(TokenType::LEFT_PAREN, "Expect '(' after '!' in macro invocation.");
+
+    auto& macro = macros_[nameToken.lexeme];
+    auto args = collectMacroArgs(macro.params.size(), nameToken);
+    auto expanded = substituteBody(macro, args, nameToken.line, nameToken.column);
+
+    // Wrap body in braces so it parses as a single block statement
+    Token lbrace(TokenType::LEFT_BRACE, "{", nameToken.line, nameToken.column);
+    Token rbrace(TokenType::RIGHT_BRACE, "}", nameToken.line, nameToken.column);
+
+    std::vector<Token> wrapped;
+    wrapped.push_back(lbrace);
+    wrapped.insert(wrapped.end(), expanded.begin(), expanded.end());
+    wrapped.push_back(rbrace);
+
+    tokens.insert(tokens.begin() + static_cast<std::ptrdiff_t>(current), wrapped.begin(), wrapped.end());
+
+    StmtPtr result = statement();  // parses the inserted '{...}' block
+    consumeSemicolonIfNeeded();    // consume optional ';' after macro invocation
+    return result;
+}
+
 // Type annotation parsing (v0.3)
 TypePtr Parser::parseTypeAnnotation() {
     // Check for 'nil' keyword used as a type annotation
@@ -906,6 +1053,10 @@ ExprPtr Parser::primary() {
 
     if (match({TokenType::IDENTIFIER})) {
         Token name = previous();
+        // Check for expression-level macro invocation: name!( ... )
+        if (check(TokenType::BANG) && macros_.count(name.lexeme)) {
+            return expandMacroExpr(std::string(name.lexeme));
+        }
         return std::make_unique<VariableExpr>(std::string(name.lexeme), nullptr);
     }
     if (match({TokenType::LEFT_BRACKET})) {
