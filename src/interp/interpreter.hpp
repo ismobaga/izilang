@@ -1,6 +1,5 @@
 #pragma once
 
-#include <memory>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
@@ -12,6 +11,7 @@
 #include "common/token.hpp"
 #include "common/value.hpp"
 #include "environment.hpp"
+#include "environment_arena.hpp"
 #include "user_function.hpp"
 
 namespace izi {
@@ -52,8 +52,9 @@ class Interpreter : public ExprVisitor, public StmtVisitor {
 
     const std::vector<std::string>& getCommandLineArgs() const { return commandLineArgs; }
 
-    // Get global environment (for REPL :vars command)
-    std::shared_ptr<Environment> getGlobals() const { return globals; }
+    // Get global environment (for REPL :vars command).
+    // Returns a non-owning pointer; the environment is owned by arena_.
+    const Environment* getGlobals() const { return globals; }
 
     // ExprVisitor
     Value visit(BinaryExpr& expr) override;
@@ -94,15 +95,20 @@ class Interpreter : public ExprVisitor, public StmtVisitor {
     void visit(ThrowStmt&) override;
     void visit(ClassStmt&) override;  // v0.3
 
-    void executeBlock(const std::vector<StmtPtr>& statements, std::shared_ptr<Environment> newEnv);
+    void executeBlock(const std::vector<StmtPtr>& statements, Environment* newEnv);
 
     // Runtime safety tracking (public so UserFunction can access it)
     size_t callDepth = 0;
 
+    // Arena that owns all Environment objects created during interpretation.
+    // Exposed so that UserFunction::call and BoundMethod::call can allocate
+    // call-frame environments without going through a separate factory.
+    EnvironmentArena arena_;
+
    private:
     std::string_view source_;
-    std::shared_ptr<Environment> globals;
-    std::shared_ptr<Environment> env;
+    Environment* globals;  // Non-owning; owned by arena_
+    Environment* env;      // Non-owning; owned by arena_
 
     Value evaluate(Expr& expr);
     void execute(Stmt& expr);

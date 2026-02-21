@@ -12,7 +12,7 @@ Value UserFunction::call(Interpreter& interp, const std::vector<Value>& argument
     // Increment call depth
     interp.callDepth++;
 
-    auto localEnv = std::make_shared<Environment>(closure);
+    auto localEnv = interp.arena_.create(closure);
 
     // Get params and body from either decl or funcExpr
     const std::vector<std::string>* params = nullptr;

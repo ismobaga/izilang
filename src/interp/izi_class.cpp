@@ -15,7 +15,7 @@ Value BoundMethod::call(Interpreter& interp, const std::vector<Value>& arguments
     }
 
     // Create a new environment with 'this' defined, using the method's closure as parent
-    auto thisEnv = std::make_shared<Environment>(userFunc->getClosure());
+    auto thisEnv = interp.arena_.create(userFunc->getClosure());
     thisEnv->define("this", instance);
 
     // Create a temporary UserFunction with the new closure
