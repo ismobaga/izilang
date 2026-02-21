@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - IPC (Inter-Process Communication)
+- **`std.ipc` module**: Named-pipe (FIFO) based IPC primitives for passing messages between processes
+  - `createPipe(name)` — Create a named pipe (FIFO) identified by a logical name
+  - `openRead(name)` — Open the read end of a named pipe; returns a handle
+  - `openWrite(name)` — Open the write end of a named pipe; returns a handle
+  - `send(handle, message)` — Send a length-prefixed string message through a write handle
+  - `recv(handle)` — Blocking receive of a complete message from a read handle
+  - `tryRecv(handle)` — Non-blocking receive; returns `nil` immediately if no message is ready
+  - `close(handle)` — Close a pipe handle and release resources
+  - `removePipe(name)` — Remove the named pipe from the filesystem
+- **Security**: Pipes created with permissions `0600` (owner read/write only) under `/tmp/izi_ipc_<name>`
+- **Platform**: POSIX systems (Linux, macOS); Windows throws a descriptive error
+- **Documentation**: Added [`docs/IPC.md`](docs/IPC.md) with full API reference and usage examples
+- **Example**: Added [`examples/demo_ipc.iz`](examples/demo_ipc.iz) demonstrating the full IPC lifecycle
+
 ### Added - Runtime & VM Hardening
 - **Stack Overflow Protection**: Automatic detection and prevention of stack overflow from deep recursion (max depth: 256)
 - **Memory Statistics Tracking**: New `--memory-stats` flag to display memory usage report

@@ -65,6 +65,7 @@ IziLang 0.3.0 REPL
 - **Classes & OOP** - Classes with inheritance, constructors, `this` binding
 - **Gradual Typing** - Optional type annotations on variables and functions
 - **Semantic Analysis** - Static checks via `izi check` (unused vars, dead code)
+- **IPC** - Named-pipe inter-process communication via `std.ipc`
 
 ### 📦 Dual Execution Modes
 
@@ -132,6 +133,7 @@ izi hello.iz
 - **[Getting Started](docs/GETTING_STARTED.md)** - Installation, basics, examples
 - **[CLI Reference](docs/CLI_REFERENCE.md)** - Complete command-line guide
 - **[Standard Library](docs/STANDARD_LIBRARY.md)** - Built-in modules and functions
+- **[IPC Module](docs/IPC.md)** - Inter-process communication via named pipes
 - **[Module System](docs/MODULE_SYSTEM.md)** - Import/export and module organisation
 - **[Error System](docs/ERROR_SYSTEM.md)** - Error types and handling
 - **[Testing](docs/TESTING.md)** - How to run and write tests
