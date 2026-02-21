@@ -3,6 +3,7 @@
 #include "vm_native_ui.hpp"
 #include "vm.hpp"
 #include <cmath>
+#include <sstream>
 
 namespace izi {
 
@@ -94,13 +95,54 @@ Value createVmLogModule(VM& vm) {
     return Value{module};
 }
 
-Value createVmAssertModule(VM& vm) {
+Value createVmAssertModule(VM& /*vm*/) {
     auto module = std::make_shared<Map>();
 
-    // Assertion functions (placeholder - need VM versions)
-    // module->entries["ok"] = Value{std::make_shared<VmNativeFunction>("ok", -1, vmNativeAssertOk)};
-    // module->entries["eq"] = Value{std::make_shared<VmNativeFunction>("eq", 2, vmNativeAssertEq)};
-    // module->entries["ne"] = Value{std::make_shared<VmNativeFunction>("ne", 2, vmNativeAssertNe)};
+    module->entries["ok"] = Value{std::make_shared<VmNativeFunction>("ok", -1,
+        [](VM&, const std::vector<Value>& args) -> Value {
+            if (args.size() < 1 || args.size() > 2) {
+                throw std::runtime_error("assert.ok() takes 1 or 2 arguments.");
+            }
+            if (!isTruthy(args[0])) {
+                std::string message = "Assertion failed";
+                if (args.size() == 2) {
+                    if (!std::holds_alternative<std::string>(args[1])) {
+                        throw std::runtime_error("Second argument to assert.ok() must be a string.");
+                    }
+                    message = std::get<std::string>(args[1]);
+                }
+                throw std::runtime_error(message);
+            }
+            return Nil{};
+        })};
+
+    module->entries["eq"] = Value{std::make_shared<VmNativeFunction>("eq", 2,
+        [](VM&, const std::vector<Value>& args) -> Value {
+            if (args.size() != 2) {
+                throw std::runtime_error("assert.eq() takes exactly 2 arguments.");
+            }
+            if (args[0] != args[1]) {
+                std::ostringstream oss;
+                oss << "Assertion failed: expected values to be equal, but got ";
+                oss << valueToString(args[0]) << " and " << valueToString(args[1]);
+                throw std::runtime_error(oss.str());
+            }
+            return Nil{};
+        })};
+
+    module->entries["ne"] = Value{std::make_shared<VmNativeFunction>("ne", 2,
+        [](VM&, const std::vector<Value>& args) -> Value {
+            if (args.size() != 2) {
+                throw std::runtime_error("assert.ne() takes exactly 2 arguments.");
+            }
+            if (args[0] == args[1]) {
+                std::ostringstream oss;
+                oss << "Assertion failed: expected values to be different, but both were ";
+                oss << valueToString(args[0]);
+                throw std::runtime_error(oss.str());
+            }
+            return Nil{};
+        })};
 
     return Value{module};
 }

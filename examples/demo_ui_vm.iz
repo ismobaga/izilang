@@ -1,14 +1,18 @@
-// IZI ui module demo
+// IZI VM ui module demo
+// Demonstrates raylib backend support running through the bytecode VM.
 // Requires raylib: build with --raylib=<path> flag passed to premake5
 //
-// Usage:
-//   ./izi examples/demo_ui.iz
+// Run via bytecode VM:
+//   izi run --vm examples/demo_ui_vm.iz
+//
+// Or via the tree-walking interpreter (both backends share the same API):
+//   izi run examples/demo_ui_vm.iz
 
 import ui
 
-var win = ui.createWindow("IZI + raylib", 900, 600)
+var win = ui.createWindow("IZI VM + raylib", 900, 600)
 
-// Set the target frame rate for the game loop
+// Set a target frame rate for the game loop
 win.setTargetFPS(60)
 
 while (win.isOpen()) {
@@ -16,7 +20,7 @@ while (win.isOpen()) {
     win.close()
   }
 
-  // Frame delta time (seconds) for frame-rate-independent logic
+  // Delta time for frame-rate-independent logic
   var dt = win.getFrameTime()
 
   win.beginDrawing()
@@ -29,7 +33,7 @@ while (win.isOpen()) {
   win.fillRect(mx - 50, my - 20, 100, 40, ui.color(80, 140, 255))
 
   // Draw text
-  win.drawText(20, 20, "Hello IZI", 24, ui.color(240, 240, 240))
+  win.drawText(20, 20, "Hello IZI VM", 24, ui.color(240, 240, 240))
   win.drawText(20, 54, "Move mouse, press ESC to quit", 16, ui.color(180, 180, 180))
 
   // Draw a circle at a fixed position

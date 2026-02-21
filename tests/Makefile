@@ -91,13 +91,12 @@ GENERATED += $(OBJDIR)/test_collections.o
 GENERATED += $(OBJDIR)/test_error_system.o
 GENERATED += $(OBJDIR)/test_first_class_functions.o
 GENERATED += $(OBJDIR)/test_http.o
-GENERATED += $(OBJDIR)/test_ipc.o
-GENERATED += $(OBJDIR)/test_net.o
 GENERATED += $(OBJDIR)/test_integration.o
 GENERATED += $(OBJDIR)/test_ipc.o
 GENERATED += $(OBJDIR)/test_lexer.o
 GENERATED += $(OBJDIR)/test_main.o
 GENERATED += $(OBJDIR)/test_modules.o
+GENERATED += $(OBJDIR)/test_net.o
 GENERATED += $(OBJDIR)/test_optimizer.o
 GENERATED += $(OBJDIR)/test_optional_semicolons.o
 GENERATED += $(OBJDIR)/test_parser.o
@@ -139,13 +138,12 @@ OBJECTS += $(OBJDIR)/test_collections.o
 OBJECTS += $(OBJDIR)/test_error_system.o
 OBJECTS += $(OBJDIR)/test_first_class_functions.o
 OBJECTS += $(OBJDIR)/test_http.o
-OBJECTS += $(OBJDIR)/test_ipc.o
-OBJECTS += $(OBJDIR)/test_net.o
 OBJECTS += $(OBJDIR)/test_integration.o
 OBJECTS += $(OBJDIR)/test_ipc.o
 OBJECTS += $(OBJDIR)/test_lexer.o
 OBJECTS += $(OBJDIR)/test_main.o
 OBJECTS += $(OBJDIR)/test_modules.o
+OBJECTS += $(OBJDIR)/test_net.o
 OBJECTS += $(OBJDIR)/test_optimizer.o
 OBJECTS += $(OBJDIR)/test_optional_semicolons.o
 OBJECTS += $(OBJDIR)/test_parser.o
@@ -317,10 +315,7 @@ $(OBJDIR)/test_first_class_functions.o: test_first_class_functions.cpp
 $(OBJDIR)/test_http.o: test_http.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
-$(OBJDIR)/test_ipc.o: test_ipc.cpp
-	@echo "$(notdir $<)"
-	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
-$(OBJDIR)/test_net.o: test_net.cpp
+$(OBJDIR)/test_integration.o: test_integration.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/test_ipc.o: test_ipc.cpp
@@ -333,6 +328,9 @@ $(OBJDIR)/test_main.o: test_main.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/test_modules.o: test_modules.cpp
+	@echo "$(notdir $<)"
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/test_net.o: test_net.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/test_optimizer.o: test_optimizer.cpp

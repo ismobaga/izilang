@@ -378,9 +378,41 @@ void BytecodeCompiler::visit(FunctionStmt& stmt) {
 void BytecodeCompiler::visit(ImportStmt& stmt) {
     std::string modulePath = stmt.module;  // Use original module name first
 
-    // Check if this is a native module - if so, skip compilation
+    // Check if this is a native module - emit bytecode to load it at runtime
     if (isVmNativeModule(modulePath)) {
-        // Native modules are registered at VM initialization
+        uint8_t moduleNameIndex = makeName(modulePath);
+
+        if (stmt.isWildcard) {
+            // import * as alias from "ui"  ->  bind module as <alias>
+            emitOp(OpCode::LOAD_MODULE);
+            emitByte(moduleNameIndex);
+            uint8_t aliasIndex = makeName(stmt.wildcardAlias);
+            emitOp(OpCode::SET_GLOBAL);
+            emitByte(aliasIndex);
+            emitOp(OpCode::POP);
+        } else if (!stmt.namedImports.empty()) {
+            // import { a, b } from "ui"  ->  bind each named export individually
+            // Load the module once per named import and extract the property
+            for (const auto& name : stmt.namedImports) {
+                emitOp(OpCode::LOAD_MODULE);
+                emitByte(moduleNameIndex);
+                uint8_t nameIdx = makeName(name);
+                emitOp(OpCode::GET_PROPERTY);
+                emitByte(nameIdx);
+                emitOp(OpCode::SET_GLOBAL);
+                emitByte(nameIdx);
+                emitOp(OpCode::POP);
+            }
+        } else {
+            // import ui  ->  bind module as <modulePath>
+            emitOp(OpCode::LOAD_MODULE);
+            emitByte(moduleNameIndex);
+            uint8_t varNameIndex = makeName(modulePath);
+            emitOp(OpCode::SET_GLOBAL);
+            emitByte(varNameIndex);
+            emitOp(OpCode::POP);
+        }
+
         // Mark as imported to prevent duplicate processing
         if (importedModules) {
             importedModules->insert(modulePath);
@@ -502,7 +534,7 @@ void BytecodeCompiler::visit(ImportStmt& stmt) {
                         chunk.code.push_back(remappedIndex);
                     }
                 } else if (op == OpCode::GET_GLOBAL || op == OpCode::SET_GLOBAL || op == OpCode::GET_PROPERTY ||
-                           op == OpCode::SET_PROPERTY) {
+                           op == OpCode::SET_PROPERTY || op == OpCode::LOAD_MODULE) {
                     // Next byte is a name index
                     if (i + 1 < moduleChunk.code.size()) {
                         ++i;

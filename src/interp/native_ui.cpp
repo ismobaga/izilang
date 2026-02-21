@@ -433,6 +433,30 @@ static Value buildWindowObject(std::shared_ptr<UiWindow> win) {
 #endif
         })};
 
+    // win.setTargetFPS(fps) - set the target frames-per-second for the game loop
+    obj->entries["setTargetFPS"] = Value{std::make_shared<NativeFunction>("setTargetFPS", 1,
+        [](Interpreter&, const std::vector<Value>& args) -> Value {
+            if (args.size() != 1) {
+                throw std::runtime_error("win.setTargetFPS() takes 1 argument (fps).");
+            }
+#ifdef HAVE_RAYLIB
+            SetTargetFPS(static_cast<int>(asNumber(args[0])));
+#else
+            throw std::runtime_error("ui module requires raylib (build with -DHAVE_RAYLIB).");
+#endif
+            return Nil{};
+        })};
+
+    // win.getFrameTime() -> float - get time in seconds for last frame drawn (delta time)
+    obj->entries["getFrameTime"] = Value{std::make_shared<NativeFunction>("getFrameTime", 0,
+        [](Interpreter&, const std::vector<Value>&) -> Value {
+#ifdef HAVE_RAYLIB
+            return static_cast<double>(GetFrameTime());
+#else
+            return 0.0;
+#endif
+        })};
+
     // win.drawText(x, y, text, fontSize, color)
     obj->entries["drawText"] = Value{std::make_shared<NativeFunction>("drawText", 5,
         [](Interpreter&, const std::vector<Value>& args) -> Value {
