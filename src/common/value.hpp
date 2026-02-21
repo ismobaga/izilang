@@ -19,10 +19,12 @@ struct Map;
 struct Set;
 struct Instance;
 struct Error;
+struct Task;
 
 using Value = std::variant<Nil, bool, double, std::string, std::shared_ptr<Array>, std::shared_ptr<Map>,
                            std::shared_ptr<Set>, std::shared_ptr<Callable>, std::shared_ptr<VmCallable>,
-                           std::shared_ptr<VmClass>, std::shared_ptr<Instance>, std::shared_ptr<Error>>;
+                           std::shared_ptr<VmClass>, std::shared_ptr<Instance>, std::shared_ptr<Error>,
+                           std::shared_ptr<Task>>;
 
 // Forward declare to avoid circular dependency
 }  // namespace izi
@@ -40,6 +42,15 @@ struct Map {
 };
 struct Set {
     std::unordered_map<std::string, Value> values;  // Using string keys for uniqueness
+};
+
+// Task: represents a spawned unit of work for the cooperative scheduler
+struct Task {
+    enum class State { Pending, Running, Completed, Failed };
+    State state = State::Pending;
+    std::shared_ptr<Callable> callable;
+    Value result;
+    std::string errorMessage;
 };
 
 void printValue(const Value& v);  // forward
@@ -104,6 +115,8 @@ inline bool isTruthy(const Value& v) {
         return true;  // Instances are always truthy
     } else if (std::holds_alternative<std::shared_ptr<Error>>(v)) {
         return true;  // Errors are always truthy
+    } else if (std::holds_alternative<std::shared_ptr<Task>>(v)) {
+        return true;  // Tasks are always truthy
     }
     return false;
 }
@@ -141,6 +154,8 @@ inline std::string getTypeName(const Value& v) {
         return "instance";
     } else if (std::holds_alternative<std::shared_ptr<Error>>(v)) {
         return "error";
+    } else if (std::holds_alternative<std::shared_ptr<Task>>(v)) {
+        return "task";
     }
     return "unknown";
 }

@@ -2116,12 +2116,72 @@ auto nativeHttpRequest(Interpreter& interp, const std::vector<Value>& arguments)
     return httpParseResponse(response);
 }
 
+// Concurrency: spawn creates a Task from a callable (runs lazily when awaited)
+auto nativeSpawn(Interpreter& /*interp*/, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 1) {
+        throw std::runtime_error("spawn() takes exactly one argument.");
+    }
+    if (!std::holds_alternative<std::shared_ptr<Callable>>(arguments[0])) {
+        throw std::runtime_error("spawn() argument must be a callable.");
+    }
+    auto task = std::make_shared<Task>();
+    task->callable = std::get<std::shared_ptr<Callable>>(arguments[0]);
+    task->state = Task::State::Pending;
+    return task;
+}
+
+// Concurrency: await runs a pending task and returns its result
+auto nativeAwait(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 1) {
+        throw std::runtime_error("await() takes exactly one argument.");
+    }
+    if (!std::holds_alternative<std::shared_ptr<Task>>(arguments[0])) {
+        throw std::runtime_error("await() argument must be a task.");
+    }
+    auto task = std::get<std::shared_ptr<Task>>(arguments[0]);
+    if (task->state == Task::State::Running) {
+        throw std::runtime_error("await() called re-entrantly on an already running task.");
+    }
+    if (task->state == Task::State::Pending) {
+        task->state = Task::State::Running;
+        try {
+            task->result = task->callable->call(interp, {});
+            task->state = Task::State::Completed;
+        } catch (const std::exception& e) {
+            task->state = Task::State::Failed;
+            task->errorMessage = e.what();
+        }
+    }
+    if (task->state == Task::State::Failed) {
+        throw std::runtime_error("Task failed: " + task->errorMessage);
+    }
+    return task->result;
+}
+
+// sleep(ms): pause execution for the given number of milliseconds
+auto nativeSleep(Interpreter& /*interp*/, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 1 || !std::holds_alternative<double>(arguments[0])) {
+        throw std::runtime_error("sleep() takes exactly one numeric argument (milliseconds).");
+    }
+    double ms = std::get<double>(arguments[0]);
+    if (ms < 0) {
+        throw std::runtime_error("sleep() argument must be non-negative.");
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<long long>(ms)));
+    return Nil{};
+}
+
 void registerNativeFunctions(Interpreter& interp) {
     // Core functions
     interp.defineGlobal("print", Value{std::make_shared<NativeFunction>("print", -1, nativePrint)});
     interp.defineGlobal("clock", Value{std::make_shared<NativeFunction>("clock", 0, nativeClock)});
     interp.defineGlobal("len", Value{std::make_shared<NativeFunction>("len", 1, nativeLen)});
     interp.defineGlobal("str", Value{std::make_shared<NativeFunction>("str", 1, nativeStr)});
+
+    // Concurrency functions
+    interp.defineGlobal("spawn", Value{std::make_shared<NativeFunction>("spawn", 1, nativeSpawn)});
+    interp.defineGlobal("await", Value{std::make_shared<NativeFunction>("await", 1, nativeAwait)});
+    interp.defineGlobal("sleep", Value{std::make_shared<NativeFunction>("sleep", 1, nativeSleep)});
 
     // Array functions
     interp.defineGlobal("push", Value{std::make_shared<NativeFunction>("push", 2, nativePush)});
