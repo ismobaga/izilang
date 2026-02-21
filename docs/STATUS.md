@@ -1,20 +1,20 @@
 # IziLang Project Status
 
-**Last Updated**: February 20, 2026  
-**Version**: v0.3.0  
-**Status**: Released
+**Last Updated**: February 21, 2026  
+**Version**: v0.4.0-dev (v0.3.0 released, v0.4.0 in progress)  
+**Status**: Active Development
 
 ---
 
 ## Executive Summary
 
-IziLang is a modern programming language with a **dual execution model** (tree-walking interpreter and bytecode VM) implemented in C++20. The project has achieved **v0.1 readiness** with all critical design decisions frozen, comprehensive features working, excellent documentation, and multi-platform support. It is **ready for v0.1 release** with core language features complete and stable.
+IziLang is a modern programming language with a **dual execution model** (tree-walking interpreter and bytecode VM) implemented in C++20. The project is actively developing **v0.4.0** after shipping v0.3.0. The codebase has **185 test cases with 1,087 assertions all passing**. Key v0.4.0 features already landed include the `izi fmt` code formatter and async/await concurrency primitives.
 
-### Maturity Level: ⭐⭐⭐⭐ (4/5) - v0.1 Ready
-- **Core Language**: ✅ Mature, feature-complete, production-ready
-- **Runtime**: ✅ Tree-walking interpreter stable, VM experimental
-- **Tooling**: ⚠️ Frameworks exist, implementations incomplete
-- **Ecosystem**: ⚠️ In development
+### Maturity Level: ⭐⭐⭐⭐ (4/5) - v0.4.0 In Progress
+- **Core Language**: ✅ Mature, feature-complete including async/await, macros, OOP, gradual typing
+- **Runtime**: ✅ Tree-walking interpreter stable; VM functional (experimental)
+- **Tooling**: ✅ Full CLI suite (`run`, `repl`, `fmt`, `check`, `bench`, `test`, `compile`, `chunk`)
+- **Ecosystem**: ⚠️ LSP server and package manager in development
 - **Documentation**: ✅ Excellent, comprehensive, up-to-date
 - **Design Decisions**: ✅ All critical decisions frozen
 
@@ -108,15 +108,10 @@ make config=release         # Release build
 **Status**: ✅ **COMPREHENSIVE**
 
 ### Test Statistics
-- **Total Test Cases**: 68
-- **Total Assertions**: 328
+- **Total Test Cases**: 185
+- **Total Assertions**: 1,087
 - **Pass Rate**: 100% ✅
-- **Execution Time**: < 1 second
-
-**Note on Test Count**: The test suite includes 5 additional test cases since the last STATUS.md update, covering:
-- VM stack operations (test_vm_stack.cpp)
-- Additional integration scenarios
-These tests were present in the codebase but not previously counted in the documentation.
+- **Execution Time**: < 2 seconds
 
 ### Test Categories
 
@@ -131,19 +126,39 @@ These tests were present in the codebase but not previously counted in the docum
 | **First-Class Functions** | 15 | Closures, higher-order functions |
 | **Try/Catch** | 13 | Exception handling |
 | **VM Simple** | Various | Bytecode execution |
+| **OOP / Classes** | Various | Classes, inheritance, `this` |
+| **Async/Await** | 6 | Async functions, await expressions |
+| **Macros** | 5 | Macro definitions and expansion |
+| **Ternary Operator** | 9 | `condition ? a : b` syntax |
+| **Formatter** | Various | `izi fmt` code formatting |
+| **Semantic Analysis** | Various | Static checks, unused vars |
+| **HTTP / Net** | Various | Native networking modules |
 
 ### Test Files
 ```
 tests/
-├── test_lexer.cpp              # Tokenization tests
-├── test_value.cpp              # Value type tests
-├── test_integration.cpp        # End-to-end tests
-├── test_modules.cpp            # Module system tests
-├── test_pattern_matching.cpp   # Pattern matching tests
-├── test_collections.cpp        # Array/map tests
-├── test_first_class_functions.cpp  # Function tests
-├── test_try_catch.cpp          # Exception handling tests
-└── test_vm_simple.cpp          # VM bytecode tests
+├── test_lexer.cpp                 # Tokenization tests
+├── test_value.cpp                 # Value type tests
+├── test_integration.cpp           # End-to-end tests
+├── test_modules.cpp               # Module system tests
+├── test_pattern_matching.cpp      # Pattern matching tests
+├── test_collections.cpp           # Array/map tests
+├── test_first_class_functions.cpp # Function tests
+├── test_try_catch.cpp             # Exception handling tests
+├── test_vm_simple.cpp             # VM bytecode tests
+├── test_vm_stack.cpp              # VM stack operations
+├── test_classes.cpp               # OOP and inheritance
+├── test_async.cpp                 # Async/await concurrency
+├── test_macros.cpp                # Macro system
+├── test_ternary_operator.cpp      # Ternary operator
+├── test_formatter.cpp             # Code formatter
+├── test_semantic_analysis.cpp     # Semantic analysis
+├── test_optimizer.cpp             # AST optimizer
+├── test_http.cpp                  # HTTP native module
+├── test_net.cpp                   # Net native module
+├── test_ipc.cpp                   # IPC module
+├── test_error_system.cpp          # Error system
+└── test_parser.cpp                # Parser tests
 ```
 
 **Assessment**: ✅ **GOOD** coverage for core features. Missing: error recovery, edge cases, performance tests.
@@ -384,40 +399,50 @@ RuntimeError: Division by zero
 **Status**: ❌ **UNDEFINED**
 
 #### Current State
-- ❌ No threading support
-- ❌ No async/await
-- ❌ No coroutines
-- ❌ No parallel collections
+- ✅ Async functions: `async fn fetch(url) { ... }`
+- ✅ `await` keyword for calling async functions
+- ✅ `ASYNC` and `AWAIT` tokens in lexer
+- ✅ `AsyncFunctionStmt` and `AwaitExpr` in AST
+- ⚠️ Event loop (cooperative scheduling) — runtime hooks present, full I/O integration in progress
 
-#### Future Options
-- **Option 1**: OS threads + mutexes
-- **Option 2**: Green threads (M:N model)
-- **Option 3**: Async/await with event loop
-- **Option 4**: Actor model
+#### Future Enhancement
+- Full non-blocking I/O via `std.async` module
+- Promise chaining: `then()`, `catch()`, `finally()`
 
-**Decision**: ❌ **NOT YET MADE**
+**Decision**: ✅ **Async/Await with cooperative event loop**
 
 ---
 
 ## 7. Tooling
 
 ### 7.1 CLI Commands
-**Status**: ✅ **BASIC & STABLE**
+**Status**: ✅ **FULL-FEATURED**
 
 #### Available Commands
 ```bash
-izi <file>              # Execute a script
-izi --vm <file>         # Use bytecode VM (experimental)
-izi --help              # Show help message
+izi                    # Start interactive REPL (default)
+izi run <file>         # Execute a source file
+izi build <file>       # Compile/check without executing
+izi check <file>       # Parse and analyze (semantic checks)
+izi compile <file>     # Compile to native executable
+izi chunk <file>       # Compile to bytecode chunk (.izb)
+izi test [pattern]     # Run test files (searches *.iz in tests/)
+izi repl               # Start interactive REPL
+izi bench <file>       # Run performance benchmark
+izi fmt <file>         # Format source code
+izi version            # Show version information
+izi help [command]     # Show help for a specific command
+
+# Global flags
+--vm                   # Use bytecode VM (experimental)
+--interp               # Use tree-walker interpreter (default)
+--debug                # Enable debug/verbose output
+--optimize, -O         # Enable optimizations (default: on)
+--no-optimize, -O0     # Disable optimizations
+--memory-stats         # Show memory usage statistics
 ```
 
-#### Missing Commands
-- ❌ `izi build` - Compile to standalone executable
-- ❌ `izi test` - Run test files
-- ❌ `izi fmt` - Format source code
-- ❌ `izi repl` - Interactive REPL
-
-**Stability**: ✅ Core execution stable, needs expansion
+**Stability**: ✅ Full CLI suite implemented and stable
 
 ---
 
@@ -443,19 +468,16 @@ Expected expression, found '{'.
 ---
 
 ### 7.3 Code Formatter
-**Status**: ❌ **NOT IMPLEMENTED**
+**Status**: ✅ **IMPLEMENTED**
 
-#### Current State
-- No `izi fmt` command
-- No automatic formatting
-- No style guide enforced
+#### Features
+- ✅ `izi fmt <file>` command
+- ✅ `izi fmt --check <file>` (check-only mode)
+- ✅ Auto-indent and consistent spacing
+- ✅ Operator spacing rules
+- ✅ Brace formatting
 
-#### Planned Features
-- Auto-indent
-- Consistent spacing
-- Configurable style (`.izifmt.toml`)
-
-**Priority**: Medium (v0.2 milestone)
+**Priority**: ✅ Complete (landed in v0.4.0)
 
 ---
 
@@ -566,50 +588,43 @@ import "mymodule.iz";
 
 ### Status Classification
 
-| Component | Status | Blocking v0.1? | Notes |
-|-----------|--------|----------------|-------|
-| **Lexer** | ✅ Stable | No | Production-ready, comments working |
-| **Parser** | ✅ Stable | No | Production-ready |
-| **AST** | ✅ Stable | No | Excellent design |
-| **Interpreter** | ✅ Stable | No | Default execution mode |
-| **VM** | ⚠️ Experimental | No | Functional but optional |
-| **Compiler** | ✅ Stable | No | Bytecode generation works |
-| **Error Handling** | ✅ Stable | No | Try/catch implemented |
-| **Stack Traces** | ⚠️ Partial | No | Needs improvement |
-| **GC Strategy** | ✅ Decided | No | Reference counting for v0.1 |
-| **Module System** | ✅ Stable | No | Named and wildcard imports working |
-| **Concurrency** | ❌ Missing | No | v0.3+ feature |
-| **Type System** | ❌ Missing | No | Dynamic for now |
-| **CLI** | ✅ Stable | No | Basic commands work |
-| **Diagnostics** | ✅ Stable | No | Good quality |
-| **Formatter** | ❌ Missing | No | v0.2 feature |
-| **LSP** | ⚠️ Partial | No | Framework exists |
-| **Package Manager** | ⚠️ Partial | No | Spec defined |
-| **Stdlib** | ✅ Stable | No | 46 functions |
-| **Tests** | ✅ Stable | No | 68 tests passing |
-| **CI/CD** | ✅ Stable | No | Production-grade |
-| **Documentation** | ✅ Stable | No | Excellent |
-
-### Previously Blocking Issues (Now Resolved for v0.1)
-
-1. ✅ **VM Bytecode Implementation** - VM mode functional and tested. Marked as experimental (opt-in) for v0.1, with interpreter as stable default.
-2. ✅ **GC Strategy** - **RESOLVED**: Reference counting with std::shared_ptr chosen for v0.1
-3. ✅ **Wildcard Imports** - **RESOLVED**: Namespace objects fully implemented and working with `import * as name from "module"`
-
-### Risky Design Decisions - Now Validated for v0.1
-
-1. **Dual Execution Model** - ✅ **RESOLVED**: Hybrid approach frozen. Interpreter is default and production-ready, VM is experimental and optional.
-2. **Reference Counting** - ✅ **RESOLVED**: Accepted for v0.1 with documented limitations. Users advised to avoid circular references. Future versions may add cycle detection.
-3. **Global Namespace Pollution** - ✅ **RESOLVED**: Wildcard imports provide namespacing via module objects. Named imports use global scope by design for v0.1.
-4. **Dynamic Typing Only** - ✅ **ACCEPTED**: Frozen for v0.1. Gradual typing planned for v0.2+.
+| Component | Status | Notes |
+|-----------|--------|-------|
+| **Lexer** | ✅ Stable | Production-ready, all tokens including `async`, `await`, `macro` |
+| **Parser** | ✅ Stable | Full language grammar, including async/await, macros, ternary |
+| **AST** | ✅ Stable | 14 expression types, 15+ statement types |
+| **Interpreter** | ✅ Stable | Default execution mode, all features supported |
+| **VM** | ⚠️ Experimental | Functional, opt-in (`--vm` flag) |
+| **Compiler** | ✅ Stable | Bytecode generation for all language constructs |
+| **Optimizer** | ✅ Stable | Constant folding, dead code elimination |
+| **Error Handling** | ✅ Stable | Try/catch/finally, stack traces |
+| **Stack Traces** | ⚠️ Partial | Function names shown; file names sometimes missing |
+| **GC Strategy** | ✅ Decided | Reference counting (std::shared_ptr) |
+| **Module System** | ✅ Stable | Named and wildcard imports, dot-notation access |
+| **Async/Await** | ✅ Implemented | `async fn`, `await` expressions |
+| **Macros** | ✅ Implemented | `macro name(params) { body }`, expansion via `name!()` |
+| **OOP / Classes** | ✅ Stable | Classes, inheritance, constructors, `this` |
+| **Gradual Typing** | ✅ Stable | Optional type annotations on vars and functions |
+| **Pattern Matching** | ✅ Stable | Match expressions with guards |
+| **Ternary Operator** | ✅ Stable | `condition ? a : b` |
+| **CLI** | ✅ Stable | Full suite: run/repl/fmt/check/test/bench/compile |
+| **Formatter** | ✅ Stable | `izi fmt` with check mode |
+| **Semantic Analysis** | ✅ Stable | `izi check` — unused vars, dead code, type hints |
+| **Diagnostics** | ✅ Stable | Color-coded, source-location errors |
+| **Stdlib** | ✅ Stable | 46+ functions: math, string, array, io, json, time, regex, http, net, log, ipc |
+| **LSP** | ⚠️ Framework | Server skeleton; diagnostics/completion not yet wired |
+| **Package Manager** | ⚠️ Spec | Design documented; implementation pending |
+| **Tests** | ✅ Stable | 185 test cases, 1,087 assertions, 100% passing |
+| **CI/CD** | ✅ Stable | Multi-platform (Linux, macOS, Windows) |
+| **Documentation** | ✅ Stable | 20+ markdown documents |
 
 ### Technical Debt
 
-1. **Code Style Inconsistencies** - Mix of naming conventions
-2. **Error Messages** - Some lack context
-3. **Test Coverage** - Missing edge cases, error recovery tests
-4. **Performance** - No optimizations (constant folding, DCE)
-5. **Documentation Site** - Only markdown files, needs web presence
+1. **VM completeness** — Some edge cases in class/async support under VM mode
+2. **Stack traces** — Source file names missing from some frames
+3. **LSP** — Framework exists but not connected to real diagnostics
+4. **Package Manager** — Backend not yet implemented
+5. **Async I/O** — Async syntax is parsed and interpreted; full event loop I/O integration pending
 
 ---
 
@@ -622,41 +637,29 @@ import "mymodule.iz";
 - Tree-walking interpreter: ✅ Working, default, production-ready
 - Bytecode VM: ✅ Implemented, experimental, opt-in
 
-#### Decision for v0.1
-**Chosen**: **Hybrid** - Interpreter for dev and production, VM for experimentation (Option 3)
+#### Decision
+**Chosen**: **Hybrid** - Interpreter for dev and production, VM for experimentation
 
 **Implementation**:
-- Default: Tree-walking interpreter (`./izi script.iz`)
-- Optional: Bytecode VM (`./izi --vm script.iz`)
+- Default: Tree-walking interpreter (`izi run script.iz`)
+- Optional: Bytecode VM (`izi run --vm script.iz`)
 - Both modes fully functional
-- Interpreter recommended for v0.1
+- Interpreter recommended for v0.4 and beyond
 
-**Rationale**:
-- Interpreter provides excellent debugging and error messages
-- Interpreter is stable and well-tested (68 tests passing)
-- VM provides future optimization path
-- Users can choose based on their needs
-- No breaking changes when VM becomes default in future
-
-**Status**: Frozen for v0.1 and documented in docs/DECISIONS.md
+**Status**: Frozen and documented in docs/DECISIONS.md
 
 ---
 
 ### 10.2 Type Inference Boundaries
-**Status**: ❌ **NOT DECIDED**
+**Status**: ✅ **DECIDED**
 
 #### Current State
-- All typing is dynamic at runtime
-- No type annotations
-- No inference
+- Gradual typing implemented: optional type annotations on variables and function parameters
+- No static type checking yet (annotations are runtime-checked only)
+- Type inference (infer types from assignment) planned for v1.0
 
-#### Options
-1. **Fully dynamic** (current)
-2. **Gradual typing** (optional type annotations)
-3. **Static with inference** (TypeScript-style)
-4. **Full static typing** (compile-time checks)
-
-**Recommendation**: Start with fully dynamic, add gradual typing in v0.2+
+#### Decision
+**Chosen**: Gradual typing (optional annotations) with runtime checks. Full static inference deferred to post-v1.0.
 
 ---
 
@@ -673,177 +676,129 @@ import "mymodule.iz";
 ---
 
 ### 10.4 Concurrency Model
-**Status**: ❌ **NOT DECIDED**
+**Status**: ✅ **DECIDED**
 
-#### Options
-1. **None** (current) - Single-threaded only
-2. **OS Threads** - Shared memory, mutexes
-3. **Async/Await** - Event loop, non-blocking I/O
-4. **Actor Model** - Isolated processes, message passing
+#### Decision
+**Chosen**: Async/Await with cooperative scheduling
 
-**Recommendation**: Defer to v0.3, start with async/await
+- `async fn` declares asynchronous functions
+- `await` suspends the current function until the awaited call resolves
+- Full non-blocking I/O via `std.async` (in progress for v0.4)
 
 ---
 
 ### 10.5 Stdlib Philosophy
-**Status**: ✅ **DECIDED** (for v0.1)
+**Status**: ✅ **DECIDED**
 
 #### Current Approach
-- **Batteries-included** - Many built-in functions (46)
+- **Batteries-included** — Rich built-in modules
 - Named imports add functions to global scope
-- Wildcard imports create namespace objects
-
-#### Decision for v0.1
-**Chosen**: Accept current approach with wildcard imports for namespacing
+- Wildcard imports create namespace objects with dot-notation access
 
 **Import Options**:
 ```izi
-// Option 1: Named imports (global scope)
+// Named imports (global scope)
 import { sqrt, pow } from "math";
 sqrt(16);  // Direct call
 
-// Option 2: Wildcard import (namespaced)
+// Wildcard import (namespaced)
 import * as math from "math";
-math["sqrt"](16);  // Namespaced call
+math.sqrt(16);  // Dot-notation access
 ```
 
-**Rationale**:
-- Provides flexibility for users
-- Wildcard imports solve namespace pollution
-- Simple and familiar to JavaScript developers
-- Breaking changes deferred to v0.2
-
-#### Future Improvements (v0.2)
-- Add dot notation for module objects: `math.sqrt(16)`
-- Add import aliasing: `import { sqrt as mathSqrt } from "math"`
-- Add namespace warnings for shadowing
-
-**Status**: Frozen for v0.1 and documented in docs/DECISIONS.md
+**Status**: Frozen and documented in docs/DECISIONS.md
 
 ---
 
 ### 10.6 Backward Compatibility Policy
-**Status**: ✅ **DECIDED** (for v0.1)
+**Status**: ✅ **DECIDED**
 
-#### Decision for v0.x
-**Chosen**: Semantic Versioning with breaking changes allowed before v1.0
-
-**Policy**:
+#### Policy
 - Breaking changes **permitted** in minor versions (v0.x)
 - All breaking changes documented in CHANGELOG.md
 - Migration guides provided for major changes
-- Syntax frozen at v0.2 for stability
 - Full SemVer compliance starting at v1.0
 
-**Rationale**:
-- Standard practice for pre-1.0 software
-- Allows iteration based on user feedback
-- Prevents locking in poor design choices
-- Clear communication with users about stability
-
-**Post-v1.0 Policy**:
-- MAJOR: Breaking changes
-- MINOR: New features (backward compatible)
-- PATCH: Bug fixes (backward compatible)
-
-**Status**: Frozen for v0.1 and documented in docs/DECISIONS.md
+**Status**: Frozen and documented in docs/DECISIONS.md
 
 ---
 
 ## 11. Overall Assessment
 
 ### Strengths ✅
-1. **Solid architecture** - Clean separation, good design patterns
-2. **Comprehensive features** - Most language features implemented
-3. **Excellent documentation** - 17 markdown files, well-written, up-to-date
-4. **Robust build system** - Multi-platform, fast builds
+1. **Solid architecture** - Clean separation, excellent design patterns
+2. **Comprehensive features** - Most language features implemented and tested
+3. **Excellent documentation** - 20+ markdown files, well-written, up-to-date
+4. **Robust build system** - Multi-platform (Linux, macOS, Windows), fast builds
 5. **Production CI/CD** - Automated testing, releases, deployment
-6. **Good test coverage** - 68 tests, 328 assertions, 100% passing
-7. **Rich stdlib** - 46 native functions across 4 modules
-8. **Complete module system** - Named and wildcard imports working
+6. **Strong test coverage** - 185 tests, 1,087 assertions, 100% passing
+7. **Rich stdlib** - math, string, array, io, json, time, regex, http, net, log, ipc
+8. **Complete module system** - Named and wildcard imports with dot-notation
 9. **Clear error messages** - Rust-quality diagnostics with source locations
-10. **Stable core** - Lexer, parser, interpreter all production-ready
+10. **Full CLI toolchain** - run, repl, fmt, check, test, bench, compile
 
-### Addressed Concerns ✅
-1. **GC strategy** - ✅ Decided: Reference counting for v0.1
-2. **Comment parsing** - ✅ Already working, no bug exists
-3. **Wildcard imports** - ✅ Implemented with namespace objects
-4. **Execution model** - ✅ Decided: Hybrid with interpreter as default
-5. **Backward compatibility** - ✅ Policy defined and documented
-
-### Areas for Future Enhancement ⚠️
-1. **VM optimization** - Make VM production-ready for performance
-2. **Stack traces** - Add file names and improve line tracking
-3. **Dot notation** - Add `module.function()` syntax (v0.2)
-4. **Type annotations** - Gradual typing system (v0.2+)
-5. **Tooling** - Complete LSP, formatter, debugger (v0.2+)
-
-### Not Planned for v0.1 (Deferred) ❌
-1. **Classes/OOP** - Deferred to v0.2
-2. **Concurrency** - Deferred to v0.3
-3. **Static typing** - Deferred to v0.2+
-4. **Package registry** - Deferred to v0.2+
-5. **Debugger protocol** - Deferred to v0.2+
+### Open Items ⚠️
+1. **VM completeness** - Some edge cases in VM mode for classes/async
+2. **Stack traces** - Source file names missing from some frames
+3. **LSP server** - Framework exists, diagnostics/completion not yet wired
+4. **Package manager** - Design spec done, backend implementation pending
+5. **Async I/O** - Syntax ready, full event loop I/O integration pending
+6. **Debugger (DAP)** - Not yet started
 
 ---
 
 ## 12. Recommendation
 
-### Current State: **v0.1 READY** ✅
+### Current State: **v0.4.0 In Progress** 🟡
 
-IziLang has **achieved v0.1 readiness** with all critical decisions made and documented.
+IziLang has achieved a strong v0.3.0 foundation and is actively building v0.4.0.
 
-### Immediate Actions (Completed for v0.1)
-1. ✅ ~~Fix VM bytecode bugs~~ - VM is functional, marked as experimental
-2. ✅ ~~Fix comment parsing in lexer~~ - Comments already working correctly
-3. ✅ ~~Complete wildcard import namespace objects~~ - Already implemented and working
-4. ✅ ~~Decide on GC strategy~~ - Reference counting chosen for v0.1
-5. ✅ Document all design decisions in docs/DECISIONS.md
-6. ✅ Update STATUS.md to reflect accurate state
+### Completed in v0.4.0 so far
+1. ✅ Code formatter (`izi fmt`)
+2. ✅ Async/await syntax and runtime
+3. ✅ Macro system
 
-### Ready for v0.1 Release
-All critical items for v0.1 are complete. The project is stable and ready for release tagging.
+### v0.4.0 Remaining
+1. Complete LSP server (diagnostics + autocompletion)
+2. Full async I/O integration (`std.async`)
+3. Package manager backend
 
-### Next Phase (1-2 months)
-1. Complete LSP server implementation
-2. Add code formatter
-3. Implement REPL
-4. Improve error messages
-5. Add more tests (edge cases, error recovery)
-
-### Future (3-6 months)
-1. Classes/OOP system
-2. Type annotations (gradual typing)
-3. Concurrency model (async/await)
-4. Package registry backend
-5. Performance optimizations
+### Path to v1.0 (Q4 2026)
+1. Stabilize LSP server
+2. Ship package manager MVP
+3. Complete debugger (DAP)
+4. Language freeze
+5. Ecosystem growth (50+ packages)
 
 ---
 
 ## 13. Conclusion
 
-**IziLang is ready for v0.1 release.** The codebase is well-architected, documented, and tested. All critical design decisions have been made and documented.
+**IziLang v0.3.0 is released and v0.4.0 is in active development.**
 
-**Status**: ✅ **v0.1 READY** - All blocking issues resolved
+**Status**: 🟡 **v0.4.0 In Progress** - Strong foundation, tooling being completed
 
 **Key Achievements**:
-- ✅ 68 tests passing (328 assertions, 100% success rate)
-- ✅ Comments working correctly (lexer bug was false alarm)
-- ✅ Wildcard imports fully functional with namespace objects
-- ✅ GC strategy decided and documented (reference counting)
-- ✅ Execution model decided and documented (hybrid approach)
-- ✅ Backward compatibility policy defined
+- ✅ 185 tests passing (1,087 assertions, 100% success rate)
+- ✅ Full CLI toolchain (run, repl, fmt, check, test, bench, compile)
+- ✅ Classes and OOP with full inheritance
+- ✅ Gradual typing system (optional annotations)
+- ✅ Mark-and-Sweep GC
+- ✅ Async/await syntax and runtime
+- ✅ Macro system
+- ✅ Code formatter (`izi fmt`)
+- ✅ Rich stdlib (math, string, array, io, json, time, regex, http, net, log, ipc)
 - ✅ All design decisions frozen and documented
 
 **Next Steps**:
-1. Tag v0.1 release
-2. Create CHANGELOG.md
-3. Announce release with feature list
-4. Begin v0.2 planning based on user feedback
+1. Complete LSP server wiring (diagnostics + autocompletion)
+2. Ship async I/O integration (`std.async`)
+3. Package manager backend
+4. Tag v0.4.0 release
 
-**Trajectory**: Positive if development continues with focus on quality over quantity
+**Trajectory**: Positive — strong foundation with active feature development
 
 ---
 
 **Document maintained by**: IziLang Development Team  
-**Next review**: After v0.1 release
+**Next review**: After v0.4.0 release

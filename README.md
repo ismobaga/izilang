@@ -140,6 +140,7 @@ izi hello.iz
 - **[Editor Setup](docs/EDITOR_SETUP.md)** - VS Code, Vim, Emacs integration
 - **[Troubleshooting](docs/ERRORS_TROUBLESHOOTING.md)** - Common errors and solutions
 - **[Roadmap](docs/ROADMAP.md)** - Development plans and milestones
+- **[Analysis](docs/ANALYSIS.md)** - Project analysis, feature inventory, and v1.0 scope
 
 ## Language Examples
 
@@ -277,7 +278,7 @@ Areas where help is needed:
 
 ## Roadmap
 
-**v0.3** (Current) - Language Power & Performance ✅
+**v0.3** (Released) - Language Power & Performance ✅
 - ✅ Gradual typing with optional type annotations
 - ✅ Classes and OOP with inheritance
 - ✅ Mark-and-Sweep garbage collection
@@ -285,16 +286,22 @@ Areas where help is needed:
 - ✅ Enhanced stack traces and error reporting
 - ✅ VM import system and benchmark command (`izi bench`)
 - ✅ Stack overflow protection and memory statistics
-- 🚧 Code formatter (`izi fmt`)
-- 🚧 LSP server MVP
 
-**v0.4** (Planned) - Concurrency & Ecosystem
-- Async/await concurrency primitives
-- Performance optimizations (JIT, inline caching)
-- Package manager
-- Debugger protocol (DAP)
+**v0.4** (In Progress) - Concurrency & Ecosystem
+- ✅ Code formatter (`izi fmt`)
+- ✅ Async/await syntax and runtime
+- ✅ Macro system
+- ✅ Rich stdlib (json, time, regex, http, net, log, ipc)
+- 🚧 LSP server (diagnostics + autocompletion)
+- 🚧 Full async I/O (`std.async` event loop)
+- 📋 Package manager MVP
 
-**[→ Full Roadmap](docs/ROADMAP.md)**
+**v1.0** (Target Q1 2027) - Stable
+- Language freeze (no breaking changes)
+- Package registry
+- Production deployments
+
+**[→ Full Roadmap](docs/ROADMAP.md)** | **[→ Project Analysis](docs/ANALYSIS.md)**
 
 ## License
 
