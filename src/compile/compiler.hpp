@@ -46,6 +46,7 @@ class BytecodeCompiler : public ExprVisitor, public StmtVisitor {
     void visit(FunctionStmt& stmt) override;
     void visit(ImportStmt& stmt) override;
     void visit(ExportStmt& stmt) override;
+    void visit(ReExportStmt& stmt) override;
     void visit(BreakStmt& stmt) override;
     void visit(ContinueStmt& stmt) override;
     void visit(TryStmt& stmt) override;

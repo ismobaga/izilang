@@ -109,12 +109,14 @@ struct IfStmt : public Stmt {
 
 // Import statement with named/wildcard imports
 // Supports:
-// - import "module.iz";               (simple import)
-// - import { name1, name2 } from "module.iz";  (named imports)
-// - import * as name from "module.iz"; (wildcard import)
+// - import "module.iz";                           (simple import)
+// - import { name1, name2 } from "module.iz";     (named imports)
+// - import { name as alias } from "module.iz";    (named import with alias)
+// - import * as name from "module.iz";            (wildcard import)
 struct ImportStmt : public Stmt {
     std::string module;
-    std::vector<std::string> namedImports;  // Empty for simple imports
+    std::vector<std::string> namedImports;  // Export names; empty for simple imports
+    std::vector<std::string> namedAliases;  // Local aliases; "" means use export name directly
     std::string wildcardAlias;  // Empty unless "import * as name"
     bool isWildcard;
 
@@ -125,6 +127,13 @@ struct ImportStmt : public Stmt {
     ImportStmt(std::string modName, std::vector<std::string> imports)
         : module(std::move(modName)), namedImports(std::move(imports)), isWildcard(false) {}
 
+    // Named imports with aliases: import { a as x, b } from "module";
+    ImportStmt(std::string modName, std::vector<std::string> imports, std::vector<std::string> aliases)
+        : module(std::move(modName)),
+          namedImports(std::move(imports)),
+          namedAliases(std::move(aliases)),
+          isWildcard(false) {}
+
     // Wildcard import: import * as name from "module";
     ImportStmt(std::string modName, std::string alias, bool wildcard)
         : module(std::move(modName)), wildcardAlias(std::move(alias)), isWildcard(wildcard) {}
@@ -134,12 +143,43 @@ struct ImportStmt : public Stmt {
 
 // Export statement
 // Supports:
-// - export fn name() { ... }    (export function)
-// - export var name = value;    (export variable)
+// - export fn name() { ... }      (export function)
+// - export var name = value;      (export variable)
+// - export default <expr>;        (default export expression)
+// - export default fn name() {}   (default export function)
+// - export default var name = v;  (default export variable)
 struct ExportStmt : public Stmt {
-    StmtPtr declaration;  // The function or variable being exported
+    StmtPtr declaration;  // The function or variable being exported (null for default expr)
+    ExprPtr defaultExpr;  // For "export default <expr>" (null unless isDefault with no declaration)
+    bool isDefault;       // True for "export default ..."
 
-    explicit ExportStmt(StmtPtr decl) : declaration(std::move(decl)) {}
+    // Regular export: export fn/var
+    explicit ExportStmt(StmtPtr decl) : declaration(std::move(decl)), isDefault(false) {}
+
+    // Default export with declaration: export default fn/var
+    ExportStmt(StmtPtr decl, bool def) : declaration(std::move(decl)), isDefault(def) {}
+
+    // Default export with expression: export default <expr>
+    explicit ExportStmt(ExprPtr expr) : defaultExpr(std::move(expr)), isDefault(true) {}
+
+    void accept(StmtVisitor& v) override { v.visit(*this); }
+};
+
+// Re-export statement
+// Supports:
+// - export * from "module";            (wildcard re-export)
+// - export { name1, name2 } from "module";  (named re-export)
+struct ReExportStmt : public Stmt {
+    std::string module;                 // Source module path
+    std::vector<std::string> names;     // Names to re-export; empty = wildcard
+    bool isWildcard;                    // True for "export * from ..."
+
+    // Named re-export: export { a, b } from "module"
+    ReExportStmt(std::string mod, std::vector<std::string> n)
+        : module(std::move(mod)), names(std::move(n)), isWildcard(false) {}
+
+    // Wildcard re-export: export * from "module"
+    explicit ReExportStmt(std::string mod) : module(std::move(mod)), isWildcard(true) {}
 
     void accept(StmtVisitor& v) override { v.visit(*this); }
 };

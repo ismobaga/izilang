@@ -608,10 +608,24 @@ void BytecodeCompiler::visit(ImportStmt& stmt) {
 }
 
 void BytecodeCompiler::visit(ExportStmt& stmt) {
-    // For now, simply emit the underlying declaration
-    // The declaration (function or variable) will be defined globally
-    // In a future enhancement, we could track exported names for validation
+    if (stmt.isDefault) {
+        if (stmt.declaration) {
+            // export default fn/var — emit the declaration
+            emitStatement(*stmt.declaration);
+        } else if (stmt.defaultExpr) {
+            // export default <expr> — emit expression, then pop (no binding at compile time)
+            emitExpression(*stmt.defaultExpr);
+            emitOp(OpCode::POP);
+        }
+        return;
+    }
+    // Regular export: emit the underlying declaration
     emitStatement(*stmt.declaration);
+}
+
+void BytecodeCompiler::visit(ReExportStmt& /*stmt*/) {
+    // Re-exports are a no-op in the bytecode compiler for now;
+    // the bytecode VM does not support isolated module scope yet.
 }
 
 void BytecodeCompiler::visit(BreakStmt& /*stmt*/) {

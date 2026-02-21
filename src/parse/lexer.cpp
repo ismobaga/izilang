@@ -318,6 +318,7 @@ TokenType Lexer::keywordType(std::string_view text) {
     if (text == "finally") return TokenType::FINALLY;
     if (text == "throw") return TokenType::THROW;
     if (text == "match") return TokenType::MATCH;
+    if (text == "default") return TokenType::DEFAULT;
     return TokenType::IDENTIFIER;
 }
 

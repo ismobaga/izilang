@@ -3,6 +3,7 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -86,6 +87,7 @@ class Interpreter : public ExprVisitor, public StmtVisitor {
     void visit(ReturnStmt&) override;
     void visit(ImportStmt&) override;
     void visit(ExportStmt&) override;
+    void visit(ReExportStmt&) override;
     void visit(BreakStmt&) override;
     void visit(ContinueStmt&) override;
     void visit(TryStmt&) override;
@@ -113,12 +115,23 @@ class Interpreter : public ExprVisitor, public StmtVisitor {
     std::vector<std::string> importStack;  // Track files being imported (for circular detection)
     std::string currentFile;  // Current file being executed
 
+    // Module export tracking for namespace isolation
+    // Points to the exports map of the module currently being loaded (null at top level)
+    std::unordered_map<std::string, Value>* currentModuleExports_ = nullptr;
+    // Cache: canonical path -> exports map (populated when module is loaded in isolated mode)
+    std::unordered_map<std::string, std::unordered_map<std::string, Value>> moduleExportCache_;
+    // Cache: canonical path -> parsed program (keeps AST alive for UserFunction closures)
+    std::unordered_map<std::string, std::vector<StmtPtr>> moduleProgramCache_;
+
     // command line arguments for std.process
     std::vector<std::string> commandLineArgs;
 
     // helpers
     std::string loadFile(const std::string& path);
     std::string normalizeModulePath(const std::string& path);
+    // Load a file module in isolated scope, collect exports, cache and return them
+    std::unordered_map<std::string, Value> loadModuleWithExports(const std::string& modulePath,
+                                                                  const std::string& fromFile);
 
    public:
     // Set current file for relative import resolution

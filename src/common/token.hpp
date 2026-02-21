@@ -75,6 +75,7 @@ enum class TokenType {
     THROW,
     MATCH,
     UNDERSCORE,
+    DEFAULT,
 
     // Special
     END_OF_FILE,

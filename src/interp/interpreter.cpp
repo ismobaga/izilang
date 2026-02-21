@@ -494,19 +494,23 @@ void Interpreter::visit(ImportStmt& stmt) {
 
         if (stmt.isWildcard) {
             // import * as name from "math"
-            globals->define(stmt.wildcardAlias, moduleValue);
+            env->define(stmt.wildcardAlias, moduleValue);
         } else if (!stmt.namedImports.empty()) {
-            // import { sqrt, pi } from "math"
-            for (const auto& name : stmt.namedImports) {
+            // import { sqrt, pi } from "math" or import { default as x } from "mod"
+            for (size_t i = 0; i < stmt.namedImports.size(); ++i) {
+                const auto& name = stmt.namedImports[i];
+                const auto& alias = (!stmt.namedAliases.empty() && !stmt.namedAliases[i].empty())
+                                        ? stmt.namedAliases[i]
+                                        : name;
                 auto it = moduleMap->entries.find(name);
                 if (it == moduleMap->entries.end()) {
                     throw std::runtime_error("Module '" + modulePath + "' does not export '" + name + "'");
                 }
-                globals->define(name, it->second);
+                env->define(alias, it->second);
             }
         } else {
             // import "math" - bind as module object
-            globals->define(modulePath, moduleValue);
+            env->define(modulePath, moduleValue);
         }
 
         // Mark as imported to avoid re-importing
@@ -519,6 +523,34 @@ void Interpreter::visit(ImportStmt& stmt) {
 
     // Canonicalize the path for proper deduplication and cycle detection
     std::string canonicalPath = ModulePath::canonicalize(modulePath);
+
+    if (stmt.isWildcard || !stmt.namedImports.empty()) {
+        // Wildcard or named import: load in isolated scope and collect exports
+        auto exports = loadModuleWithExports(modulePath, currentFile);
+
+        if (stmt.isWildcard) {
+            // import * as alias from "./module" -> create namespace Map
+            auto map = std::make_shared<Map>();
+            map->entries = exports;
+            env->define(stmt.wildcardAlias, Value(map));
+        } else {
+            // import { a, b } from "./module" -> validate and bind named exports
+            for (size_t i = 0; i < stmt.namedImports.size(); ++i) {
+                const auto& name = stmt.namedImports[i];
+                const auto& alias = (!stmt.namedAliases.empty() && !stmt.namedAliases[i].empty())
+                                        ? stmt.namedAliases[i]
+                                        : name;
+                auto it = exports.find(name);
+                if (it == exports.end()) {
+                    throw std::runtime_error("Module '" + stmt.module + "' does not export '" + name + "'");
+                }
+                env->define(alias, it->second);
+            }
+        }
+        return;
+    }
+
+    // Simple import: run in current (global) scope for backward compatibility
 
     // Check if module is already imported (avoid re-importing)
     if (importedModules.contains(canonicalPath)) {
@@ -538,12 +570,13 @@ void Interpreter::visit(ImportStmt& stmt) {
         throw std::runtime_error("Circular import detected: " + chain);
     }
 
-    // Load and parse the module
+    // Load and parse the module, keeping AST alive in the program cache
     std::string source = loadFile(modulePath);
     Lexer lexer(source);
     auto tokens = lexer.scanTokens();
     Parser parser(std::move(tokens));
-    auto program = parser.parse();
+    auto& cachedProgram = moduleProgramCache_[canonicalPath];
+    cachedProgram = parser.parse();
 
     // Save current file and push to import stack
     std::string previousFile = currentFile;
@@ -551,8 +584,8 @@ void Interpreter::visit(ImportStmt& stmt) {
     importStack.push_back(canonicalPath);
 
     try {
-        // Execute the module
-        interpret(program);
+        // Execute the module in current global scope
+        interpret(cachedProgram);
 
         // Pop from import stack and mark as imported
         importStack.pop_back();
@@ -561,12 +594,79 @@ void Interpreter::visit(ImportStmt& stmt) {
         // Restore previous file
         currentFile = previousFile;
     } catch (...) {
-        // On error, restore state and rethrow
+        // On error, restore state and rethrow; keep the cached program alive
         importStack.pop_back();
         currentFile = previousFile;
         throw;
     }
 }
+
+std::unordered_map<std::string, Value> Interpreter::loadModuleWithExports(const std::string& modulePath,
+                                                                           const std::string& fromFile) {
+    std::string resolvedPath = ModulePath::resolveImport(modulePath, fromFile);
+    std::string canonicalPath = ModulePath::canonicalize(resolvedPath);
+
+    // Return cached exports if already loaded in isolated mode
+    auto cacheIt = moduleExportCache_.find(canonicalPath);
+    if (cacheIt != moduleExportCache_.end()) {
+        return cacheIt->second;
+    }
+
+    // Check for circular imports
+    auto stackIt = std::find(importStack.begin(), importStack.end(), canonicalPath);
+    if (stackIt != importStack.end()) {
+        std::string chain;
+        for (size_t i = std::distance(importStack.begin(), stackIt); i < importStack.size(); ++i) {
+            if (!chain.empty()) chain += " -> ";
+            chain += importStack[i];
+        }
+        chain += " -> " + canonicalPath;
+        throw std::runtime_error("Circular import detected: " + chain);
+    }
+
+    // Load and parse, keeping AST alive in the program cache
+    std::string source = loadFile(resolvedPath);
+    Lexer lexer(source);
+    auto tokens = lexer.scanTokens();
+    Parser parser(std::move(tokens));
+    auto& cachedProgram = moduleProgramCache_[canonicalPath];
+    cachedProgram = parser.parse();
+
+    // Execute in isolated module scope
+    auto moduleEnv = std::make_shared<Environment>(globals);
+    std::unordered_map<std::string, Value> exports;
+
+    auto prevEnv = env;
+    auto prevFile = currentFile;
+    auto* prevModuleExports = currentModuleExports_;
+
+    env = moduleEnv;
+    currentFile = canonicalPath;
+    currentModuleExports_ = &exports;
+    importStack.push_back(canonicalPath);
+
+    try {
+        interpret(cachedProgram);
+        importStack.pop_back();
+        importedModules.insert(canonicalPath);
+        moduleExportCache_[canonicalPath] = exports;
+    } catch (...) {
+        importStack.pop_back();
+        env = prevEnv;
+        currentFile = prevFile;
+        currentModuleExports_ = prevModuleExports;
+        // Keep the cached program alive to avoid dangling pointers in any
+        // UserFunction objects that may have been created before the error.
+        throw;
+    }
+
+    env = prevEnv;
+    currentFile = prevFile;
+    currentModuleExports_ = prevModuleExports;
+
+    return exports;
+}
+
 std::string Interpreter::normalizeModulePath(const std::string& path) {
     // Turn "math" into "math.iz"
     if (path.size() >= 3 && path.ends_with(".iz")) {
@@ -586,10 +686,66 @@ std::string Interpreter::loadFile(const std::string& path) {
 }
 
 void Interpreter::visit(ExportStmt& stmt) {
-    // For now, simply execute the underlying declaration
-    // The declaration (function or variable) will be defined globally
-    // In a future enhancement, we could track exported names for validation
+    if (stmt.isDefault) {
+        Value value;
+        if (stmt.declaration) {
+            // export default fn/var — execute declaration, then capture its value
+            execute(*stmt.declaration);
+            if (auto* fnStmt = dynamic_cast<FunctionStmt*>(stmt.declaration.get())) {
+                value = env->get(fnStmt->name);
+            } else if (auto* varStmt = dynamic_cast<VarStmt*>(stmt.declaration.get())) {
+                value = env->get(varStmt->name);
+            }
+        } else if (stmt.defaultExpr) {
+            // export default <expr>
+            value = evaluate(*stmt.defaultExpr);
+        }
+        if (currentModuleExports_) {
+            (*currentModuleExports_)["default"] = value;
+        }
+        return;
+    }
+
+    // Regular export: execute the declaration
     execute(*stmt.declaration);
+
+    // If we're in a module context, record the exported name
+    if (currentModuleExports_) {
+        if (auto* varStmt = dynamic_cast<VarStmt*>(stmt.declaration.get())) {
+            (*currentModuleExports_)[varStmt->name] = env->get(varStmt->name);
+        } else if (auto* fnStmt = dynamic_cast<FunctionStmt*>(stmt.declaration.get())) {
+            (*currentModuleExports_)[fnStmt->name] = env->get(fnStmt->name);
+        } else if (auto* classStmt = dynamic_cast<ClassStmt*>(stmt.declaration.get())) {
+            (*currentModuleExports_)[classStmt->name] = env->get(classStmt->name);
+        }
+    }
+}
+
+void Interpreter::visit(ReExportStmt& stmt) {
+    // Re-export only affects the current module's exports
+    if (!currentModuleExports_) {
+        // Re-export at top level is a no-op (no module context)
+        return;
+    }
+
+    // Load the source module exports
+    auto exports = loadModuleWithExports(stmt.module, currentFile);
+
+    if (stmt.isWildcard) {
+        // export * from "module" — re-export all
+        for (auto& [name, value] : exports) {
+            (*currentModuleExports_)[name] = value;
+        }
+    } else {
+        // export { a, b } from "module" — re-export named
+        for (const auto& name : stmt.names) {
+            auto it = exports.find(name);
+            if (it == exports.end()) {
+                throw std::runtime_error("Module '" + stmt.module + "' does not export '" + name + "'");
+            }
+            (*currentModuleExports_)[name] = it->second;
+        }
+    }
 }
 
 void Interpreter::visit(BreakStmt& /*stmt*/) {
