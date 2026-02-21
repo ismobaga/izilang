@@ -74,6 +74,7 @@ OBJECTS :=
 GENERATED += $(OBJDIR)/chunk_serializer.o
 GENERATED += $(OBJDIR)/cli.o
 GENERATED += $(OBJDIR)/compiler.o
+GENERATED += $(OBJDIR)/diagnostics.o
 GENERATED += $(OBJDIR)/error_reporter.o
 GENERATED += $(OBJDIR)/formatter.o
 GENERATED += $(OBJDIR)/interpreter.o
@@ -100,6 +101,7 @@ GENERATED += $(OBJDIR)/vm_user_function.o
 OBJECTS += $(OBJDIR)/chunk_serializer.o
 OBJECTS += $(OBJDIR)/cli.o
 OBJECTS += $(OBJDIR)/compiler.o
+OBJECTS += $(OBJDIR)/diagnostics.o
 OBJECTS += $(OBJDIR)/error_reporter.o
 OBJECTS += $(OBJDIR)/formatter.o
 OBJECTS += $(OBJDIR)/interpreter.o
@@ -211,6 +213,9 @@ $(OBJDIR)/vm_user_function.o: src/bytecode/vm_user_function.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/cli.o: src/common/cli.cpp
+	@echo "$(notdir $<)"
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/diagnostics.o: src/common/diagnostics.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/error_reporter.o: src/common/error_reporter.cpp

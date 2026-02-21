@@ -74,6 +74,7 @@ OBJECTS :=
 GENERATED += $(OBJDIR)/chunk_serializer.o
 GENERATED += $(OBJDIR)/cli.o
 GENERATED += $(OBJDIR)/compiler.o
+GENERATED += $(OBJDIR)/diagnostics.o
 GENERATED += $(OBJDIR)/error_reporter.o
 GENERATED += $(OBJDIR)/formatter.o
 GENERATED += $(OBJDIR)/interpreter.o
@@ -90,6 +91,7 @@ GENERATED += $(OBJDIR)/semantic_analyzer.o
 GENERATED += $(OBJDIR)/test_async.o
 GENERATED += $(OBJDIR)/test_classes.o
 GENERATED += $(OBJDIR)/test_collections.o
+GENERATED += $(OBJDIR)/test_diagnostics.o
 GENERATED += $(OBJDIR)/test_error_system.o
 GENERATED += $(OBJDIR)/test_first_class_functions.o
 GENERATED += $(OBJDIR)/test_formatter.o
@@ -125,6 +127,7 @@ GENERATED += $(OBJDIR)/vm_user_function.o
 OBJECTS += $(OBJDIR)/chunk_serializer.o
 OBJECTS += $(OBJDIR)/cli.o
 OBJECTS += $(OBJDIR)/compiler.o
+OBJECTS += $(OBJDIR)/diagnostics.o
 OBJECTS += $(OBJDIR)/error_reporter.o
 OBJECTS += $(OBJDIR)/formatter.o
 OBJECTS += $(OBJDIR)/interpreter.o
@@ -141,6 +144,7 @@ OBJECTS += $(OBJDIR)/semantic_analyzer.o
 OBJECTS += $(OBJDIR)/test_async.o
 OBJECTS += $(OBJDIR)/test_classes.o
 OBJECTS += $(OBJDIR)/test_collections.o
+OBJECTS += $(OBJDIR)/test_diagnostics.o
 OBJECTS += $(OBJDIR)/test_error_system.o
 OBJECTS += $(OBJDIR)/test_first_class_functions.o
 OBJECTS += $(OBJDIR)/test_formatter.o
@@ -263,6 +267,9 @@ $(OBJDIR)/vm_user_function.o: ../src/bytecode/vm_user_function.cpp
 $(OBJDIR)/cli.o: ../src/common/cli.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/diagnostics.o: ../src/common/diagnostics.cpp
+	@echo "$(notdir $<)"
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/error_reporter.o: ../src/common/error_reporter.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
@@ -318,6 +325,9 @@ $(OBJDIR)/test_classes.o: test_classes.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/test_collections.o: test_collections.cpp
+	@echo "$(notdir $<)"
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/test_diagnostics.o: test_diagnostics.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/test_error_system.o: test_error_system.cpp

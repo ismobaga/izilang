@@ -120,6 +120,10 @@ void Lexer::scanToken() {
             } else if (isalpha(c) || c == '_') {
                 identifier();
             } else {
+                if (diags_) {
+                    diags_->error("E001", "unexpected character '" + std::string(1, c) + "'",
+                                  SourceRange(startLine, startColumn, 1));
+                }
                 throw LexerError(startLine, startColumn, "Unexpected character '" + std::string(1, c) + "'");
             }
             break;
@@ -224,6 +228,13 @@ void Lexer::string() {
             }
 
             if (braceDepth != 0) {
+                if (diags_) {
+                    Diagnostic d(DiagnosticLevel::Error, "E004",
+                                 "unterminated string interpolation",
+                                 SourceRange(stringStartLine, stringStartColumn, 1));
+                    d.addHelp("add a closing `}` to complete the interpolation");
+                    diags_->report(std::move(d));
+                }
                 throw LexerError(stringStartLine, stringStartColumn, "Unterminated interpolation in string");
             }
 
@@ -242,6 +253,12 @@ void Lexer::string() {
     }
 
     if (isAtEnd()) {
+        if (diags_) {
+            Diagnostic d(DiagnosticLevel::Error, "E002", "unterminated string",
+                         SourceRange(stringStartLine, stringStartColumn, 1));
+            d.addHelp("add a closing `\"` to end the string");
+            diags_->report(std::move(d));
+        }
         throw LexerError(stringStartLine, stringStartColumn, "Unterminated string");
     }
 
@@ -349,6 +366,12 @@ void Lexer::skipBlockComment() {
     }
 
     // If we reach here, we have an unterminated comment
+    if (diags_) {
+        Diagnostic d(DiagnosticLevel::Error, "E003", "unterminated block comment",
+                     SourceRange(commentStartLine, commentStartColumn, 2));
+        d.addHelp("add `*/` to close the comment");
+        diags_->report(std::move(d));
+    }
     throw LexerError(commentStartLine, commentStartColumn, "Unterminated block comment");
 }
 }  // namespace izi
