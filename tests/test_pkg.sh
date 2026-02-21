@@ -159,7 +159,8 @@ cat >> izi.toml <<'TOML'
 # pre-populated git dep to avoid network call
 TOML
 # Manually insert git entry to test manifest parsing without network
-awk '/^\[deps\]/ { print; print "my-pkg = { git = \"https://example.com/my-pkg.git\", ref = \"v1.0.0\" }"; next } { print }' izi.toml > /tmp/izi_test.toml && mv /tmp/izi_test.toml izi.toml
+TMPF="$(mktemp)"
+awk '/^\[deps\]/ { print; print "my-pkg = { git = \"https://example.com/my-pkg.git\", ref = \"v1.0.0\" }"; next } { print }' izi.toml > "$TMPF" && mv "$TMPF" izi.toml
 manifest="$(cat izi.toml)"
 assert_contains "git dep present in manifest" 'git = "https://example.com/my-pkg.git"' "$manifest"
 
@@ -181,7 +182,13 @@ LIBDIR="$(make_local_lib hash-lib 2.0.0)"
 lock="$(cat izi.lock)"
 sha="$(echo "$lock" | grep '^sha256' | awk -F'"' '{print $2}')"
 assert_contains "sha256 is non-empty" "sha256  =" "$lock"
-[ -n "$sha" ] && assert_contains "sha256 is a hex string" "$sha" "$sha"
+if echo "$sha" | grep -qE '^[0-9a-f]{64}$'; then
+    echo "  PASS: sha256 is a valid hex string"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: sha256 is not a valid 64-char hex string (got: $sha)"
+    FAIL=$((FAIL + 1))
+fi
 
 # ── sync: --dev includes dev-deps ────────────────────────────────────────────
 echo "--- sync: --dev includes dev-deps ---"
