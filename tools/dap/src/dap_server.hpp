@@ -88,7 +88,8 @@ class DAPServer {
     bool initialized_ = false;
     bool launched_ = false;
     bool shouldExit_ = false;
-    int nextSeq_ = 1;
+    std::atomic<int> nextSeq_{1};
+    std::mutex sendMutex_;  // Protects stdout writes (called from multiple threads)
 
     // DAP message I/O
     std::string readMessage();

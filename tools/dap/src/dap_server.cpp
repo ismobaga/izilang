@@ -120,11 +120,15 @@ std::string DAPServer::readMessage() {
         if (!line.empty() && line.back() == '\r') line.pop_back();
         if (line.empty()) break;
         if (line.rfind("Content-Length: ", 0) == 0) {
-            contentLength = std::stoi(line.substr(16));
+            try {
+                contentLength = std::stoi(line.substr(16));
+            } catch (const std::exception&) {
+                contentLength = 0;
+            }
         }
     }
 
-    if (contentLength == 0) return "";
+    if (contentLength <= 0) return "";
 
     std::string content(contentLength, '\0');
     std::cin.read(&content[0], contentLength);
@@ -133,6 +137,7 @@ std::string DAPServer::readMessage() {
 
 void DAPServer::sendMessage(const json& message) {
     std::string content = message.dump();
+    std::lock_guard<std::mutex> lock(sendMutex_);
     std::cout << "Content-Length: " << content.size() << "\r\n\r\n" << content << std::flush;
 }
 
