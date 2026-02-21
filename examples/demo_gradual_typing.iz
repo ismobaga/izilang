@@ -1,0 +1,51 @@
+// Gradual Typing Demo - IziLang v0.3
+// Type annotations are optional - code without them still works.
+// Run with: izi check demo_gradual_typing.iz   (for type checking)
+// Run with: izi demo_gradual_typing.iz          (for execution)
+
+// --- Functions with type annotations ---
+fn add(a: number, b: number): number {
+    return a + b;
+}
+
+fn greet(name: string): string {
+    return "Hello, " + name;
+}
+
+// --- Variables with type annotations ---
+var name: string = "Alice";
+var age: number = 30;
+var active: bool = true;
+
+// --- Using annotated functions ---
+var sum = add(10, 20);
+print(sum);               // 30
+
+var message = greet(name);
+print(message);           // Hello, Alice
+
+// --- Class with type-annotated fields and methods ---
+class Person {
+    var name: string;
+    var age: number;
+
+    fn constructor(n: string, a: number) {
+        this.name = n;
+        this.age = a;
+    }
+
+    fn greet(): string {
+        return "Hello, I'm " + this.name + " and I'm " + str(this.age) + " years old.";
+    }
+}
+
+var person = Person("Bob", 25);
+print(person.greet());    // Hello, I'm Bob and I'm 25 years old.
+
+// --- Unannotated code still works (gradual typing) ---
+fn multiply(x, y) {
+    return x * y;
+}
+
+var result = multiply(4, 5);
+print(result);            // 20

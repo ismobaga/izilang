@@ -50,6 +50,10 @@ jobs:
       if: runner.os != 'Windows'
       run: make config=${{ matrix.config == 'Debug' && 'debug' || 'release' }} -j$(nproc 2>/dev/null || sysctl -n hw.ncpu)
 
+    - name: Setup MSBuild (Windows)
+      if: runner.os == 'Windows'
+      uses: microsoft/setup-msbuild@v2
+
     - name: Build project (Windows)
       if: runner.os == 'Windows'
       run: |

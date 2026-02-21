@@ -612,3 +612,99 @@ TEST_CASE("Semantic Analysis: Type Misuse Detection", "[semantic][types][errors]
         REQUIRE(hasErrorContaining(analyzer, "Type mismatch"));
     }
 }
+
+TEST_CASE("Semantic Analysis: Lowercase Type Annotations", "[semantic][types][lowercase]") {
+    SECTION("Lowercase type names work for variables") {
+        std::string code = R"(
+            var x: number = 42;
+            var y: string = "hello";
+            var z: bool = true;
+        )";
+
+        auto analyzer = analyzeCode(code);
+        REQUIRE_FALSE(hasErrors(analyzer));
+    }
+
+    SECTION("Lowercase type mismatch is detected") {
+        std::string code = R"(
+            var x: number = "not a number";
+        )";
+
+        auto analyzer = analyzeCode(code);
+        REQUIRE(hasErrors(analyzer));
+        REQUIRE(hasErrorContaining(analyzer, "Type mismatch"));
+    }
+
+    SECTION("Issue example: fn with lowercase type annotations") {
+        std::string code = R"(
+            fn add(a: number, b: number): number {
+                return a + b;
+            }
+            var name: string = "Alice";
+            var age: number = 30;
+        )";
+
+        auto analyzer = analyzeCode(code);
+        REQUIRE_FALSE(hasErrors(analyzer));
+    }
+
+    SECTION("Issue example: class with lowercase type annotations") {
+        std::string code = R"(
+            class Person {
+                var name: string;
+                var age: number;
+
+                fn greet(): string {
+                    return this.name;
+                }
+            }
+        )";
+
+        auto analyzer = analyzeCode(code);
+        REQUIRE_FALSE(hasErrors(analyzer));
+    }
+
+    SECTION("Mixed case type annotations (both work)") {
+        std::string code = R"(
+            var a: Number = 1;
+            var b: number = 2;
+            var c: String = "hi";
+            var d: string = "bye";
+            var e: Bool = true;
+            var f: bool = false;
+        )";
+
+        auto analyzer = analyzeCode(code);
+        REQUIRE_FALSE(hasErrors(analyzer));
+    }
+
+    SECTION("Lowercase nil type annotation") {
+        std::string code = R"(
+            var x: nil = nil;
+        )";
+
+        auto analyzer = analyzeCode(code);
+        REQUIRE_FALSE(hasErrors(analyzer));
+    }
+
+    SECTION("Lowercase void return type") {
+        std::string code = R"(
+            fn doNothing(): void {
+                var x = 10;
+            }
+        )";
+
+        auto analyzer = analyzeCode(code);
+        REQUIRE_FALSE(hasErrors(analyzer));
+    }
+
+    SECTION("Lowercase any type") {
+        std::string code = R"(
+            var x: any = 42;
+            var y: any = "string";
+        )";
+
+        auto analyzer = analyzeCode(code);
+        REQUIRE_FALSE(hasErrors(analyzer));
+    }
+}
