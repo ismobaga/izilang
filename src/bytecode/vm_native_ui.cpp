@@ -302,6 +302,28 @@ static Value vmBuildWindowObject(std::shared_ptr<VmUiWindow> win) {
 #endif
         })};
 
+    obj->entries["setTargetFPS"] = Value{std::make_shared<VmNativeFunction>("setTargetFPS", 1,
+        [](VM&, const std::vector<Value>& args) -> Value {
+            if (args.size() != 1) {
+                throw std::runtime_error("win.setTargetFPS() takes 1 argument (fps).");
+            }
+#ifdef HAVE_RAYLIB
+            SetTargetFPS(static_cast<int>(asNumber(args[0])));
+#else
+            throw std::runtime_error("ui module requires raylib (build with -DHAVE_RAYLIB).");
+#endif
+            return Nil{};
+        })};
+
+    obj->entries["getFrameTime"] = Value{std::make_shared<VmNativeFunction>("getFrameTime", 0,
+        [](VM&, const std::vector<Value>&) -> Value {
+#ifdef HAVE_RAYLIB
+            return static_cast<double>(GetFrameTime());
+#else
+            return 0.0;
+#endif
+        })};
+
     obj->entries["drawText"] = Value{std::make_shared<VmNativeFunction>("drawText", 5,
         [](VM&, const std::vector<Value>& args) -> Value {
             if (args.size() != 5) {

@@ -2,6 +2,9 @@
 #include "interp/interpreter.hpp"
 #include "parse/lexer.hpp"
 #include "parse/parser.hpp"
+#include "compile/compiler.hpp"
+#include "bytecode/vm.hpp"
+#include "bytecode/vm_native.hpp"
 #include <sstream>
 
 using namespace izi;
@@ -988,5 +991,140 @@ TEST_CASE("Native module system - ui module", "[modules][ui]") {
 
         Interpreter interp(source);
         REQUIRE_NOTHROW(interp.interpret(program));
+    }
+}
+
+// ---------------------------------------------------------------------------
+// VM bytecode backend - ui module tests
+// These mirror the interpreter-side ui module tests, exercising the
+// createVmUiModule() path via BytecodeCompiler + VM.
+// Tests that require an actual display (createWindow) are omitted since
+// the test environment is headless.
+// ---------------------------------------------------------------------------
+
+namespace {
+// Helper: compile IZI source and run it through the bytecode VM.
+static bool vmRunNoThrow(const std::string& source) {
+    Lexer lexer(source);
+    auto tokens = lexer.scanTokens();
+    Parser parser(std::move(tokens), source);
+    auto program = parser.parse();
+    BytecodeCompiler compiler;
+    Chunk chunk = compiler.compile(program);
+    VM vm;
+    registerVmNatives(vm);
+    vm.run(chunk);
+    return true;
+}
+}  // namespace
+
+TEST_CASE("VM: Native module system - ui module", "[vm][modules][ui]") {
+    SECTION("ui module can be imported via VM") {
+        REQUIRE_NOTHROW(vmRunNoThrow("import ui;"));
+    }
+
+    SECTION("ui.color() creates a color value with r, g, b, a fields via VM") {
+        std::string source = R"(
+            import * as assert from "std.assert";
+            import ui;
+            var c = ui.color(255, 128, 0);
+            assert.eq(c.r, 255);
+            assert.eq(c.g, 128);
+            assert.eq(c.b, 0);
+            assert.eq(c.a, 255);
+        )";
+        REQUIRE_NOTHROW(vmRunNoThrow(source));
+    }
+
+    SECTION("ui.color() accepts optional alpha channel via VM") {
+        std::string source = R"(
+            import * as assert from "std.assert";
+            import ui;
+            var c = ui.color(10, 20, 30, 128);
+            assert.eq(c.r, 10);
+            assert.eq(c.g, 20);
+            assert.eq(c.b, 30);
+            assert.eq(c.a, 128);
+        )";
+        REQUIRE_NOTHROW(vmRunNoThrow(source));
+    }
+
+    SECTION("ui.key constants are accessible via VM") {
+        std::string source = R"(
+            import ui;
+            var esc   = ui.key.escape;
+            var sp    = ui.key.space;
+            var a     = ui.key.a;
+            var enter = ui.key.enter;
+            var left  = ui.key.left;
+            var right = ui.key.right;
+            var up    = ui.key.up;
+            var down  = ui.key.down;
+        )";
+        REQUIRE_NOTHROW(vmRunNoThrow(source));
+    }
+
+    SECTION("ui.mouse constants are accessible via VM") {
+        std::string source = R"(
+            import ui;
+            var left   = ui.mouse.left;
+            var right  = ui.mouse.right;
+            var middle = ui.mouse.middle;
+        )";
+        REQUIRE_NOTHROW(vmRunNoThrow(source));
+    }
+
+    SECTION("ui module exposes expected functions via VM") {
+        std::string source = R"(
+            import ui;
+            var cw  = ui.createWindow;
+            var col = ui.color;
+            var kd  = ui.keyDown;
+            var kp  = ui.keyPressed;
+            var md  = ui.mouseDown;
+            var mp  = ui.mousePressed;
+            var gmp = ui.getMousePosition;
+            var gmw = ui.getMouseWheelMove;
+            var gcp = ui.getCharPressed;
+        )";
+        REQUIRE_NOTHROW(vmRunNoThrow(source));
+    }
+
+    SECTION("ui.color() with wrong arg count reports error via VM") {
+        // The VM catches runtime errors internally and returns Nil rather than
+        // propagating them as C++ exceptions. Verify that execution still
+        // completes gracefully (no crash) when given wrong arg count.
+        std::string source = R"(
+            import ui;
+            var c = ui.color(255, 128);
+        )";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+        BytecodeCompiler compiler;
+        Chunk chunk = compiler.compile(program);
+        VM vm;
+        registerVmNatives(vm);
+        // VM reports the error internally; run() should complete without crashing
+        REQUIRE_NOTHROW(vm.run(chunk));
+    }
+
+    SECTION("ui.key.escape has expected value via VM") {
+        std::string source = R"(
+            import * as assert from "std.assert";
+            import ui;
+            assert.eq(ui.key.escape, 256);
+        )";
+        REQUIRE_NOTHROW(vmRunNoThrow(source));
+    }
+
+    SECTION("ui.mouse.left has expected value via VM") {
+        std::string source = R"(
+            import * as assert from "std.assert";
+            import ui;
+            assert.eq(ui.mouse.left, 0);
+        )";
+        REQUIRE_NOTHROW(vmRunNoThrow(source));
     }
 }

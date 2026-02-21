@@ -2,6 +2,7 @@
 #include "bytecode/opcode.hpp"
 #include "bytecode/mv_callable.hpp"
 #include "bytecode/vm_class.hpp"
+#include "bytecode/vm_native_modules.hpp"
 #include "interp/izi_class.hpp"
 #include <cmath>
 
@@ -344,6 +345,17 @@ Value VM::run(const Chunk& entry) {
                     const std::string& propertyName = currentFrame()->chunk->names[nameIndex];
                     Value object = pop();
 
+                    // Support Map property access (used by native modules)
+                    if (std::holds_alternative<std::shared_ptr<Map>>(object)) {
+                        auto map = std::get<std::shared_ptr<Map>>(object);
+                        auto it = map->entries.find(propertyName);
+                        if (it == map->entries.end()) {
+                            throw std::runtime_error("Undefined property '" + propertyName + "'.");
+                        }
+                        push(it->second);
+                        break;
+                    }
+
                     if (!std::holds_alternative<std::shared_ptr<Instance>>(object)) {
                         throw std::runtime_error("Only instances have properties.");
                     }
@@ -375,6 +387,14 @@ Value VM::run(const Chunk& entry) {
                     Value value = pop();
                     Value object = pop();
 
+                    // Support Map property assignment
+                    if (std::holds_alternative<std::shared_ptr<Map>>(object)) {
+                        auto map = std::get<std::shared_ptr<Map>>(object);
+                        map->entries[propertyName] = value;
+                        push(value);
+                        break;
+                    }
+
                     if (!std::holds_alternative<std::shared_ptr<Instance>>(object)) {
                         throw std::runtime_error("Only instances have properties.");
                     }
@@ -385,6 +405,12 @@ Value VM::run(const Chunk& entry) {
                     break;
                 }
                 // ... handle other opcodes ...
+                case OpCode::LOAD_MODULE: {
+                    uint8_t nameIndex = readByte();
+                    const std::string& moduleName = currentFrame()->chunk->names[nameIndex];
+                    push(getVmNativeModule(moduleName, *this));
+                    break;
+                }
                 default:
                     throw std::runtime_error("Unknown opcode encountered.");
             }
