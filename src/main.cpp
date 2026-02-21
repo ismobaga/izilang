@@ -881,80 +881,115 @@ int main(int argc, char** argv) {
             return 1;
         }
 
-        // Read source file
-        std::ifstream file(options.input);
-        if (!file.is_open()) {
-            std::cerr << "Error: Cannot open file '" << options.input << "'\n";
-            return 1;
-        }
-        std::ostringstream buf;
-        buf << file.rdbuf();
-        std::string src = buf.str();
-
-        // Parse source into AST
-        try {
-            Lexer lex(src);
-            auto tokens = lex.scanTokens();
-            DiagnosticEngine diags(src);
-            Parser parser(std::move(tokens), src, &diags);
-            auto program = parser.parse();
-
-            if (diags.hasErrors()) {
-                std::cerr << "In file '" << options.input << "':\n";
-                std::cerr << diags.formatAll();
-                return 1;
-            }
-
-            // Format the AST
-            Formatter formatter;
-            std::string formatted = formatter.format(program);
-
-            if (options.check) {
-                // --check mode: report whether the file needs formatting
-                if (formatted == src) {
-                    std::cout << options.input << ": already formatted\n";
-                    return 0;
-                } else {
-                    std::cout << options.input << ": would be reformatted\n";
-                    return 1;
-                }
-            }
-
-            if (!options.output.empty()) {
-                // -o <file>: write to specified output file
-                std::ofstream out(options.output);
-                if (!out.is_open()) {
-                    std::cerr << "Error: Cannot write to file '" << options.output << "'\n";
-                    return 1;
-                }
-                out << formatted;
-            } else if (options.write) {
-                // --write: overwrite source file in-place
-                std::ofstream out(options.input);
-                if (!out.is_open()) {
-                    std::cerr << "Error: Cannot write to file '" << options.input << "'\n";
-                    return 1;
-                }
-                out << formatted;
-                if (options.debug) {
-                    std::cout << "Formatted: " << options.input << "\n";
-                }
+        // Auto-load .izifmt.toml from the current directory, then from the
+        // target path's parent directory (if different).
+        FormatterConfig fmtConfig;
+        {
+            const std::string localCfg = ".izifmt.toml";
+            if (fs::exists(localCfg)) {
+                fmtConfig = FormatterConfig::load(localCfg);
             } else {
-                // Default: print formatted output to stdout
-                std::cout << formatted;
+                fs::path targetParent = fs::path(options.input).parent_path();
+                if (!targetParent.empty() && targetParent != ".") {
+                    fs::path parentCfg = targetParent / ".izifmt.toml";
+                    if (fs::exists(parentCfg)) {
+                        fmtConfig = FormatterConfig::load(parentCfg.string());
+                    }
+                }
             }
-        } catch (const LexerError& e) {
-            ErrorReporter reporter(src);
-            std::cerr << "In file '" << options.input << "':\n";
-            std::cerr << reporter.formatError(e.line, e.column, e.what(), "Lexer Error") << '\n';
-            return 1;
-        } catch (const ParserError& e) {
-            ErrorReporter reporter(src);
-            std::cerr << "In file '" << options.input << "':\n";
-            std::cerr << reporter.formatError(e.token, e.what(), "Parse Error") << '\n';
-            return 1;
         }
-        return 0;
+
+        // Helper lambda: format a single file and apply the requested action.
+        // Returns false on error.
+        auto formatFile = [&](const std::string& filePath) -> bool {
+            std::ifstream file(filePath);
+            if (!file.is_open()) {
+                std::cerr << "Error: Cannot open file '" << filePath << "'\n";
+                return false;
+            }
+            std::ostringstream buf;
+            buf << file.rdbuf();
+            std::string src = buf.str();
+
+            try {
+                Lexer lex(src);
+                auto tokens = lex.scanTokens();
+                DiagnosticEngine diags(src);
+                Parser parser(std::move(tokens), src, &diags);
+                auto program = parser.parse();
+
+                if (diags.hasErrors()) {
+                    std::cerr << "In file '" << filePath << "':\n";
+                    std::cerr << diags.formatAll();
+                    return false;
+                }
+
+                Formatter formatter(fmtConfig);
+                std::string formatted = formatter.format(program);
+
+                if (options.check) {
+                    if (formatted != src) {
+                        std::cout << filePath << ": would be reformatted\n";
+                        return false;
+                    } else {
+                        std::cout << filePath << ": already formatted\n";
+                        return true;
+                    }
+                }
+
+                if (!options.output.empty()) {
+                    std::ofstream out(options.output);
+                    if (!out.is_open()) {
+                        std::cerr << "Error: Cannot write to file '" << options.output << "'\n";
+                        return false;
+                    }
+                    out << formatted;
+                } else if (options.write) {
+                    std::ofstream out(filePath);
+                    if (!out.is_open()) {
+                        std::cerr << "Error: Cannot write to file '" << filePath << "'\n";
+                        return false;
+                    }
+                    out << formatted;
+                    if (options.debug) {
+                        std::cout << "Formatted: " << filePath << "\n";
+                    }
+                } else {
+                    std::cout << formatted;
+                }
+            } catch (const LexerError& e) {
+                ErrorReporter reporter(src);
+                std::cerr << "In file '" << filePath << "':\n";
+                std::cerr << reporter.formatError(e.line, e.column, e.what(), "Lexer Error") << '\n';
+                return false;
+            } catch (const ParserError& e) {
+                ErrorReporter reporter(src);
+                std::cerr << "In file '" << filePath << "':\n";
+                std::cerr << reporter.formatError(e.token, e.what(), "Parse Error") << '\n';
+                return false;
+            }
+            return true;
+        };
+
+        // Directory mode: recursively format all .iz files
+        if (fs::is_directory(options.input)) {
+            bool allOk = true;
+            std::vector<fs::path> izFiles;
+            for (const auto& entry : fs::recursive_directory_iterator(options.input)) {
+                if (entry.is_regular_file() && entry.path().extension() == ".iz") {
+                    izFiles.push_back(entry.path());
+                }
+            }
+            std::sort(izFiles.begin(), izFiles.end());
+            for (const auto& izPath : izFiles) {
+                if (!formatFile(izPath.string())) {
+                    allOk = false;
+                }
+            }
+            return allOk ? 0 : 1;
+        }
+
+        return formatFile(options.input) ? 0 : 1;
     }
 
     // Handle compile command
