@@ -6,6 +6,21 @@ namespace izi {
 void SemanticAnalyzer::analyze(const std::vector<StmtPtr>& program) {
     diagnostics_.clear();
     currentScope_ = std::make_shared<Scope>();
+    currentScope_->type = Scope::Type::Global;
+
+    // Pre-populate global scope with built-in function names
+    auto anyType = TypeAnnotation::simple(TypeAnnotation::Kind::Any);
+    for (const auto& builtin :
+         {"print", "clock", "len", "str", "spawn", "await", "sleep", "push", "pop", "shift", "unshift", "splice",
+          "keys", "values", "hasKey", "has", "delete", "entries", "Set", "setAdd", "setHas", "setDelete", "setSize",
+          "sqrt", "pow", "abs", "floor", "ceil", "round", "sin", "cos", "tan", "min", "max", "substring", "split",
+          "join", "toUpper", "toLower", "trim", "replace", "startsWith", "endsWith", "indexOf", "map", "filter",
+          "reduce", "sort", "reverse", "concat", "slice", "readFile", "writeFile", "appendFile", "fileExists",
+          "readLine", "input", "num", "int", "bool", "type", "error", "assert", "range", "zip", "enumerate",
+          "format", "parse", "exit", "getenv", "args", "open", "close", "read", "write"}) {
+        currentScope_->variables[builtin] = TypeAnnotation::simple(TypeAnnotation::Kind::Any);
+        currentScope_->usedVariables.insert(builtin);  // mark builtins as used
+    }
 
     for (const auto& stmt : program) {
         if (stmt) {
@@ -34,8 +49,9 @@ void SemanticAnalyzer::addInfo(const std::string& message, int line, int column)
     diagnostics_.emplace_back(SemanticDiagnostic::Severity::Info, message, line, column);
 }
 
-void SemanticAnalyzer::enterScope() {
+void SemanticAnalyzer::enterScope(Scope::Type type) {
     auto newScope = std::make_shared<Scope>();
+    newScope->type = type;
     newScope->parent = currentScope_;
     currentScope_ = newScope;
 }
@@ -56,6 +72,20 @@ void SemanticAnalyzer::exitScope() {
 void SemanticAnalyzer::defineVariable(const std::string& name, TypePtr type, int line, int column) {
     if (currentScope_->variables.find(name) != currentScope_->variables.end()) {
         addError("Variable '" + name + "' already defined in this scope", line, column);
+    }
+    // Check for shadowing in parent scopes
+    if (currentScope_->type != Scope::Type::Global) {
+        auto scope = currentScope_->parent;
+        while (scope) {
+            if (scope->variables.find(name) != scope->variables.end()) {
+                std::string scopeDesc = (scope->type == Scope::Type::Global)    ? "global scope"
+                                        : (scope->type == Scope::Type::Function) ? "enclosing function scope"
+                                                                                  : "outer block scope";
+                addWarning("Variable '" + name + "' shadows variable from " + scopeDesc, line, column);
+                break;
+            }
+            scope = scope->parent;
+        }
     }
     currentScope_->variables[name] = std::move(type);
 }
@@ -206,11 +236,17 @@ Value SemanticAnalyzer::visit(CallExpr& expr) {
 }
 
 Value SemanticAnalyzer::visit(VariableExpr& expr) {
+    if (lookupVariable(expr.name) == nullptr) {
+        addError("Undefined variable '" + expr.name + "'", 0, 0);
+    }
     markVariableUsed(expr.name);
     return Nil{};
 }
 
 Value SemanticAnalyzer::visit(AssignExpr& expr) {
+    if (lookupVariable(expr.name) == nullptr) {
+        addError("Undefined variable '" + expr.name + "'", 0, 0);
+    }
     markVariableUsed(expr.name);
     expr.value->accept(*this);
     return Nil{};
@@ -250,6 +286,21 @@ Value SemanticAnalyzer::visit(SetIndexExpr& expr) {
 }
 
 Value SemanticAnalyzer::visit(FunctionExpr& expr) {
+    enterScope(Scope::Type::Function);
+    bool wasInFunction = inFunction_;
+    inFunction_ = true;
+
+    // Define parameters in function scope
+    for (const auto& param : expr.params) {
+        defineVariable(param, TypeAnnotation::simple(TypeAnnotation::Kind::Any), 0, 0);
+    }
+
+    for (const auto& s : expr.body) {
+        s->accept(*this);
+    }
+
+    inFunction_ = wasInFunction;
+    exitScope();
     return Nil{};
 }
 
@@ -398,7 +449,7 @@ void SemanticAnalyzer::visit(FunctionStmt& stmt) {
     defineVariable(stmt.name, std::move(funcType), 0, 0);
 
     // Analyze function body
-    enterScope();
+    enterScope(Scope::Type::Function);
     bool wasInFunction = inFunction_;
     inFunction_ = true;
 
@@ -433,7 +484,23 @@ void SemanticAnalyzer::visit(ReturnStmt& stmt) {
 }
 
 void SemanticAnalyzer::visit(ImportStmt& stmt) {
-    // Nothing to analyze for imports
+    // Register imported names in current scope to prevent false "undefined variable" errors
+    if (stmt.isWildcard && !stmt.wildcardAlias.empty()) {
+        // Only define if not already in scope (avoid conflict with built-ins)
+        if (lookupVariable(stmt.wildcardAlias) == nullptr) {
+            defineVariable(stmt.wildcardAlias, TypeAnnotation::simple(TypeAnnotation::Kind::Any), 0, 0);
+        }
+    } else {
+        for (size_t i = 0; i < stmt.namedImports.size(); ++i) {
+            const std::string& alias = (i < stmt.namedAliases.size() && !stmt.namedAliases[i].empty())
+                                           ? stmt.namedAliases[i]
+                                           : stmt.namedImports[i];
+            // Only define if not already in scope (avoid conflict with built-ins)
+            if (lookupVariable(alias) == nullptr) {
+                defineVariable(alias, TypeAnnotation::simple(TypeAnnotation::Kind::Any), 0, 0);
+            }
+        }
+    }
 }
 
 void SemanticAnalyzer::visit(ExportStmt& stmt) {
@@ -469,7 +536,27 @@ void SemanticAnalyzer::visit(ContinueStmt& stmt) {
 void SemanticAnalyzer::visit(TryStmt& stmt) {
     stmt.tryBlock->accept(*this);
     if (stmt.catchBlock) {
-        stmt.catchBlock->accept(*this);
+        // Enter a scope for the catch block so the catch variable is accessible
+        enterScope();
+        if (!stmt.catchVariable.empty()) {
+            defineVariable(stmt.catchVariable, TypeAnnotation::simple(TypeAnnotation::Kind::Any), 0, 0);
+        }
+        // Visit the catch block's body directly to avoid entering another scope
+        if (auto* block = dynamic_cast<BlockStmt*>(stmt.catchBlock.get())) {
+            bool previousReturned = hasReturnedInCurrentBlock_;
+            hasReturnedInCurrentBlock_ = false;
+            for (const auto& s : block->statements) {
+                if (hasReturnedInCurrentBlock_) {
+                    addWarning("Unreachable code after return statement", 0, 0);
+                    break;
+                }
+                s->accept(*this);
+            }
+            hasReturnedInCurrentBlock_ = previousReturned;
+        } else {
+            stmt.catchBlock->accept(*this);
+        }
+        exitScope();
     }
     if (stmt.finallyBlock) {
         stmt.finallyBlock->accept(*this);
@@ -481,6 +568,9 @@ void SemanticAnalyzer::visit(ThrowStmt& stmt) {
 }
 
 void SemanticAnalyzer::visit(ClassStmt& stmt) {
+    // Define class name in current scope (so it can be used as a callable)
+    defineVariable(stmt.name, TypeAnnotation::simple(TypeAnnotation::Kind::Any), 0, 0);
+
     currentClassName_ = stmt.name;
     currentClassFields_.clear();
     currentClassMethods_.clear();

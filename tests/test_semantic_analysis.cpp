@@ -708,3 +708,258 @@ TEST_CASE("Semantic Analysis: Lowercase Type Annotations", "[semantic][types][lo
         REQUIRE_FALSE(hasErrors(analyzer));
     }
 }
+
+// Helper to count warnings
+static int countWarnings(const SemanticAnalyzer& analyzer) {
+    int count = 0;
+    for (const auto& diag : analyzer.getDiagnostics()) {
+        if (diag.severity == SemanticDiagnostic::Severity::Warning) {
+            count++;
+        }
+    }
+    return count;
+}
+
+// Helper to check if warning message contains substring
+static bool hasWarningContaining(const SemanticAnalyzer& analyzer, const std::string& substring) {
+    for (const auto& diag : analyzer.getDiagnostics()) {
+        if (diag.severity == SemanticDiagnostic::Severity::Warning &&
+            diag.message.find(substring) != std::string::npos) {
+            return true;
+        }
+    }
+    return false;
+}
+
+TEST_CASE("Symbol Table: Undefined Variables", "[semantic][symbol-table][undefined]") {
+    SECTION("Undefined variable access is an error") {
+        std::string code = R"(
+            var x = y;
+        )";
+        auto analyzer = analyzeCode(code);
+        REQUIRE(hasErrors(analyzer));
+        REQUIRE(hasErrorContaining(analyzer, "Undefined variable 'y'"));
+    }
+
+    SECTION("Defined variable access is not an error") {
+        std::string code = R"(
+            var x = 10;
+            var y = x;
+        )";
+        auto analyzer = analyzeCode(code);
+        REQUIRE_FALSE(hasErrors(analyzer));
+    }
+
+    SECTION("Assigning to undefined variable is an error") {
+        std::string code = R"(
+            z = 42;
+        )";
+        auto analyzer = analyzeCode(code);
+        REQUIRE(hasErrors(analyzer));
+        REQUIRE(hasErrorContaining(analyzer, "Undefined variable 'z'"));
+    }
+
+    SECTION("Using undefined variable in expression") {
+        std::string code = R"(
+            var result = unknown + 1;
+        )";
+        auto analyzer = analyzeCode(code);
+        REQUIRE(hasErrors(analyzer));
+        REQUIRE(hasErrorContaining(analyzer, "Undefined variable 'unknown'"));
+    }
+
+    SECTION("Built-in functions are not undefined") {
+        std::string code = R"(
+            print("hello");
+            var n = len([1, 2, 3]);
+            var s = str(42);
+        )";
+        auto analyzer = analyzeCode(code);
+        REQUIRE_FALSE(hasErrors(analyzer));
+    }
+
+    SECTION("Function can be called after declaration") {
+        std::string code = R"(
+            fn greet(name) {
+                return name;
+            }
+            var result = greet("world");
+        )";
+        auto analyzer = analyzeCode(code);
+        REQUIRE_FALSE(hasErrors(analyzer));
+    }
+
+    SECTION("Variable defined in function scope is undefined outside") {
+        std::string code = R"(
+            fn test() {
+                var local = 10;
+            }
+            var x = local;
+        )";
+        auto analyzer = analyzeCode(code);
+        REQUIRE(hasErrors(analyzer));
+        REQUIRE(hasErrorContaining(analyzer, "Undefined variable 'local'"));
+    }
+
+    SECTION("Function parameters are defined inside function body") {
+        std::string code = R"(
+            fn add(a, b) {
+                return a + b;
+            }
+        )";
+        auto analyzer = analyzeCode(code);
+        REQUIRE_FALSE(hasErrors(analyzer));
+    }
+
+    SECTION("Class name is defined after class declaration") {
+        std::string code = R"(
+            class Point {
+                var x: Number;
+                var y: Number;
+            }
+            var p = Point();
+        )";
+        auto analyzer = analyzeCode(code);
+        REQUIRE_FALSE(hasErrors(analyzer));
+    }
+
+    SECTION("Recursive function can reference itself") {
+        std::string code = R"(
+            fn factorial(n) {
+                if (n <= 1) {
+                    return 1;
+                }
+                return n * factorial(n - 1);
+            }
+        )";
+        auto analyzer = analyzeCode(code);
+        REQUIRE_FALSE(hasErrors(analyzer));
+    }
+}
+
+TEST_CASE("Symbol Table: Variable Shadowing", "[semantic][symbol-table][shadowing]") {
+    SECTION("Inner scope variable shadows outer scope variable") {
+        std::string code = R"(
+            var x = 10;
+            fn test() {
+                var x = 20;
+                return x;
+            }
+        )";
+        auto analyzer = analyzeCode(code);
+        REQUIRE_FALSE(hasErrors(analyzer));
+        REQUIRE(hasWarningContaining(analyzer, "shadows"));
+    }
+
+    SECTION("No shadowing when variable is in same scope") {
+        std::string code = R"(
+            var x = 10;
+            var y = 20;
+        )";
+        auto analyzer = analyzeCode(code);
+        REQUIRE_FALSE(hasErrors(analyzer));
+        REQUIRE_FALSE(hasWarningContaining(analyzer, "shadows"));
+    }
+
+    SECTION("Function parameter shadows outer variable") {
+        std::string code = R"(
+            var value = 100;
+            fn compute(value) {
+                return value * 2;
+            }
+        )";
+        auto analyzer = analyzeCode(code);
+        REQUIRE_FALSE(hasErrors(analyzer));
+        REQUIRE(hasWarningContaining(analyzer, "shadows"));
+    }
+
+    SECTION("Block scope variable shadows function parameter") {
+        std::string code = R"(
+            fn test(x) {
+                if (true) {
+                    var x = 99;
+                    return x;
+                }
+                return x;
+            }
+        )";
+        auto analyzer = analyzeCode(code);
+        REQUIRE_FALSE(hasErrors(analyzer));
+        REQUIRE(hasWarningContaining(analyzer, "shadows"));
+    }
+}
+
+TEST_CASE("Symbol Table: Scope Rules", "[semantic][symbol-table][scopes]") {
+    SECTION("Global variables are accessible in functions") {
+        std::string code = R"(
+            var globalVar = 42;
+            fn readGlobal() {
+                return globalVar;
+            }
+        )";
+        auto analyzer = analyzeCode(code);
+        REQUIRE_FALSE(hasErrors(analyzer));
+    }
+
+    SECTION("Local variables are not accessible outside their scope") {
+        std::string code = R"(
+            fn makeLocal() {
+                var localOnly = 10;
+            }
+            var x = localOnly;
+        )";
+        auto analyzer = analyzeCode(code);
+        REQUIRE(hasErrors(analyzer));
+        REQUIRE(hasErrorContaining(analyzer, "Undefined variable 'localOnly'"));
+    }
+
+    SECTION("Parameters are accessible in function body") {
+        std::string code = R"(
+            fn multiply(a, b) {
+                var result = a * b;
+                return result;
+            }
+        )";
+        auto analyzer = analyzeCode(code);
+        REQUIRE_FALSE(hasErrors(analyzer));
+    }
+
+    SECTION("Catch variable is accessible inside catch block") {
+        std::string code = R"(
+            try {
+                var x = 1;
+            } catch (err) {
+                print(err);
+            }
+        )";
+        auto analyzer = analyzeCode(code);
+        REQUIRE_FALSE(hasErrors(analyzer));
+    }
+
+    SECTION("Lambda function parameters are accessible in body") {
+        std::string code = R"(
+            var double = fn(x) { return x * 2; };
+        )";
+        auto analyzer = analyzeCode(code);
+        REQUIRE_FALSE(hasErrors(analyzer));
+    }
+
+    SECTION("Redeclaration in same scope is an error") {
+        std::string code = R"(
+            var x = 10;
+            var x = 20;
+        )";
+        auto analyzer = analyzeCode(code);
+        REQUIRE(hasErrors(analyzer));
+        REQUIRE(hasErrorContaining(analyzer, "already defined"));
+    }
+
+    SECTION("Variables from imported modules are accessible") {
+        std::string code = R"(
+            import { sqrt, abs } from "math";
+            var result = sqrt(16);
+        )";
+        auto analyzer = analyzeCode(code);
+        REQUIRE_FALSE(hasErrors(analyzer));
+    }
+}
