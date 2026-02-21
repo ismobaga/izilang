@@ -1,0 +1,84 @@
+// Example: Concurrency Model in IziLang
+//
+// IziLang supports three concurrency primitives:
+//
+//   1. Async/Await (cooperative, single-threaded)
+//      async fn declarations return a Task when called.
+//      `await` runs the task and returns its result.
+//
+//   2. OS Threads (parallel, multi-threaded)
+//      thread_spawn(fn) launches a callable on a new OS thread.
+//      `await` blocks until the thread completes and returns its result.
+//
+//   3. Mutex (synchronization for shared mutable state)
+//      mutex() creates a mutual-exclusion lock.
+//      lock(m) / unlock(m) protect shared mutable state between threads.
+//      trylock(m) attempts acquisition without blocking.
+
+// ── Async/Await ───────────────────────────────────────────────────────────────
+
+async fn fetchData(url) {
+    // Simulate async work (e.g., I/O)
+    return "data from " + url;
+}
+
+async fn processData(data) {
+    return "processed: " + data;
+}
+
+// Calling an async fn returns a pending Task
+var task = fetchData("https://api.example.com/data");
+
+// await runs the task and returns its result
+var raw = await task;
+var result = await processData(raw);
+print(result);  // processed: data from https://api.example.com/data
+
+// ── OS Threads ────────────────────────────────────────────────────────────────
+
+// thread_spawn launches a callable on a real OS thread.
+// The main thread continues while the OS thread runs.
+var t1 = thread_spawn(fn() { return 10 * 10; });
+var t2 = thread_spawn(fn() { return 20 * 20; });
+
+// await blocks until each thread completes
+var r1 = await t1;  // 100
+var r2 = await t2;  // 400
+print(r1 + r2);     // 500
+
+// ── Shared State with Mutex ────────────────────────────────────────────────────
+
+// Use a shared Array (reference type) to communicate between threads.
+// Protect mutations with a mutex to avoid data races.
+var counter = [0];
+var m = mutex();
+
+var workers = [];
+var i = 0;
+while (i < 4) {
+    push(workers, thread_spawn(fn() {
+        lock(m);
+        counter[0] = counter[0] + 1;
+        unlock(m);
+    }));
+    i = i + 1;
+}
+
+// Wait for all workers to finish
+var j = 0;
+while (j < len(workers)) {
+    await workers[j];
+    j = j + 1;
+}
+
+print(counter[0]);  // 4
+
+// ── trylock ───────────────────────────────────────────────────────────────────
+
+var mtx = mutex();
+if (trylock(mtx)) {
+    print("acquired the lock");
+    unlock(mtx);
+} else {
+    print("lock was busy");
+}

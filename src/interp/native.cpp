@@ -2698,6 +2698,73 @@ auto nativeSleep(Interpreter& /*interp*/, const std::vector<Value>& arguments) -
     return Nil{};
 }
 
+// mutex(): create a new mutual-exclusion lock for protecting shared mutable state
+auto nativeMutex(Interpreter& /*interp*/, const std::vector<Value>& /*arguments*/) -> Value {
+    return std::make_shared<Mutex>();
+}
+
+// lock(m): acquire a mutex; blocks until the lock is available
+auto nativeLock(Interpreter& /*interp*/, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 1 || !std::holds_alternative<std::shared_ptr<Mutex>>(arguments[0])) {
+        throw std::runtime_error("lock() takes exactly one mutex argument.");
+    }
+    std::get<std::shared_ptr<Mutex>>(arguments[0])->mtx->lock();
+    return Nil{};
+}
+
+// unlock(m): release a previously acquired mutex
+auto nativeUnlock(Interpreter& /*interp*/, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 1 || !std::holds_alternative<std::shared_ptr<Mutex>>(arguments[0])) {
+        throw std::runtime_error("unlock() takes exactly one mutex argument.");
+    }
+    std::get<std::shared_ptr<Mutex>>(arguments[0])->mtx->unlock();
+    return Nil{};
+}
+
+// trylock(m): try to acquire a mutex without blocking; returns true if acquired, false otherwise
+auto nativeTryLock(Interpreter& /*interp*/, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 1 || !std::holds_alternative<std::shared_ptr<Mutex>>(arguments[0])) {
+        throw std::runtime_error("trylock() takes exactly one mutex argument.");
+    }
+    return std::get<std::shared_ptr<Mutex>>(arguments[0])->mtx->try_lock();
+}
+
+// thread_spawn(callable): spawn a callable on a new OS thread; returns a Task that can be awaited
+// Note: the callable's closure may reference shared state from the calling interpreter's
+// environment. Mutable shared reference types (Array, Map) should be protected with a Mutex
+// to prevent data races. Primitive values (number, string, bool) are copied and are safe.
+auto nativeThreadSpawn(Interpreter& /*interp*/, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 1) {
+        throw std::runtime_error("thread_spawn() takes exactly one argument.");
+    }
+    if (!std::holds_alternative<std::shared_ptr<Callable>>(arguments[0])) {
+        throw std::runtime_error("thread_spawn() argument must be a callable.");
+    }
+    auto callable = std::get<std::shared_ptr<Callable>>(arguments[0]);
+    auto task = std::make_shared<Task>();
+    task->osMutex = std::make_shared<std::mutex>();
+    task->osCv = std::make_shared<std::condition_variable>();
+    task->state = Task::State::Running;
+
+    std::thread t([task, callable]() {
+        Interpreter threadInterp;
+        // Note: Interpreter constructor already registers native functions
+        try {
+            Value result = callable->call(threadInterp, {});
+            std::lock_guard<std::mutex> lock(*task->osMutex);
+            task->result = std::move(result);
+            task->state = Task::State::Completed;
+        } catch (const std::exception& e) {
+            std::lock_guard<std::mutex> lock(*task->osMutex);
+            task->errorMessage = e.what();
+            task->state = Task::State::Failed;
+        }
+        task->osCv->notify_all();
+    });
+    t.detach();
+    return task;
+}
+
 void registerNativeFunctions(Interpreter& interp) {
     // Core functions
     interp.defineGlobal("print", Value{std::make_shared<NativeFunction>("print", -1, nativePrint)});
@@ -2709,6 +2776,11 @@ void registerNativeFunctions(Interpreter& interp) {
     interp.defineGlobal("spawn", Value{std::make_shared<NativeFunction>("spawn", 1, nativeSpawn)});
     interp.defineGlobal("await", Value{std::make_shared<NativeFunction>("await", 1, nativeAwait)});
     interp.defineGlobal("sleep", Value{std::make_shared<NativeFunction>("sleep", 1, nativeSleep)});
+    interp.defineGlobal("mutex", Value{std::make_shared<NativeFunction>("mutex", 0, nativeMutex)});
+    interp.defineGlobal("lock", Value{std::make_shared<NativeFunction>("lock", 1, nativeLock)});
+    interp.defineGlobal("unlock", Value{std::make_shared<NativeFunction>("unlock", 1, nativeUnlock)});
+    interp.defineGlobal("trylock", Value{std::make_shared<NativeFunction>("trylock", 1, nativeTryLock)});
+    interp.defineGlobal("thread_spawn", Value{std::make_shared<NativeFunction>("thread_spawn", 1, nativeThreadSpawn)});
 
     // Array functions
     interp.defineGlobal("push", Value{std::make_shared<NativeFunction>("push", 2, nativePush)});

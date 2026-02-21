@@ -1,8 +1,10 @@
 #pragma once
 
+#include <condition_variable>
 #include <future>
 #include <iostream>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <unordered_map>
 #include <variant>
@@ -20,11 +22,12 @@ struct Set;
 struct Instance;
 struct Error;
 struct Task;
+struct Mutex;
 
 using Value = std::variant<Nil, bool, double, std::string, std::shared_ptr<Array>, std::shared_ptr<Map>,
                            std::shared_ptr<Set>, std::shared_ptr<Callable>, std::shared_ptr<VmCallable>,
                            std::shared_ptr<VmClass>, std::shared_ptr<Instance>, std::shared_ptr<Error>,
-                           std::shared_ptr<Task>>;
+                           std::shared_ptr<Task>, std::shared_ptr<Mutex>>;
 
 // Forward declare to avoid circular dependency
 }  // namespace izi
@@ -45,12 +48,22 @@ struct Set {
 };
 
 // Task: represents a spawned unit of work for the cooperative scheduler
+// When osMutex/osCv are set, the task runs on an OS thread (via thread_spawn).
 struct Task {
     enum class State { Pending, Running, Completed, Failed };
     State state = State::Pending;
     std::shared_ptr<Callable> callable;
     Value result;
     std::string errorMessage;
+    // OS thread support (non-null only for thread_spawn tasks)
+    std::shared_ptr<std::mutex> osMutex;
+    std::shared_ptr<std::condition_variable> osCv;
+};
+
+// Mutex: a mutual-exclusion lock for protecting shared mutable state between threads.
+// Created with mutex(), acquired with lock()/trylock(), released with unlock().
+struct Mutex {
+    std::shared_ptr<std::mutex> mtx = std::make_shared<std::mutex>();
 };
 
 void printValue(const Value& v);  // forward
@@ -117,6 +130,8 @@ inline bool isTruthy(const Value& v) {
         return true;  // Errors are always truthy
     } else if (std::holds_alternative<std::shared_ptr<Task>>(v)) {
         return true;  // Tasks are always truthy
+    } else if (std::holds_alternative<std::shared_ptr<Mutex>>(v)) {
+        return true;  // Mutexes are always truthy
     }
     return false;
 }
@@ -156,6 +171,8 @@ inline std::string getTypeName(const Value& v) {
         return "error";
     } else if (std::holds_alternative<std::shared_ptr<Task>>(v)) {
         return "task";
+    } else if (std::holds_alternative<std::shared_ptr<Mutex>>(v)) {
+        return "mutex";
     }
     return "unknown";
 }
