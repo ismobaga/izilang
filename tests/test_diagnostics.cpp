@@ -336,6 +336,50 @@ TEST_CASE("Parser integrates with DiagnosticEngine", "[diagnostics][parser]") {
         // Should not throw (parser synchronizes internally)
         REQUIRE_NOTHROW(parser.parse());
     }
+
+    SECTION("Multiple parse errors are all collected") {
+        const std::string src = "var x = ;\nvar y = ;\nvar z = ;";
+        DiagnosticEngine engine(src, false);
+        Lexer lexer(src);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), src, &engine);
+
+        parser.parse();
+        REQUIRE(engine.hasErrors());
+        REQUIRE(engine.errorCount() == 3);
+    }
+
+    SECTION("Parser continues after error and parses subsequent valid statements") {
+        const std::string src = "var x = ;\nvar y = 42;";
+        DiagnosticEngine engine(src, false);
+        Lexer lexer(src);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), src, &engine);
+
+        auto stmts = parser.parse();
+        REQUIRE(engine.hasErrors());
+        REQUIRE(engine.errorCount() == 1);
+        // The valid statement (var y = 42) should still be parsed
+        // stmts contains a nullptr (for the failed var x) and a valid VarStmt
+        size_t validCount = 0;
+        for (const auto& s : stmts) {
+            if (s) validCount++;
+        }
+        REQUIRE(validCount == 1);
+    }
+
+    SECTION("formatAll includes all error messages") {
+        const std::string src = "var x = ;\nvar y = ;";
+        DiagnosticEngine engine(src, false);
+        Lexer lexer(src);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), src, &engine);
+
+        parser.parse();
+        std::string formatted = engine.formatAll();
+        REQUIRE(formatted.find("var x = ;") != std::string::npos);
+        REQUIRE(formatted.find("var y = ;") != std::string::npos);
+    }
 }
 
 // ---- Edge cases -------------------------------------------------------------
