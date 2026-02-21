@@ -61,6 +61,7 @@ enum class OpCode : uint8_t {
     GET_PROPERTY,  // Get a property from an instance (followed by name index)
     SET_PROPERTY,  // Set a property on an instance (followed by name index)
     GET_SUPER_METHOD,  // Get a method from superclass and bind to this
+    INHERIT,  // Set superclass on a class: pops superclass then subclass, sets super, pushes subclass
 
     // Module support
     LOAD_MODULE,  // Load a native module by name and push it onto the stack

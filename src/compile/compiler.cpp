@@ -837,13 +837,21 @@ void BytecodeCompiler::visit(ClassStmt& stmt) {
         fieldDefaults[field->name] = Nil{};
     }
 
-    // Create the VmClass
-    auto vmClass = std::make_shared<VmClass>(stmt.name, fieldNames, fieldDefaults, methods);
+    // Create the VmClass (with null superclass; resolved at runtime via INHERIT)
+    auto vmClass = std::make_shared<VmClass>(stmt.name, nullptr, fieldNames, fieldDefaults, methods);
 
     // Store the class as a constant
     uint8_t constantIndex = makeConstant(vmClass);
     emitOp(OpCode::CONSTANT);
     emitByte(constantIndex);
+
+    // If there's a superclass, load it and emit INHERIT to set the superclass at runtime
+    if (!stmt.superclass.empty()) {
+        uint8_t superIndex = makeName(stmt.superclass);
+        emitOp(OpCode::GET_GLOBAL);
+        emitByte(superIndex);
+        emitOp(OpCode::INHERIT);
+    }
 
     // Store it in a global variable with the class name
     uint8_t nameIndex = makeName(stmt.name);

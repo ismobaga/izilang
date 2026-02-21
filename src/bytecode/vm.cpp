@@ -111,9 +111,16 @@ Value VM::run(const Chunk& entry, const std::vector<Value>& initialLocals) {
                     std::cout << '\n';
                     break;
                 }
-                case OpCode::ADD:
-                    binaryNumeric([](double a, double b) { return a + b; });
+                case OpCode::ADD: {
+                    Value b = pop();
+                    Value a = pop();
+                    if (std::holds_alternative<std::string>(a) && std::holds_alternative<std::string>(b)) {
+                        push(std::get<std::string>(a) + std::get<std::string>(b));
+                    } else {
+                        push(asNumber(a) + asNumber(b));
+                    }
                     break;
+                }
                 case OpCode::SUBTRACT:
                     binaryNumeric([](double a, double b) { return a - b; });
                     break;
@@ -420,6 +427,51 @@ Value VM::run(const Chunk& entry, const std::vector<Value>& initialLocals) {
                     break;
                 }
                 // ... handle other opcodes ...
+                case OpCode::INHERIT: {
+                    // Compiler pushes subclass first, then superclass (superclass is on top of stack)
+                    // Stack layout: [..., subclass, superclass(top)]
+                    Value superclassVal = pop();   // top of stack = superclass
+                    Value subclassVal = stack.back();  // peek = subclass (kept on stack)
+
+                    if (!std::holds_alternative<std::shared_ptr<VmClass>>(superclassVal)) {
+                        throw std::runtime_error("Superclass must be a class.");
+                    }
+                    if (!std::holds_alternative<std::shared_ptr<VmClass>>(subclassVal)) {
+                        throw std::runtime_error("INHERIT requires a class on the stack.");
+                    }
+
+                    auto superClass = std::get<std::shared_ptr<VmClass>>(superclassVal);
+                    auto subClass = std::get<std::shared_ptr<VmClass>>(subclassVal);
+                    subClass->superclass = superClass;
+                    break;
+                }
+                case OpCode::GET_SUPER_METHOD: {
+                    // Compiler pushes superclass first, then 'this' (instance is on top of stack)
+                    // Stack layout: [..., superclass, instance(top)]
+                    // Followed by: method name index
+                    uint8_t methodIndex = readByte();
+                    const std::string& methodName = currentFrame()->chunk->names[methodIndex];
+
+                    Value instanceVal = pop();   // top of stack = 'this' instance
+                    Value superclassVal = pop();  // next = superclass
+
+                    if (!std::holds_alternative<std::shared_ptr<VmClass>>(superclassVal)) {
+                        throw std::runtime_error("'super' must refer to a class.");
+                    }
+                    if (!std::holds_alternative<std::shared_ptr<Instance>>(instanceVal)) {
+                        throw std::runtime_error("Cannot use 'super' outside of a class method.");
+                    }
+
+                    auto superClass = std::get<std::shared_ptr<VmClass>>(superclassVal);
+                    auto instance = std::get<std::shared_ptr<Instance>>(instanceVal);
+
+                    auto method = superClass->getMethod(methodName, instance);
+                    if (!method) {
+                        throw std::runtime_error("Undefined method '" + methodName + "' in superclass.");
+                    }
+                    push(std::static_pointer_cast<VmCallable>(method));
+                    break;
+                }
                 case OpCode::LOAD_MODULE: {
                     uint8_t nameIndex = readByte();
                     const std::string& moduleName = currentFrame()->chunk->names[nameIndex];
