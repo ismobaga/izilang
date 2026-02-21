@@ -571,6 +571,11 @@ static Value nativeUiCreateWindow(Interpreter& /*interp*/, const std::vector<Val
         throw std::runtime_error("ui.createWindow(): only one window is supported at a time.");
     }
     InitWindow(width, height, title.c_str());
+    if (!IsWindowReady()) {
+        throw std::runtime_error(
+            "ui.createWindow(): failed to initialize window (no graphical display available?).");
+    }
+    SetExitKey(KEY_NULL);
     SetTargetFPS(60);
     win->open = true;
 #endif

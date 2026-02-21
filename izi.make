@@ -28,12 +28,12 @@ ifeq ($(origin AR), default)
   AR = ar
 endif
 RESCOMP = windres
-DEFINES +=
-INCLUDES += -Isrc
+DEFINES += -DHAVE_RAYLIB
+INCLUDES += -Isrc -I/usr/local/include
 FORCE_INCLUDE +=
 ALL_CPPFLAGS += $(CPPFLAGS) -MD -MP $(DEFINES) $(INCLUDES)
 ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
-LIBS += -lm -ldl -lpthread
+LIBS += -lraylib -lm -ldl -lpthread -lGL -lX11
 LDDEPS +=
 LINKCMD = $(CXX) -o "$@" $(OBJECTS) $(RESOURCES) $(ALL_LDFLAGS) $(LIBS)
 define PREBUILDCMDS
@@ -49,7 +49,7 @@ TARGET = $(TARGETDIR)/izi
 OBJDIR = obj/Debug/izi
 ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -g
 ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -g -std=c++20
-ALL_LDFLAGS += $(LDFLAGS)
+ALL_LDFLAGS += $(LDFLAGS) -L/usr/local/lib
 
 else ifeq ($(config),release)
 TARGETDIR = bin/Release/izi
@@ -57,7 +57,7 @@ TARGET = $(TARGETDIR)/izi
 OBJDIR = obj/Release/izi
 ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -O2
 ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -O2 -std=c++20
-ALL_LDFLAGS += $(LDFLAGS) -s
+ALL_LDFLAGS += $(LDFLAGS) -L/usr/local/lib -s
 
 endif
 

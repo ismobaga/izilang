@@ -6,18 +6,20 @@
 
 import ui
 
-win = ui.createWindow("IZI + raylib", 900, 600)
+var win = ui.createWindow("IZI + raylib", 900, 600)
 
-while win.isOpen() {
-  if ui.keyPressed(ui.key.escape) { win.close() }
+while (win.isOpen()) {
+  if (ui.keyPressed(ui.key.escape)) {
+    win.close()
+  }
 
   win.beginDrawing()
   win.clear(ui.color(20, 20, 24))
 
   // Draw a filled rectangle that follows the mouse
-  pos = ui.getMousePosition()
-  mx = pos.x
-  my = pos.y
+  var pos = ui.getMousePosition()
+  var mx = pos.x
+  var my = pos.y
   win.fillRect(mx - 50, my - 20, 100, 40, ui.color(80, 140, 255))
 
   // Draw text
@@ -34,7 +36,7 @@ while win.isOpen() {
   win.drawLine(0, 0, 900, 600, 2, ui.color(255, 255, 0))
 
   // Show FPS
-  fps = win.getFps()
+  var fps = win.getFps()
   win.drawText(20, 570, "FPS: " + str(fps), 14, ui.color(120, 120, 120))
 
   win.endDrawing()
