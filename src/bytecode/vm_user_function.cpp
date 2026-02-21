@@ -4,13 +4,10 @@
 namespace izi {
 
 Value VmUserFunction::call(VM& vm, const std::vector<Value>& arguments) {
-    // Set parameters as globals before executing function
-    for (size_t i = 0; i < params_.size(); ++i) {
-        vm.setGlobal(params_[i], arguments[i]);
-    }
-
-    // Execute the function's bytecode
-    return vm.run(*chunk_);
+    // Execute the function's bytecode, passing arguments as initial local variable slots.
+    // Each argument is pushed onto the VM stack immediately after the call frame is
+    // created, so GET_LOCAL 0 == first parameter, GET_LOCAL 1 == second parameter, etc.
+    return vm.run(*chunk_, arguments);
 }
 
 }  // namespace izi

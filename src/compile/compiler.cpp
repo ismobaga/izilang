@@ -76,6 +76,15 @@ void BytecodeCompiler::emitLoop(size_t loopStart) {
     emitByte(offset & 0xff);
 }
 
+// Register allocation helper: find the stack slot for a local variable name.
+// Returns the slot index (0-based from the call frame base) or -1 if not local.
+int BytecodeCompiler::resolveLocal(const std::string& name) const {
+    for (int i = static_cast<int>(locals.size()) - 1; i >= 0; --i) {
+        if (locals[static_cast<size_t>(i)] == name) return i;
+    }
+    return -1;
+}
+
 //  --- ExprVisitor
 Value BytecodeCompiler::visit(BinaryExpr& expr) {
     emitExpression(*expr.left);
@@ -168,16 +177,28 @@ Value BytecodeCompiler::visit(LiteralExpr& expr) {
 
 Value BytecodeCompiler::visit(AssignExpr& expr) {
     emitExpression(*expr.value);
-    uint8_t nameIndex = makeName(expr.name);
-    emitOp(OpCode::SET_GLOBAL);
-    emitByte(nameIndex);
+    int slot = resolveLocal(expr.name);
+    if (slot >= 0) {
+        emitOp(OpCode::SET_LOCAL);
+        emitByte(static_cast<uint8_t>(slot));
+    } else {
+        uint8_t nameIndex = makeName(expr.name);
+        emitOp(OpCode::SET_GLOBAL);
+        emitByte(nameIndex);
+    }
     return Nil{};
 }
 
 Value BytecodeCompiler::visit(VariableExpr& expr) {
-    uint8_t nameIndex = makeName(expr.name);
-    emitOp(OpCode::GET_GLOBAL);
-    emitByte(nameIndex);
+    int slot = resolveLocal(expr.name);
+    if (slot >= 0) {
+        emitOp(OpCode::GET_LOCAL);
+        emitByte(static_cast<uint8_t>(slot));
+    } else {
+        uint8_t nameIndex = makeName(expr.name);
+        emitOp(OpCode::GET_GLOBAL);
+        emitByte(nameIndex);
+    }
     return Nil{};
 }
 Value BytecodeCompiler::visit(GroupingExpr& expr) {
@@ -349,6 +370,13 @@ void BytecodeCompiler::visit(VarStmt& stmt) {
 void BytecodeCompiler::visit(FunctionStmt& stmt) {
     // Compile function body into a separate chunk
     BytecodeCompiler functionCompiler;
+
+    // Register allocation: pre-register each parameter as a local variable slot.
+    // VmUserFunction::call() will push argument values onto the VM stack in the
+    // same order, so GET_LOCAL 0 retrieves the first argument, etc.
+    for (const auto& param : stmt.params) {
+        functionCompiler.locals.push_back(param);
+    }
 
     // Compile the function body
     for (const auto& bodyStmt : stmt.body) {
@@ -777,6 +805,13 @@ void BytecodeCompiler::visit(ClassStmt& stmt) {
     // Compile methods
     for (const auto& method : stmt.methods) {
         BytecodeCompiler methodCompiler;
+
+        // Register allocation: pre-register each parameter as a local variable slot.
+        // VmUserFunction::call() will pass the arguments as initial locals to vm.run(),
+        // so GET_LOCAL 0 retrieves the first argument, etc.
+        for (const auto& param : method->params) {
+            methodCompiler.locals.push_back(param);
+        }
 
         // Compile the method body
         for (const auto& bodyStmt : method->body) {

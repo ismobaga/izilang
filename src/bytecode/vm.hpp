@@ -31,7 +31,7 @@ class VM {
    public:
     VM();
 
-    Value run(const Chunk& chunk);
+    Value run(const Chunk& chunk, const std::vector<Value>& initialLocals = {});
 
     void setGlobal(const std::string& name, const Value& value);
 
