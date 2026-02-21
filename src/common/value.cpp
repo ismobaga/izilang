@@ -49,6 +49,14 @@ std::string valueToString(const Value& v) {
     } else if (std::holds_alternative<std::shared_ptr<Error>>(v)) {
         auto error = std::get<std::shared_ptr<Error>>(v);
         oss << error->fullMessage();
+    } else if (std::holds_alternative<std::shared_ptr<Task>>(v)) {
+        auto task = std::get<std::shared_ptr<Task>>(v);
+        switch (task->state) {
+            case Task::State::Pending:  oss << "<task: pending>"; break;
+            case Task::State::Running:  oss << "<task: running>"; break;
+            case Task::State::Completed: oss << "<task: completed>"; break;
+            case Task::State::Failed:   oss << "<task: failed>"; break;
+        }
     } else {
         oss << "<unknown>";
     }
@@ -85,6 +93,14 @@ void printValue(const Value& v) {
     } else if (std::holds_alternative<std::shared_ptr<Error>>(v)) {
         auto error = std::get<std::shared_ptr<Error>>(v);
         std::cout << error->fullMessage() << error->formatStackTrace();
+    } else if (std::holds_alternative<std::shared_ptr<Task>>(v)) {
+        auto task = std::get<std::shared_ptr<Task>>(v);
+        switch (task->state) {
+            case Task::State::Pending:  std::cout << "<task: pending>"; break;
+            case Task::State::Running:  std::cout << "<task: running>"; break;
+            case Task::State::Completed: std::cout << "<task: completed>"; break;
+            case Task::State::Failed:   std::cout << "<task: failed>"; break;
+        }
     } else {
         std::cout << "<unknown>";
     }

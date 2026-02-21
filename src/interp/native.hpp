@@ -131,6 +131,11 @@ auto nativeTimeNow(Interpreter& interp, const std::vector<Value>& arguments) -> 
 auto nativeTimeSleep(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 auto nativeTimeFormat(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 
+// concurrency functions
+auto nativeSpawn(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeAwait(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeSleep(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+
 // std.json functions
 auto nativeJsonParse(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 auto nativeJsonStringify(Interpreter& interp, const std::vector<Value>& arguments) -> Value;

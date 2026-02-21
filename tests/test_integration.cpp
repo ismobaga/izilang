@@ -1393,3 +1393,136 @@ TEST_CASE("Integration: Combined spread and destructuring", "[integration][sprea
         REQUIRE(capture.getOutput() == "Bob\nbob@example.com\n");
     }
 }
+
+TEST_CASE("Concurrency: spawn and await", "[concurrency]") {
+    SECTION("Spawn and await a simple task returning a value") {
+        std::string source = R"(
+            var t = spawn(fn() { return 42; });
+            print(await(t));
+        )";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+
+        REQUIRE(capture.getOutput() == "42\n");
+    }
+
+    SECTION("Await returns nil when task has no return value") {
+        std::string source = R"(
+            var t = spawn(fn() { var x = 1 + 1; });
+            print(await(t));
+        )";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+
+        REQUIRE(capture.getOutput() == "nil\n");
+    }
+
+    SECTION("Multiple tasks can be spawned and awaited in order") {
+        std::string source = R"(
+            var t1 = spawn(fn() { return 1; });
+            var t2 = spawn(fn() { return 2; });
+            var t3 = spawn(fn() { return 3; });
+            print(await(t1));
+            print(await(t2));
+            print(await(t3));
+        )";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+
+        REQUIRE(capture.getOutput() == "1\n2\n3\n");
+    }
+
+    SECTION("Awaiting a completed task returns the same result") {
+        std::string source = R"(
+            var t = spawn(fn() { return 99; });
+            var r1 = await(t);
+            var r2 = await(t);
+            print(r1);
+            print(r2);
+        )";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+
+        REQUIRE(capture.getOutput() == "99\n99\n");
+    }
+
+    SECTION("Task can compute using closed-over variables") {
+        std::string source = R"(
+            var x = 10;
+            var t = spawn(fn() { return x * 2; });
+            print(await(t));
+        )";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+
+        REQUIRE(capture.getOutput() == "20\n");
+    }
+}
+
+TEST_CASE("Concurrency: sleep", "[concurrency]") {
+    SECTION("sleep() returns nil and accepts a millisecond duration") {
+        std::string source = R"(
+            var result = sleep(0);
+            print(result);
+        )";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+
+        REQUIRE(capture.getOutput() == "nil\n");
+    }
+
+    SECTION("sleep() pauses execution for the specified duration") {
+        std::string source = R"(
+            var before = clock();
+            sleep(100);
+            var after = clock();
+            print(after - before >= 0.09);
+        )";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+
+        OutputCapture capture;
+        Interpreter interp(source);
+        interp.interpret(program);
+
+        REQUIRE(capture.getOutput() == "true\n");
+    }
+}
