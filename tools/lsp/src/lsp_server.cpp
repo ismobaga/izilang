@@ -1,4 +1,6 @@
 #include "lsp_server.hpp"
+#include "ast/stmt.hpp"
+#include <algorithm>
 #include <iostream>
 #include <sstream>
 
@@ -98,6 +100,12 @@ void LSPServer::handleMessage(const std::string& content) {
         } else if (method == "textDocument/documentSymbol") {
             response["result"] = handleDocumentSymbol(message.value("params", json::object()));
             sendMessage(response);
+        } else if (method == "textDocument/signatureHelp") {
+            response["result"] = handleSignatureHelp(message.value("params", json::object()));
+            sendMessage(response);
+        } else if (method == "textDocument/codeAction") {
+            response["result"] = handleCodeAction(message.value("params", json::object()));
+            sendMessage(response);
         }
         // Handle notifications (no response)
         else if (method == "exit") {
@@ -133,7 +141,11 @@ json LSPServer::handleInitialize(const json& params) {
         {"definitionProvider", true},
         {"referencesProvider", true},
         {"renameProvider", true},
-        {"documentSymbolProvider", true}
+        {"documentSymbolProvider", true},
+        {"signatureHelpProvider", {
+            {"triggerCharacters", json::array({"(", ","})}
+        }},
+        {"codeActionProvider", true}
     };
     
     json result = {
@@ -457,6 +469,181 @@ json LSPServer::handleDocumentSymbol(const json& params) {
     }
     
     return symbols;
+}
+
+json LSPServer::handleSignatureHelp(const json& params) {
+    std::string uri = params["textDocument"]["uri"];
+    Position pos = jsonToPosition(params["position"]);
+
+    Document* doc = docManager_.getDocument(uri);
+    if (!doc) {
+        return nullptr;
+    }
+
+    // Walk backwards from the cursor to find the opening '(' and the function name
+    size_t offset = doc->positionToOffset(pos);
+    const std::string& content = doc->getContent();
+
+    // Count active arguments (commas at nesting depth 0 since the opening paren)
+    int activeParam = 0;
+    int depth = 0;
+    size_t searchPos = offset;
+    while (searchPos > 0) {
+        --searchPos;
+        char c = content[searchPos];
+        if (c == ')' || c == ']') {
+            ++depth;
+        } else if ((c == '(' || c == '[') && depth > 0) {
+            --depth;
+        } else if (c == '(' && depth == 0) {
+            break;
+        } else if (c == ',' && depth == 0) {
+            ++activeParam;
+        }
+    }
+
+    if (content[searchPos] != '(') {
+        return nullptr;
+    }
+
+    // Extract the function name immediately before the '('
+    size_t nameEnd = searchPos;
+    while (nameEnd > 0 && content[nameEnd - 1] == ' ') {
+        --nameEnd;
+    }
+    size_t nameStart = nameEnd;
+    while (nameStart > 0 &&
+           (std::isalnum(static_cast<unsigned char>(content[nameStart - 1])) ||
+            content[nameStart - 1] == '_')) {
+        --nameStart;
+    }
+
+    if (nameStart >= nameEnd) {
+        return nullptr;
+    }
+
+    std::string funcName = content.substr(nameStart, nameEnd - nameStart);
+
+    // Look up the function in the document's symbol table
+    auto* symbol = doc->findSymbol(funcName);
+    if (!symbol || symbol->type != "function") {
+        return nullptr;
+    }
+
+    // Walk the top-level AST to find the FunctionStmt with this name and
+    // extract its parameter list directly (avoids heuristics on the symbol table).
+    std::vector<std::string> paramNames;
+    for (const auto& stmt : doc->getAst()) {
+        if (!stmt) continue;
+        auto* fnStmt = dynamic_cast<FunctionStmt*>(stmt.get());
+        if (fnStmt && fnStmt->name == funcName) {
+            paramNames = fnStmt->params;
+            break;
+        }
+    }
+
+    // Build the label string: "funcName(param1, param2, ...)"
+    std::string label = funcName + "(";
+    json parameters = json::array();
+    for (size_t i = 0; i < paramNames.size(); ++i) {
+        if (i > 0) label += ", ";
+        size_t paramStart = label.size();
+        label += paramNames[i];
+        size_t paramEnd = label.size();
+        parameters.push_back({
+            {"label", json::array({static_cast<int>(paramStart),
+                                   static_cast<int>(paramEnd)})},
+            {"documentation", paramNames[i]}
+        });
+    }
+    label += ")";
+
+    json signature = {
+        {"label", label},
+        {"parameters", parameters}
+    };
+
+    int clampedParam = paramNames.empty()
+                           ? 0
+                           : std::min(activeParam, static_cast<int>(paramNames.size()) - 1);
+
+    if (!paramNames.empty()) {
+        signature["activeParameter"] = clampedParam;
+    }
+
+    return {
+        {"signatures", json::array({signature})},
+        {"activeSignature", 0},
+        {"activeParameter", clampedParam}
+    };
+}
+
+json LSPServer::handleCodeAction(const json& params) {
+    std::string uri = params["textDocument"]["uri"];
+    Range range = jsonToRange(params["range"]);
+
+    Document* doc = docManager_.getDocument(uri);
+    if (!doc) {
+        return json::array();
+    }
+
+    json actions = json::array();
+
+    // Collect diagnostics in the requested range and generate quick fixes
+    for (const auto& diag : doc->getDiagnostics()) {
+        // Quick fix: prefix unused variable with underscore to suppress the warning
+        if (diag.severity == SemanticDiagnostic::Severity::Warning &&
+            diag.message.find("unused") != std::string::npos) {
+            // Extract the variable name from the message ("'name' is unused" or similar)
+            std::string varName;
+            auto sq = diag.message.find('\'');
+            if (sq != std::string::npos) {
+                auto sq2 = diag.message.find('\'', sq + 1);
+                if (sq2 != std::string::npos) {
+                    varName = diag.message.substr(sq + 1, sq2 - sq - 1);
+                }
+            }
+
+            if (!varName.empty() && varName[0] != '_') {
+                auto* sym = doc->findSymbol(varName);
+                if (!sym) continue;
+
+                // Determine the diagnostic's effective range. If the analyzer did
+                // not record a position (line==0), fall back to the symbol's definition.
+                Position diagPos = sym->definition.range.start;
+                if (diag.line >= 1) {
+                    diagPos = Position(diag.line - 1, diag.column > 0 ? diag.column - 1 : 0);
+                }
+
+                // Only emit an action when the diagnostic overlaps the requested range
+                if (diagPos.line < range.start.line || diagPos.line > range.end.line) {
+                    continue;
+                }
+
+                // Build a workspace edit that prepends '_' to the definition
+                json edit;
+                edit["changes"][uri] = json::array({{
+                    {"range", rangeToJson(sym->definition.range)},
+                    {"newText", "_" + varName}
+                }});
+
+                actions.push_back({
+                    {"title", "Prefix '" + varName + "' with '_' (suppress unused warning)"},
+                    {"kind", "quickfix"},
+                    {"diagnostics", json::array({
+                        {
+                            {"range", rangeToJson(Range(diagPos, diagPos))},
+                            {"message", diag.message},
+                            {"source", "izilang"}
+                        }
+                    })},
+                    {"edit", edit}
+                });
+            }
+        }
+    }
+
+    return actions;
 }
 
 void LSPServer::publishDiagnostics(const std::string& uri) {

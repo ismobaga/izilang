@@ -123,7 +123,14 @@
           "description": "Path to the izilang-dap executable. Leave empty to use the one from PATH."
         }
       }
-    }
+    },
+    "commands": [
+      {
+        "command": "izilang.restartServer",
+        "title": "Restart Language Server",
+        "category": "IziLang"
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
