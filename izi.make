@@ -28,12 +28,12 @@ ifeq ($(origin AR), default)
   AR = ar
 endif
 RESCOMP = windres
-DEFINES += -DHAVE_READLINE
+DEFINES +=
 INCLUDES += -Isrc
 FORCE_INCLUDE +=
 ALL_CPPFLAGS += $(CPPFLAGS) -MD -MP $(DEFINES) $(INCLUDES)
 ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
-LIBS += -lm -ldl -lpthread -lreadline
+LIBS += -lm -ldl -lpthread
 LDDEPS +=
 LINKCMD = $(CXX) -o "$@" $(OBJECTS) $(RESOURCES) $(ALL_LDFLAGS) $(LIBS)
 define PREBUILDCMDS
@@ -76,6 +76,7 @@ GENERATED += $(OBJDIR)/chunk_serializer.o
 GENERATED += $(OBJDIR)/cli.o
 GENERATED += $(OBJDIR)/compiler.o
 GENERATED += $(OBJDIR)/diagnostics.o
+GENERATED += $(OBJDIR)/disassembler.o
 GENERATED += $(OBJDIR)/error_reporter.o
 GENERATED += $(OBJDIR)/formatter.o
 GENERATED += $(OBJDIR)/interpreter.o
@@ -84,9 +85,10 @@ GENERATED += $(OBJDIR)/lexer.o
 GENERATED += $(OBJDIR)/main.o
 GENERATED += $(OBJDIR)/module_path.o
 GENERATED += $(OBJDIR)/native.o
-GENERATED += $(OBJDIR)/native_compiler.o
-GENERATED += $(OBJDIR)/native_modules.o
 GENERATED += $(OBJDIR)/native_audio.o
+GENERATED += $(OBJDIR)/native_compiler.o
+GENERATED += $(OBJDIR)/native_image.o
+GENERATED += $(OBJDIR)/native_modules.o
 GENERATED += $(OBJDIR)/native_ui.o
 GENERATED += $(OBJDIR)/optimizer.o
 GENERATED += $(OBJDIR)/parser.o
@@ -97,8 +99,9 @@ GENERATED += $(OBJDIR)/value.o
 GENERATED += $(OBJDIR)/vm.o
 GENERATED += $(OBJDIR)/vm_class.o
 GENERATED += $(OBJDIR)/vm_native.o
-GENERATED += $(OBJDIR)/vm_native_modules.o
 GENERATED += $(OBJDIR)/vm_native_audio.o
+GENERATED += $(OBJDIR)/vm_native_image.o
+GENERATED += $(OBJDIR)/vm_native_modules.o
 GENERATED += $(OBJDIR)/vm_native_ui.o
 GENERATED += $(OBJDIR)/vm_user_function.o
 OBJECTS += $(OBJDIR)/ast_printer.o
@@ -106,6 +109,7 @@ OBJECTS += $(OBJDIR)/chunk_serializer.o
 OBJECTS += $(OBJDIR)/cli.o
 OBJECTS += $(OBJDIR)/compiler.o
 OBJECTS += $(OBJDIR)/diagnostics.o
+OBJECTS += $(OBJDIR)/disassembler.o
 OBJECTS += $(OBJDIR)/error_reporter.o
 OBJECTS += $(OBJDIR)/formatter.o
 OBJECTS += $(OBJDIR)/interpreter.o
@@ -114,9 +118,10 @@ OBJECTS += $(OBJDIR)/lexer.o
 OBJECTS += $(OBJDIR)/main.o
 OBJECTS += $(OBJDIR)/module_path.o
 OBJECTS += $(OBJDIR)/native.o
-OBJECTS += $(OBJDIR)/native_compiler.o
-OBJECTS += $(OBJDIR)/native_modules.o
 OBJECTS += $(OBJDIR)/native_audio.o
+OBJECTS += $(OBJDIR)/native_compiler.o
+OBJECTS += $(OBJDIR)/native_image.o
+OBJECTS += $(OBJDIR)/native_modules.o
 OBJECTS += $(OBJDIR)/native_ui.o
 OBJECTS += $(OBJDIR)/optimizer.o
 OBJECTS += $(OBJDIR)/parser.o
@@ -127,8 +132,9 @@ OBJECTS += $(OBJDIR)/value.o
 OBJECTS += $(OBJDIR)/vm.o
 OBJECTS += $(OBJDIR)/vm_class.o
 OBJECTS += $(OBJDIR)/vm_native.o
-OBJECTS += $(OBJDIR)/vm_native_modules.o
 OBJECTS += $(OBJDIR)/vm_native_audio.o
+OBJECTS += $(OBJDIR)/vm_native_image.o
+OBJECTS += $(OBJDIR)/vm_native_modules.o
 OBJECTS += $(OBJDIR)/vm_native_ui.o
 OBJECTS += $(OBJDIR)/vm_user_function.o
 
@@ -194,15 +200,16 @@ endif
 # File Rules
 # #############################################
 
-$(OBJDIR)/type.o: src/ast/type.cpp
-	@echo "$(notdir $<)"
-	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/ast_printer.o: src/ast/ast_printer.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/type.o: src/ast/type.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/chunk_serializer.o: src/bytecode/chunk_serializer.cpp
+	@echo "$(notdir $<)"
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/disassembler.o: src/bytecode/disassembler.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/vm.o: src/bytecode/vm.cpp
@@ -214,10 +221,13 @@ $(OBJDIR)/vm_class.o: src/bytecode/vm_class.cpp
 $(OBJDIR)/vm_native.o: src/bytecode/vm_native.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
-$(OBJDIR)/vm_native_modules.o: src/bytecode/vm_native_modules.cpp
+$(OBJDIR)/vm_native_audio.o: src/bytecode/vm_native_audio.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
-$(OBJDIR)/vm_native_audio.o: src/bytecode/vm_native_audio.cpp
+$(OBJDIR)/vm_native_image.o: src/bytecode/vm_native_image.cpp
+	@echo "$(notdir $<)"
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/vm_native_modules.o: src/bytecode/vm_native_modules.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/vm_native_ui.o: src/bytecode/vm_native_ui.cpp
@@ -265,10 +275,13 @@ $(OBJDIR)/izi_class.o: src/interp/izi_class.cpp
 $(OBJDIR)/native.o: src/interp/native.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
-$(OBJDIR)/native_modules.o: src/interp/native_modules.cpp
+$(OBJDIR)/native_audio.o: src/interp/native_audio.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
-$(OBJDIR)/native_audio.o: src/interp/native_audio.cpp
+$(OBJDIR)/native_image.o: src/interp/native_image.cpp
+	@echo "$(notdir $<)"
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/native_modules.o: src/interp/native_modules.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/native_ui.o: src/interp/native_ui.cpp
