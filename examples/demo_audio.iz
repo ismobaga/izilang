@@ -1,0 +1,157 @@
+// IZI audio module demo
+// Requires raylib: build with --raylib=<path> flag passed to premake5
+//
+// Demonstrates:
+//   - Audio device initialization
+//   - Loading and playing sounds (WAV, MP3, OGG)
+//   - Music streaming with playback controls
+//   - Volume, pitch, and pan control
+//   - Camera2D for 2D game camera
+//   - Texture loading and drawing
+//
+// Usage:
+//   ./izi examples/demo_audio.iz
+
+import ui
+import audio
+
+// Initialize the audio device (must be called before loading sounds)
+audio.initDevice()
+
+// Set overall master volume (0.0 - 1.0)
+audio.setMasterVolume(0.8)
+
+// Load a sound effect (WAV, MP3, OGG are all supported by raylib)
+// Uncomment and provide actual paths for real usage:
+// var sfx = audio.loadSound("assets/jump.wav")
+// var music = audio.loadMusic("assets/background.ogg")
+
+// Create a window
+var win = ui.createWindow("IZI Audio + Camera2D Demo", 800, 600)
+win.setTargetFPS(60)
+
+// Create a Camera2D for scrolling the game world
+// Parameters: offsetX, offsetY, targetX, targetY, rotation, zoom
+var cam = ui.createCamera2D(400, 300, 0, 0, 0, 1)
+
+// Track zoom separately (camera object doesn't expose a getter for it)
+var camZoom = 1.0
+
+// Simulated player position in world space
+var playerX = 0
+var playerY = 0
+var speed = 200
+
+// Example: If we had loaded a texture:
+// var playerTex = ui.loadTexture("assets/player.png")
+
+var bgColor = ui.color(20, 20, 30)
+var playerColor = ui.color(80, 200, 100)
+var worldColor = ui.color(60, 60, 80)
+var textColor = ui.color(220, 220, 220)
+var accentColor = ui.color(255, 180, 50)
+
+while (win.isOpen()) {
+  if (ui.keyPressed(ui.key.escape)) {
+    win.close()
+  }
+
+  var dt = win.getFrameTime()
+
+  // Move player with arrow keys (world-space movement)
+  if (ui.keyDown(ui.key.left) || ui.keyDown(ui.key.a)) {
+    playerX = playerX - speed * dt
+  }
+  if (ui.keyDown(ui.key.right) || ui.keyDown(ui.key.d)) {
+    playerX = playerX + speed * dt
+  }
+  if (ui.keyDown(ui.key.up) || ui.keyDown(ui.key.w)) {
+    playerY = playerY - speed * dt
+  }
+  if (ui.keyDown(ui.key.down) || ui.keyDown(ui.key.s)) {
+    playerY = playerY + speed * dt
+  }
+
+  // Camera follows the player
+  cam.setTarget(playerX, playerY)
+
+  // Zoom with mouse wheel (clamp between 0.1 and 4.0)
+  var wheel = ui.getMouseWheelMove()
+  if (wheel != 0) {
+    camZoom = camZoom + wheel * 0.1
+    if (camZoom < 0.1) { camZoom = 0.1 }
+    if (camZoom > 4.0) { camZoom = 4.0 }
+    cam.setZoom(camZoom)
+  }
+
+  // Audio control examples (require loaded sounds)
+  // Press P to play sound
+  // if (ui.keyPressed(ui.key.p)) {
+  //   sfx.play()
+  // }
+  // Press M to toggle music
+  // if (ui.keyPressed(ui.key.m)) {
+  //   if (music.isPlaying()) {
+  //     music.pause()
+  //   } else {
+  //     music.resume()
+  //   }
+  // }
+  // Update music stream every frame (required for streaming)
+  // music.update()
+
+  win.beginDrawing()
+  win.clear(bgColor)
+
+  // Begin 2D camera mode - all drawing below is in world space
+  cam.beginMode()
+
+  // Draw a tiled world grid (world-space coordinates)
+  var gridSize = 64
+  var gridRange = 10
+  var i = -gridRange
+  while (i <= gridRange) {
+    var x1 = i * gridSize
+    var y1 = -gridRange * gridSize
+    var x2 = i * gridSize
+    var y2 = gridRange * gridSize
+    win.drawLine(x1, y1, x2, y2, 1, worldColor)
+
+    var xa1 = -gridRange * gridSize
+    var ya1 = i * gridSize
+    var xa2 = gridRange * gridSize
+    var ya2 = i * gridSize
+    win.drawLine(xa1, ya1, xa2, ya2, 1, worldColor)
+    i = i + 1
+  }
+
+  // Draw origin marker
+  win.fillRect(-5, -5, 10, 10, ui.color(200, 50, 50))
+
+  // Draw player (world-space position)
+  win.fillRectRounded(playerX - 20, playerY - 20, 40, 40, 0.3, playerColor)
+
+  // Draw world-space label above player
+  win.drawText(playerX - 30, playerY - 45, "Player", 16, textColor)
+
+  // End camera mode
+  cam.endMode()
+
+  // HUD (screen-space, drawn after endMode)
+  win.drawText(10, 10, "Arrow/WASD: Move  ESC: Quit", 16, textColor)
+  win.drawText(10, 35, "Audio: initDevice() + loadSound() / loadMusic()", 14, accentColor)
+  win.drawText(10, 55, "Camera2D: cam.beginMode() / cam.endMode()", 14, accentColor)
+  win.drawText(10, 75, "Texture: ui.loadTexture(path)", 14, accentColor)
+
+  // Show player world-space position
+  var posLabel = "World pos: (" + str(playerX) + ", " + str(playerY) + ")"
+  win.drawText(10, 100, posLabel, 14, ui.color(180, 180, 180))
+
+  win.drawFPS(700, 10)
+  win.endDrawing()
+}
+
+// Cleanup
+// sfx.unload()
+// music.unload()
+audio.closeDevice()

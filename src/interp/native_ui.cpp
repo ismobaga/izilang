@@ -762,6 +762,272 @@ static Value buildWindowObject(std::shared_ptr<UiWindow> win) {
 }
 
 // ---------------------------------------------------------------------------
+// Camera2D state
+// ---------------------------------------------------------------------------
+struct UiCamera2D {
+    float offsetX = 0.0f, offsetY = 0.0f;
+    float targetX = 0.0f, targetY = 0.0f;
+    float rotation = 0.0f;
+    float zoom = 1.0f;
+};
+
+static Value buildCamera2DObject(std::shared_ptr<UiCamera2D> cam) {
+    auto obj = std::make_shared<Map>();
+
+    obj->entries["setTarget"] = Value{std::make_shared<NativeFunction>("setTarget", 2,
+        [cam](Interpreter&, const std::vector<Value>& args) -> Value {
+            if (args.size() != 2) {
+                throw std::runtime_error("camera.setTarget() takes 2 arguments (x, y).");
+            }
+            cam->targetX = static_cast<float>(asNumber(args[0]));
+            cam->targetY = static_cast<float>(asNumber(args[1]));
+            return Nil{};
+        })};
+
+    obj->entries["setOffset"] = Value{std::make_shared<NativeFunction>("setOffset", 2,
+        [cam](Interpreter&, const std::vector<Value>& args) -> Value {
+            if (args.size() != 2) {
+                throw std::runtime_error("camera.setOffset() takes 2 arguments (x, y).");
+            }
+            cam->offsetX = static_cast<float>(asNumber(args[0]));
+            cam->offsetY = static_cast<float>(asNumber(args[1]));
+            return Nil{};
+        })};
+
+    obj->entries["setRotation"] = Value{std::make_shared<NativeFunction>("setRotation", 1,
+        [cam](Interpreter&, const std::vector<Value>& args) -> Value {
+            if (args.size() != 1) {
+                throw std::runtime_error("camera.setRotation() takes 1 argument (degrees).");
+            }
+            // Rotation is in degrees, matching raylib's Camera2D convention
+            cam->rotation = static_cast<float>(asNumber(args[0]));
+            return Nil{};
+        })};
+
+    obj->entries["setZoom"] = Value{std::make_shared<NativeFunction>("setZoom", 1,
+        [cam](Interpreter&, const std::vector<Value>& args) -> Value {
+            if (args.size() != 1) {
+                throw std::runtime_error("camera.setZoom() takes 1 argument (zoom).");
+            }
+            cam->zoom = static_cast<float>(asNumber(args[0]));
+            return Nil{};
+        })};
+
+    obj->entries["beginMode"] = Value{std::make_shared<NativeFunction>("beginMode", 0,
+        [cam](Interpreter&, const std::vector<Value>&) -> Value {
+#ifdef HAVE_RAYLIB
+            ::Camera2D c{};
+            c.offset = {cam->offsetX, cam->offsetY};
+            c.target = {cam->targetX, cam->targetY};
+            c.rotation = cam->rotation;
+            c.zoom = cam->zoom;
+            BeginMode2D(c);
+#else
+            throw std::runtime_error("ui module requires raylib (build with -DHAVE_RAYLIB).");
+#endif
+            return Nil{};
+        })};
+
+    obj->entries["endMode"] = Value{std::make_shared<NativeFunction>("endMode", 0,
+        [](Interpreter&, const std::vector<Value>&) -> Value {
+#ifdef HAVE_RAYLIB
+            EndMode2D();
+#else
+            throw std::runtime_error("ui module requires raylib (build with -DHAVE_RAYLIB).");
+#endif
+            return Nil{};
+        })};
+
+    obj->entries["getWorldToScreen"] = Value{std::make_shared<NativeFunction>("getWorldToScreen", 2,
+        [cam](Interpreter&, const std::vector<Value>& args) -> Value {
+            if (args.size() != 2) {
+                throw std::runtime_error("camera.getWorldToScreen() takes 2 arguments (x, y).");
+            }
+            auto m = std::make_shared<Map>();
+#ifdef HAVE_RAYLIB
+            ::Camera2D c{};
+            c.offset = {cam->offsetX, cam->offsetY};
+            c.target = {cam->targetX, cam->targetY};
+            c.rotation = cam->rotation;
+            c.zoom = cam->zoom;
+            ::Vector2 world{static_cast<float>(asNumber(args[0])),
+                            static_cast<float>(asNumber(args[1]))};
+            ::Vector2 screen = GetWorldToScreen2D(world, c);
+            m->entries["x"] = static_cast<double>(screen.x);
+            m->entries["y"] = static_cast<double>(screen.y);
+#else
+            m->entries["x"] = asNumber(args[0]);
+            m->entries["y"] = asNumber(args[1]);
+#endif
+            return Value{m};
+        })};
+
+    obj->entries["getScreenToWorld"] = Value{std::make_shared<NativeFunction>("getScreenToWorld", 2,
+        [cam](Interpreter&, const std::vector<Value>& args) -> Value {
+            if (args.size() != 2) {
+                throw std::runtime_error("camera.getScreenToWorld() takes 2 arguments (x, y).");
+            }
+            auto m = std::make_shared<Map>();
+#ifdef HAVE_RAYLIB
+            ::Camera2D c{};
+            c.offset = {cam->offsetX, cam->offsetY};
+            c.target = {cam->targetX, cam->targetY};
+            c.rotation = cam->rotation;
+            c.zoom = cam->zoom;
+            ::Vector2 screen{static_cast<float>(asNumber(args[0])),
+                             static_cast<float>(asNumber(args[1]))};
+            ::Vector2 world = GetScreenToWorld2D(screen, c);
+            m->entries["x"] = static_cast<double>(world.x);
+            m->entries["y"] = static_cast<double>(world.y);
+#else
+            m->entries["x"] = asNumber(args[0]);
+            m->entries["y"] = asNumber(args[1]);
+#endif
+            return Value{m};
+        })};
+
+    return Value{obj};
+}
+
+// ---------------------------------------------------------------------------
+// Texture wrapper
+// ---------------------------------------------------------------------------
+#ifdef HAVE_RAYLIB
+struct UiTexture {
+    ::Texture2D texture{};
+    bool loaded = false;
+    ~UiTexture() {
+        if (loaded) {
+            UnloadTexture(texture);
+            loaded = false;
+        }
+    }
+};
+
+static Value buildTextureObject(std::shared_ptr<UiTexture> tex) {
+    auto obj = std::make_shared<Map>();
+
+    obj->entries["getWidth"] = Value{std::make_shared<NativeFunction>("getWidth", 0,
+        [tex](Interpreter&, const std::vector<Value>&) -> Value {
+            return tex->loaded ? static_cast<double>(tex->texture.width) : 0.0;
+        })};
+
+    obj->entries["getHeight"] = Value{std::make_shared<NativeFunction>("getHeight", 0,
+        [tex](Interpreter&, const std::vector<Value>&) -> Value {
+            return tex->loaded ? static_cast<double>(tex->texture.height) : 0.0;
+        })};
+
+    obj->entries["draw"] = Value{std::make_shared<NativeFunction>("draw", 3,
+        [tex](Interpreter&, const std::vector<Value>& args) -> Value {
+            if (args.size() != 3) {
+                throw std::runtime_error("texture.draw() takes 3 arguments (x, y, tint).");
+            }
+            if (tex->loaded) {
+                int x = static_cast<int>(asNumber(args[0]));
+                int y = static_cast<int>(asNumber(args[1]));
+                ::Color tint = extractRaylibColor(args[2]);
+                DrawTexture(tex->texture, x, y, tint);
+            }
+            return Nil{};
+        })};
+
+    obj->entries["drawEx"] = Value{std::make_shared<NativeFunction>("drawEx", 5,
+        [tex](Interpreter&, const std::vector<Value>& args) -> Value {
+            if (args.size() != 5) {
+                throw std::runtime_error(
+                    "texture.drawEx() takes 5 arguments (x, y, rotation, scale, tint).");
+            }
+            if (tex->loaded) {
+                float x = static_cast<float>(asNumber(args[0]));
+                float y = static_cast<float>(asNumber(args[1]));
+                float rotation = static_cast<float>(asNumber(args[2]));
+                float scale = static_cast<float>(asNumber(args[3]));
+                ::Color tint = extractRaylibColor(args[4]);
+                DrawTextureEx(tex->texture, {x, y}, rotation, scale, tint);
+            }
+            return Nil{};
+        })};
+
+    obj->entries["drawRec"] = Value{std::make_shared<NativeFunction>("drawRec", 4,
+        [tex](Interpreter&, const std::vector<Value>& args) -> Value {
+            if (args.size() != 4) {
+                throw std::runtime_error(
+                    "texture.drawRec() takes 4 arguments (srcRec, position, rotation, tint). "
+                    "srcRec and position are {x, y, width, height} and {x, y} maps respectively.");
+            }
+            if (tex->loaded) {
+                if (!std::holds_alternative<std::shared_ptr<Map>>(args[0]) ||
+                    !std::holds_alternative<std::shared_ptr<Map>>(args[1])) {
+                    throw std::runtime_error("texture.drawRec(): srcRec and position must be maps.");
+                }
+                auto srcMap = std::get<std::shared_ptr<Map>>(args[0]);
+                auto posMap = std::get<std::shared_ptr<Map>>(args[1]);
+                auto getNum = [](const std::shared_ptr<Map>& m, const std::string& k) -> float {
+                    auto it = m->entries.find(k);
+                    return (it != m->entries.end() && std::holds_alternative<double>(it->second))
+                               ? static_cast<float>(std::get<double>(it->second))
+                               : 0.0f;
+                };
+                ::Rectangle src{getNum(srcMap, "x"), getNum(srcMap, "y"),
+                                getNum(srcMap, "width"), getNum(srcMap, "height")};
+                ::Vector2 pos{getNum(posMap, "x"), getNum(posMap, "y")};
+                float rotation = static_cast<float>(asNumber(args[2]));
+                ::Color tint = extractRaylibColor(args[3]);
+                DrawTextureRec(tex->texture, src, pos, tint);
+            }
+            return Nil{};
+        })};
+
+    obj->entries["unload"] = Value{std::make_shared<NativeFunction>("unload", 0,
+        [tex](Interpreter&, const std::vector<Value>&) -> Value {
+            if (tex->loaded) {
+                UnloadTexture(tex->texture);
+                tex->loaded = false;
+            }
+            return Nil{};
+        })};
+
+    return Value{obj};
+}
+#endif
+
+// ---------------------------------------------------------------------------
+// ui.createCamera2D(offsetX, offsetY, targetX, targetY, rotation, zoom)
+// ---------------------------------------------------------------------------
+static Value nativeUiCreateCamera2D(Interpreter& /*interp*/, const std::vector<Value>& args) {
+    if (args.size() != 6) {
+        throw std::runtime_error(
+            "ui.createCamera2D() takes 6 arguments (offsetX, offsetY, targetX, targetY, rotation, zoom).");
+    }
+    auto cam = std::make_shared<UiCamera2D>();
+    cam->offsetX   = static_cast<float>(asNumber(args[0]));
+    cam->offsetY   = static_cast<float>(asNumber(args[1]));
+    cam->targetX   = static_cast<float>(asNumber(args[2]));
+    cam->targetY   = static_cast<float>(asNumber(args[3]));
+    cam->rotation  = static_cast<float>(asNumber(args[4]));
+    cam->zoom      = static_cast<float>(asNumber(args[5]));
+    return buildCamera2DObject(cam);
+}
+
+// ---------------------------------------------------------------------------
+// ui.loadTexture(path) -> texture object
+// ---------------------------------------------------------------------------
+static Value nativeUiLoadTexture(Interpreter& /*interp*/, const std::vector<Value>& args) {
+    if (args.size() != 1 || !std::holds_alternative<std::string>(args[0])) {
+        throw std::runtime_error("ui.loadTexture() takes 1 string argument (path).");
+    }
+#ifdef HAVE_RAYLIB
+    const std::string& path = std::get<std::string>(args[0]);
+    auto tex = std::make_shared<UiTexture>();
+    tex->texture = LoadTexture(path.c_str());
+    tex->loaded = true;
+    return buildTextureObject(tex);
+#else
+    throw std::runtime_error("ui module requires raylib (build with -DHAVE_RAYLIB).");
+#endif
+}
+
+// ---------------------------------------------------------------------------
 // ui.createWindow(title, width, height)
 // ---------------------------------------------------------------------------
 static Value nativeUiCreateWindow(Interpreter& /*interp*/, const std::vector<Value>& args) {
@@ -820,6 +1086,14 @@ Value createUiModule(Interpreter& interp) {
         Value{std::make_shared<NativeFunction>("getMouseWheelMove", 0, nativeUiGetMouseWheelMove)};
     module->entries["getCharPressed"] =
         Value{std::make_shared<NativeFunction>("getCharPressed", 0, nativeUiGetCharPressed)};
+
+    // Camera 2D
+    module->entries["createCamera2D"] =
+        Value{std::make_shared<NativeFunction>("createCamera2D", 6, nativeUiCreateCamera2D)};
+
+    // Texture loading
+    module->entries["loadTexture"] =
+        Value{std::make_shared<NativeFunction>("loadTexture", 1, nativeUiLoadTexture)};
 
     // ui.getTime() -> number  (seconds since window was initialized)
     module->entries["getTime"] = Value{std::make_shared<NativeFunction>("getTime", 0,

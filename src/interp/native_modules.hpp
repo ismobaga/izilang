@@ -22,6 +22,7 @@ Value createPathModule(Interpreter& interp);
 Value createFsModule(Interpreter& interp);
 Value createHttpModule(Interpreter& interp);
 Value createUiModule(Interpreter& interp);
+Value createAudioModule(Interpreter& interp);
 Value createIpcModule(Interpreter& interp);
 Value createNetModule(Interpreter& interp);
 
