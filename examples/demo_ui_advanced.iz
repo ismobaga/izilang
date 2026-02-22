@@ -1,0 +1,128 @@
+// IZI advanced UI demo
+// Showcases new raylib-backed primitives added to the ui module:
+//   - drawTriangle / drawTriangleLines
+//   - fillRectGradientV / fillRectGradientH
+//   - drawFPS
+//   - ui.keyReleased / ui.mouseReleased
+//   - ui.getMouseDelta
+//   - ui.hideCursor / ui.showCursor / ui.isCursorOnScreen
+//
+// Requires raylib: build with --raylib=<path> passed to premake5
+//
+// Run:
+//   izi run examples/demo_ui_advanced.iz
+
+import ui
+
+var win = ui.createWindow("IZI Advanced UI Demo", 900, 600)
+win.setTargetFPS(60)
+win.setWindowMinSize(400, 300)
+
+// Hide the OS cursor – we will draw our own
+ui.hideCursor()
+
+var cursorVisible = false  // tracks whether cursor was last shown or hidden
+
+while (win.isOpen()) {
+  if (ui.keyPressed(ui.key.escape)) {
+    win.close()
+  }
+
+  // Toggle OS cursor visibility with C key
+  if (ui.keyReleased(ui.key.c)) {
+    if (cursorVisible) {
+      ui.hideCursor()
+      cursorVisible = false
+    } else {
+      ui.showCursor()
+      cursorVisible = true
+    }
+  }
+
+  // Toggle fullscreen with F11
+  if (ui.keyPressed(ui.key.f11)) {
+    win.toggleFullscreen()
+  }
+
+  var size = win.getSize()
+  var W = size.width
+  var H = size.height
+
+  var mouse = ui.getMousePosition()
+  var mx = mouse.x
+  var my = mouse.y
+
+  var delta = ui.getMouseDelta()
+  var dx = delta.x
+  var dy = delta.y
+
+  win.beginDrawing()
+  win.clear(ui.color(18, 18, 24))
+
+  // --- Background gradient banner ---
+  win.fillRectGradientV(0, 0, W, 60, ui.color(30, 60, 120), ui.color(18, 18, 24))
+
+  win.drawText(16, 16, "IZI Advanced UI – New Primitives Demo", 22, ui.color(230, 230, 255))
+
+  // --- Horizontal gradient bar ---
+  win.fillRectGradientH(0, H - 30, W, 30, ui.color(80, 0, 120), ui.color(0, 100, 200))
+
+  // --- Triangles section ---
+  win.drawText(16, 80, "Triangles", 16, ui.color(200, 200, 100))
+
+  // Filled triangle
+  win.drawTriangle(60, 200, 20, 280, 100, 280, ui.color(255, 100, 60))
+
+  // Outline triangle
+  win.drawTriangleLines(160, 200, 120, 280, 200, 280, ui.color(60, 200, 255))
+
+  // A second filled triangle to show stacking
+  win.drawTriangle(260, 280, 220, 200, 300, 200, ui.color(100, 255, 120))
+
+  win.drawText(20, 295, "filled", 12, ui.color(255, 100, 60))
+  win.drawText(120, 295, "outline", 12, ui.color(60, 200, 255))
+  win.drawText(220, 295, "inverted", 12, ui.color(100, 255, 120))
+
+  // --- Gradient rectangles section ---
+  win.drawText(360, 80, "Gradient Rectangles", 16, ui.color(200, 200, 100))
+
+  win.fillRectGradientV(360, 100, 200, 80, ui.color(200, 60, 60), ui.color(60, 60, 200))
+  win.drawText(360, 185, "Vertical gradient", 12, ui.color(180, 180, 180))
+
+  win.fillRectGradientH(360, 220, 200, 80, ui.color(60, 200, 60), ui.color(200, 200, 60))
+  win.drawText(360, 305, "Horizontal gradient", 12, ui.color(180, 180, 180))
+
+  // --- Mouse delta visualization ---
+  win.drawText(16, 330, "Mouse delta (movement per frame):", 14, ui.color(180, 180, 180))
+  win.drawText(16, 350, "dx: " + str(dx) + "  dy: " + str(dy), 14, ui.color(100, 220, 220))
+
+  // Visualize delta as a line from center of a small box
+  var bx = 200
+  var by = 340
+  win.fillRect(bx - 30, by - 10, 60, 20, ui.color(40, 40, 50))
+  win.drawLine(bx, by, bx + dx * 5, by + dy * 5, 2, ui.color(255, 200, 0))
+  win.drawCircle(bx, by, 3, ui.color(255, 200, 0))
+
+  // --- Cursor state indicator ---
+  win.drawText(16, 390, "Press C to toggle OS cursor  |  cursor on screen: " + str(ui.isCursorOnScreen()), 13, ui.color(150, 150, 180))
+
+  // --- Custom software cursor (crosshair) drawn at mouse position ---
+  if (ui.isCursorOnScreen()) {
+    var cr = ui.color(255, 255, 255)
+    win.drawLine(mx - 10, my, mx + 10, my, 1, cr)
+    win.drawLine(mx, my - 10, mx, my + 10, 1, cr)
+    win.drawCircleLines(mx, my, 6, cr)
+  }
+
+  // --- Mouse released event demo ---
+  if (ui.mouseReleased(ui.mouse.left)) {
+    win.drawText(16, 420, "Left mouse released!", 14, ui.color(255, 80, 80))
+  }
+
+  // --- Built-in FPS counter ---
+  win.drawFPS(W - 90, 10)
+
+  win.drawText(10, H - 25, "ESC: quit  |  F11: fullscreen  |  C: toggle cursor", 12, ui.color(120, 120, 120))
+
+  win.endDrawing()
+}
