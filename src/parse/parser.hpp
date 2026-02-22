@@ -38,6 +38,7 @@ class Parser {
     ExprPtr expression();
     ExprPtr assignment();
     ExprPtr conditional();
+    ExprPtr nullCoalesce();
     ExprPtr logicalOr();
     ExprPtr logicalAnd();
     ExprPtr equality();

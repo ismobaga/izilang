@@ -2,7 +2,7 @@
 
 # IziLang
 
-**Version 0.3.0** - A modern, expressive programming language with excellent tooling and developer experience.
+**Version 0.4.0-dev** - A modern, expressive programming language with excellent tooling and developer experience.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/ismobaga/izilang/actions)
@@ -65,6 +65,9 @@ IziLang 0.3.0 REPL
 - **Classes & OOP** - Classes with inheritance, constructors, `this` binding
 - **Gradual Typing** - Optional type annotations on variables and functions
 - **Semantic Analysis** - Static checks via `izi check` (unused vars, dead code)
+- **Async/Await** - Asynchronous functions with `async fn` and `await`
+- **Macros** - Compile-time macro definitions and expansion (`name!(args)`)
+- **Nullish Coalescing** - `??` operator returns left if not nil, otherwise right
 - **IPC** - Named-pipe inter-process communication via `std.ipc`
 
 ### 📦 Dual Execution Modes
@@ -200,6 +203,22 @@ var person = {
 };
 ```
 
+### Nullish Coalescing
+
+Use `??` to provide a default when a value might be `nil`:
+
+```izilang
+fn findUser(id) {
+    // returns nil if not found
+}
+
+var user = findUser(42) ?? { name: "Guest", role: "visitor" };
+print(user.name);  // "Guest" if not found
+
+// Chains: first non-nil wins
+var config = envValue ?? fileValue ?? defaultValue;
+```
+
 **[→ More examples in examples/](examples/)**
 
 ## Development
@@ -306,9 +325,10 @@ Areas where help is needed:
 - ✅ Async/await syntax and runtime
 - ✅ Macro system
 - ✅ Rich stdlib (json, time, regex, http, net, log, ipc)
-- 🚧 LSP server (diagnostics + autocompletion)
+- ✅ Nullish coalescing operator (`??`)
+- ✅ LSP server (diagnostics, completion, signature help, code actions)
+- ✅ Package manager MVP (`izi-pkg`)
 - 🚧 Full async I/O (`std.async` event loop)
-- 📋 Package manager MVP
 
 **v1.0** (Target Q1 2027) - Stable
 - Language freeze (no breaking changes)

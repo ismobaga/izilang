@@ -219,7 +219,11 @@ try_stmt    = "try" block
 expression  = assignment ;
 
 assignment  = [ call "." ] IDENT ( "=" | "+=" | "-=" | "*=" | "/=" ) assignment
-            | match_expr ;
+            | conditional ;
+
+conditional = null_coalesce [ "?" expression ":" conditional ] ;
+
+null_coalesce = logic_or { "??" logic_or } ;
 
 match_expr  = "match" expression "{" { match_arm } "}" | logic_or ;
 match_arm   = pattern [ "if" expression ] "=>" expression "," ;

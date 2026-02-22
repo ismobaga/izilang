@@ -112,6 +112,7 @@ GENERATED += $(OBJDIR)/test_macros.o
 GENERATED += $(OBJDIR)/test_main.o
 GENERATED += $(OBJDIR)/test_modules.o
 GENERATED += $(OBJDIR)/test_net.o
+GENERATED += $(OBJDIR)/test_nullish_coalescing.o
 GENERATED += $(OBJDIR)/test_optimizer.o
 GENERATED += $(OBJDIR)/test_optional_semicolons.o
 GENERATED += $(OBJDIR)/test_parser.o
@@ -177,6 +178,7 @@ OBJECTS += $(OBJDIR)/test_macros.o
 OBJECTS += $(OBJDIR)/test_main.o
 OBJECTS += $(OBJDIR)/test_modules.o
 OBJECTS += $(OBJDIR)/test_net.o
+OBJECTS += $(OBJDIR)/test_nullish_coalescing.o
 OBJECTS += $(OBJDIR)/test_optimizer.o
 OBJECTS += $(OBJDIR)/test_optional_semicolons.o
 OBJECTS += $(OBJDIR)/test_parser.o
@@ -418,6 +420,9 @@ $(OBJDIR)/test_modules.o: test_modules.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/test_net.o: test_net.cpp
+	@echo "$(notdir $<)"
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/test_nullish_coalescing.o: test_nullish_coalescing.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/test_optimizer.o: test_optimizer.cpp
