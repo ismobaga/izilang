@@ -88,6 +88,14 @@ Value Interpreter::visit(BinaryExpr& expr) {
         return evaluate(*expr.right);  // Only evaluate right if left is truthy
     }
 
+    if (expr.op.type == TokenType::QUESTION_QUESTION) {
+        Value left = evaluate(*expr.left);
+        if (!std::holds_alternative<Nil>(left)) {
+            return left;  // Short-circuit: return left if not nil
+        }
+        return evaluate(*expr.right);  // Only evaluate right if left is nil
+    }
+
     // For all other operators, evaluate both operands
     Value left = evaluate(*expr.left);
     Value right = evaluate(*expr.right);

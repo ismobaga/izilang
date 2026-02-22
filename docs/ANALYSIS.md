@@ -200,7 +200,7 @@ Language Features
   ❌ Destructuring assignment (var {a, b} = obj or var [x, y] = arr)
   ❌ Spread/rest operator (fn(a, ...rest) and [...arr, 4])
   ❌ Optional chaining (obj?.field)
-  ❌ Nullish coalescing (x ?? default)
+  ✅ Nullish coalescing (x ?? default)  — implemented in v0.4.0
   ❌ Generator functions (yield)
   ❌ Decorators / annotations (@decorator)
   ❌ String multi-line literals
@@ -222,12 +222,14 @@ Runtime
   ❌ JIT compilation (post-v1.0)
 
 Tooling
-  ❌ LSP diagnostics (connected to actual compiler)
-  ❌ LSP auto-completion
-  ❌ LSP hover / go-to-definition
+  ✅ LSP diagnostics (connected to semantic analyzer)
+  ✅ LSP auto-completion (keywords + document symbols)
+  ✅ LSP hover / go-to-definition / references / rename
+  ✅ LSP signature help (textDocument/signatureHelp)
+  ✅ LSP code actions (quick fixes for unused-variable warnings)
   ❌ VS Code extension (full, published)
   ❌ Debug Adapter Protocol (DAP)
-  ❌ Package manager backend
+  ✅ Package manager backend (izi-pkg sync/add/drop)
   ❌ Package registry
 
 Standard Library
@@ -315,8 +317,11 @@ These items complete the **developer experience** necessary before ecosystem gro
 | Code formatter (`izi fmt`) | 🔴 Critical | Low | ✅ Done |
 | Async/await syntax & runtime | 🔴 Critical | Medium | ✅ Done |
 | Macro system | 🔴 Critical | Medium | ✅ Done |
-| LSP server — diagnostics | 🔴 Critical | High | 🟡 In Progress |
-| LSP server — autocompletion | 🔴 Critical | High | ❌ Not started |
+| LSP server — diagnostics | 🔴 Critical | High | ✅ Done |
+| LSP server — autocompletion | 🔴 Critical | High | ✅ Done |
+| LSP server — signature help | 🔴 Critical | Medium | ✅ Done |
+| LSP server — code actions | 🔴 Critical | Medium | ✅ Done |
+| Package manager MVP | 🔴 Critical | High | ✅ Done |
 | Full async I/O (`std.async`) | 🔴 Critical | High | 🟡 In Progress |
 | VM production-ready | 🟠 High | Medium | 🟡 In Progress |
 
@@ -326,14 +331,13 @@ These items improve **day-to-day developer ergonomics**.
 
 | Feature | Priority | Effort | Status |
 |---------|----------|--------|--------|
+| Nullish coalescing (`??`) | 🟠 High | Low | ✅ Done |
 | Destructuring assignment | 🟠 High | Medium | ❌ Not started |
 | Optional chaining (`?.`) | 🟠 High | Low | ❌ Not started |
-| Nullish coalescing (`??`) | 🟠 High | Low | ❌ Not started |
 | Spread/rest operator | 🟠 High | Medium | ❌ Not started |
 | VS Code extension (full) | 🟠 High | Medium | ❌ Not started |
 | Debug Adapter Protocol (DAP) | 🟠 High | High | ❌ Not started |
 | `std.test` built-in framework | 🟠 High | Medium | ❌ Not started |
-| Package manager backend | 🟠 High | High | ❌ Not started |
 
 ### Ecosystem (v1.0.0 — Q1 2027)
 

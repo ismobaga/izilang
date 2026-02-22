@@ -208,6 +208,7 @@ std::string Formatter::tokenTypeToStr(TokenType type) const {
         case TokenType::GREATER_EQUAL: return ">=";
         case TokenType::AND:           return "and";
         case TokenType::OR:            return "or";
+        case TokenType::QUESTION_QUESTION: return "??";
         case TokenType::BANG:          return "!";
         case TokenType::PLUS_EQUAL:    return "+=";
         case TokenType::MINUS_EQUAL:   return "-=";

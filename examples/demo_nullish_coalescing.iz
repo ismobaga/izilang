@@ -1,0 +1,41 @@
+// demo_nullish_coalescing.iz
+// Demonstrates the ?? (nullish coalescing) operator added in v0.4.0.
+//
+// x ?? y  evaluates to x when x is not nil, otherwise evaluates and returns y.
+// The right-hand side is NOT evaluated when the left-hand side is non-nil
+// (short-circuit semantics).
+
+// Basic usage: provide a default for nil
+var name = nil;
+print(name ?? "Anonymous");        // Anonymous
+
+var greeting = "Hello";
+print(greeting ?? "Hi");           // Hello (not nil, so use it)
+
+// Works with zero and false — they are NOT nil
+var count = 0;
+print(count ?? -1);                // 0
+
+var enabled = false;
+print(enabled ?? true);            // false
+
+// Works with function return values
+fn lookupUser(id) {
+    if (id == 1) {
+        return "Alice";
+    }
+    return nil;
+}
+
+print(lookupUser(1) ?? "Guest");   // Alice
+print(lookupUser(99) ?? "Guest");  // Guest
+
+// Chaining: returns the first non-nil value
+var a = nil;
+var b = nil;
+var c = "found it";
+print(a ?? b ?? c);                // found it
+
+// Short-circuit: right side is not evaluated when left is non-nil
+var result = 42 ?? (1/0);          // No division-by-zero error
+print(result);                     // 42

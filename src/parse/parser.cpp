@@ -860,13 +860,25 @@ ExprPtr Parser::assignment() {
 }
 
 ExprPtr Parser::conditional() {
-    ExprPtr expr = logicalOr();
+    ExprPtr expr = nullCoalesce();
 
     if (match({TokenType::QUESTION})) {
         ExprPtr thenBranch = expression();
         consume(TokenType::COLON, "Expect ':' after then branch of conditional expression.");
         ExprPtr elseBranch = conditional();  // Right-associative
         expr = std::make_unique<ConditionalExpr>(std::move(expr), std::move(thenBranch), std::move(elseBranch));
+    }
+
+    return expr;
+}
+
+ExprPtr Parser::nullCoalesce() {
+    ExprPtr expr = logicalOr();
+
+    while (match({TokenType::QUESTION_QUESTION})) {
+        Token op = previous();
+        ExprPtr right = logicalOr();
+        expr = std::make_unique<BinaryExpr>(std::move(expr), op, std::move(right));
     }
 
     return expr;

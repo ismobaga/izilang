@@ -39,6 +39,7 @@ enum class TokenType {
     STAR_EQUAL,
     SLASH_EQUAL,
     PERCENT_EQUAL,
+    QUESTION_QUESTION,
 
     // Literals
     IDENTIFIER,
@@ -163,6 +164,8 @@ inline const char* tokenTypeToString(TokenType type) {
             return "SLASH_EQUAL";
         case TokenType::PERCENT_EQUAL:
             return "PERCENT_EQUAL";
+        case TokenType::QUESTION_QUESTION:
+            return "QUESTION_QUESTION";
         case TokenType::IDENTIFIER:
             return "IDENTIFIER";
         case TokenType::STRING:

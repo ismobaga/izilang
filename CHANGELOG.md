@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Nullish Coalescing Operator
+- **`??` operator**: Returns the left operand if it is not `nil`; otherwise evaluates and
+  returns the right operand. The right side is **not evaluated** when the left side is
+  non-nil (short-circuit semantics).
+  ```izilang
+  var x = nil ?? "default";   // "default"
+  var y = 0   ?? "default";   // 0  (0 is not nil)
+  var z = false ?? true;      // false (false is not nil)
+  var w = nil ?? nil ?? 42;   // 42  (chains)
+  ```
+  The operator sits between the ternary (`?:`) and logical-or (`or`) levels in the
+  precedence hierarchy, so it composes naturally with other boolean operators.
+
 ### Added - LSP & Editor Tooling Improvements
 - **Signature Help** (`textDocument/signatureHelp`): The LSP server now returns function
   signature information when the cursor is inside a function call. Triggered automatically
