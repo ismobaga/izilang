@@ -9,6 +9,7 @@
 #include <cctype>
 #include <cstdlib>
 #include <cstring>
+#include <random>
 #include <sys/stat.h>
 #include <thread>
 #include <regex>
@@ -521,6 +522,95 @@ auto nativeIsNaN(Interpreter& interp, const std::vector<Value>& arguments) -> Va
     return std::isnan(val);
 }
 
+auto nativeTrunc(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 1) {
+        throw std::runtime_error("trunc() takes exactly one argument.");
+    }
+    return std::trunc(asNumber(arguments[0]));
+}
+
+auto nativeLog(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 1) {
+        throw std::runtime_error("log() takes exactly one argument.");
+    }
+    double val = asNumber(arguments[0]);
+    if (val <= 0) {
+        throw std::runtime_error("log() argument must be positive.");
+    }
+    return std::log(val);
+}
+
+auto nativeLog2(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 1) {
+        throw std::runtime_error("log2() takes exactly one argument.");
+    }
+    double val = asNumber(arguments[0]);
+    if (val <= 0) {
+        throw std::runtime_error("log2() argument must be positive.");
+    }
+    return std::log2(val);
+}
+
+auto nativeLog10(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 1) {
+        throw std::runtime_error("log10() takes exactly one argument.");
+    }
+    double val = asNumber(arguments[0]);
+    if (val <= 0) {
+        throw std::runtime_error("log10() argument must be positive.");
+    }
+    return std::log10(val);
+}
+
+auto nativeRandom(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
+    if (!arguments.empty()) {
+        throw std::runtime_error("random() takes no arguments.");
+    }
+    static thread_local std::mt19937_64 rng{std::random_device{}()};
+    static thread_local std::uniform_real_distribution<double> dist(0.0, 1.0);
+    return dist(rng);
+}
+
+auto nativeAsin(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 1) {
+        throw std::runtime_error("asin() takes exactly one argument.");
+    }
+    return std::asin(asNumber(arguments[0]));
+}
+
+auto nativeAcos(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 1) {
+        throw std::runtime_error("acos() takes exactly one argument.");
+    }
+    return std::acos(asNumber(arguments[0]));
+}
+
+auto nativeAtan(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 1) {
+        throw std::runtime_error("atan() takes exactly one argument.");
+    }
+    return std::atan(asNumber(arguments[0]));
+}
+
+auto nativeAtan2(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 2) {
+        throw std::runtime_error("atan2() takes exactly two arguments.");
+    }
+    return std::atan2(asNumber(arguments[0]), asNumber(arguments[1]));
+}
+
+auto nativeHypot(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
+    if (arguments.empty()) {
+        throw std::runtime_error("hypot() requires at least one argument.");
+    }
+    double sumSq = 0.0;
+    for (const auto& arg : arguments) {
+        double v = asNumber(arg);
+        sumSq += v * v;
+    }
+    return std::sqrt(sumSq);
+}
+
 // ============ std.string functions ============
 
 auto nativeSubstring(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
@@ -700,6 +790,18 @@ auto nativeIndexOf(Interpreter& interp, const std::vector<Value>& arguments) -> 
     return static_cast<double>(pos);
 }
 
+auto nativeContains(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
+    if (arguments.size() != 2) {
+        throw std::runtime_error("contains() takes exactly two arguments.");
+    }
+    if (!std::holds_alternative<std::string>(arguments[0]) || !std::holds_alternative<std::string>(arguments[1])) {
+        throw std::runtime_error("Both arguments to contains() must be strings.");
+    }
+    const std::string& str = std::get<std::string>(arguments[0]);
+    const std::string& substr = std::get<std::string>(arguments[1]);
+    return str.find(substr) != std::string::npos;
+}
+
 // ============ std.array functions ============
 
 auto nativeMap(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
@@ -786,8 +888,8 @@ auto nativeReduce(Interpreter& interp, const std::vector<Value>& arguments) -> V
 }
 
 auto nativeSort(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
-    if (arguments.size() != 1) {
-        throw std::runtime_error("sort() takes exactly one argument.");
+    if (arguments.size() < 1 || arguments.size() > 2) {
+        throw std::runtime_error("sort() takes 1 or 2 arguments.");
     }
     if (!std::holds_alternative<std::shared_ptr<Array>>(arguments[0])) {
         throw std::runtime_error("Argument to sort() must be an array.");
@@ -796,15 +898,26 @@ auto nativeSort(Interpreter& interp, const std::vector<Value>& arguments) -> Val
     auto arr = std::get<std::shared_ptr<Array>>(arguments[0]);
     auto result = std::make_shared<Array>(*arr);
 
-    std::sort(result->elements.begin(), result->elements.end(), [](const Value& a, const Value& b) {
-        if (std::holds_alternative<double>(a) && std::holds_alternative<double>(b)) {
-            return std::get<double>(a) < std::get<double>(b);
+    if (arguments.size() == 2) {
+        if (!std::holds_alternative<std::shared_ptr<Callable>>(arguments[1])) {
+            throw std::runtime_error("Second argument to sort() must be a function.");
         }
-        if (std::holds_alternative<std::string>(a) && std::holds_alternative<std::string>(b)) {
-            return std::get<std::string>(a) < std::get<std::string>(b);
-        }
-        return false;
-    });
+        auto comparator = std::get<std::shared_ptr<Callable>>(arguments[1]);
+        std::sort(result->elements.begin(), result->elements.end(), [&](const Value& a, const Value& b) {
+            Value cmpResult = comparator->call(interp, {a, b});
+            return asNumber(cmpResult) < 0;
+        });
+    } else {
+        std::sort(result->elements.begin(), result->elements.end(), [](const Value& a, const Value& b) {
+            if (std::holds_alternative<double>(a) && std::holds_alternative<double>(b)) {
+                return std::get<double>(a) < std::get<double>(b);
+            }
+            if (std::holds_alternative<std::string>(a) && std::holds_alternative<std::string>(b)) {
+                return std::get<std::string>(a) < std::get<std::string>(b);
+            }
+            return false;
+        });
+    }
     return result;
 }
 
@@ -942,10 +1055,7 @@ auto nativeLogInfo(Interpreter& interp, const std::vector<Value>& arguments) -> 
     if (arguments.size() != 1) {
         throw std::runtime_error("log.info() takes exactly one argument.");
     }
-    if (!std::holds_alternative<std::string>(arguments[0])) {
-        throw std::runtime_error("Argument to log.info() must be a string.");
-    }
-    std::cout << "[INFO] " << std::get<std::string>(arguments[0]) << "\n";
+    std::cout << "[INFO] " << valueToString(arguments[0]) << "\n";
     return Nil{};
 }
 
@@ -953,10 +1063,7 @@ auto nativeLogWarn(Interpreter& interp, const std::vector<Value>& arguments) -> 
     if (arguments.size() != 1) {
         throw std::runtime_error("log.warn() takes exactly one argument.");
     }
-    if (!std::holds_alternative<std::string>(arguments[0])) {
-        throw std::runtime_error("Argument to log.warn() must be a string.");
-    }
-    std::cout << "[WARN] " << std::get<std::string>(arguments[0]) << "\n";
+    std::cout << "[WARN] " << valueToString(arguments[0]) << "\n";
     return Nil{};
 }
 
@@ -964,10 +1071,7 @@ auto nativeLogError(Interpreter& interp, const std::vector<Value>& arguments) ->
     if (arguments.size() != 1) {
         throw std::runtime_error("log.error() takes exactly one argument.");
     }
-    if (!std::holds_alternative<std::string>(arguments[0])) {
-        throw std::runtime_error("Argument to log.error() must be a string.");
-    }
-    std::cerr << "[ERROR] " << std::get<std::string>(arguments[0]) << "\n";
+    std::cerr << "[ERROR] " << valueToString(arguments[0]) << "\n";
     return Nil{};
 }
 
@@ -975,10 +1079,7 @@ auto nativeLogDebug(Interpreter& interp, const std::vector<Value>& arguments) ->
     if (arguments.size() != 1) {
         throw std::runtime_error("log.debug() takes exactly one argument.");
     }
-    if (!std::holds_alternative<std::string>(arguments[0])) {
-        throw std::runtime_error("Argument to log.debug() must be a string.");
-    }
-    std::cout << "[DEBUG] " << std::get<std::string>(arguments[0]) << "\n";
+    std::cout << "[DEBUG] " << valueToString(arguments[0]) << "\n";
     return Nil{};
 }
 
@@ -1846,9 +1947,28 @@ auto nativeRegexMatch(Interpreter& interp, const std::vector<Value>& arguments) 
         throw std::runtime_error("Both arguments to regex.match() must be strings.");
     }
 
-    // NOTE: regex.match() is currently disabled due to a memory issue
-    // Use regex.test() and regex.replace() for now
-    throw std::runtime_error("regex.match() is currently disabled. Use regex.test() or regex.replace() instead.");
+    std::string text = std::get<std::string>(arguments[0]);
+    std::string pattern = std::get<std::string>(arguments[1]);
+
+    try {
+        std::regex re(pattern);
+        auto result = std::make_shared<Array>();
+        auto searchStart = text.cbegin();
+        std::smatch match;
+        while (std::regex_search(searchStart, text.cend(), match, re)) {
+            result->elements.push_back(match[0].str());
+            auto next = match.suffix().first;
+            if (next == searchStart) {
+                if (searchStart == text.cend()) break;
+                ++searchStart;
+            } else {
+                searchStart = next;
+            }
+        }
+        return result;
+    } catch (const std::regex_error& e) {
+        throw std::runtime_error(std::string("Regex error: ") + e.what());
+    }
 }
 
 auto nativeRegexReplace(Interpreter& interp, const std::vector<Value>& arguments) -> Value {
@@ -2811,9 +2931,18 @@ void registerNativeFunctions(Interpreter& interp) {
     interp.defineGlobal("floor", Value{std::make_shared<NativeFunction>("floor", 1, nativeFloor)});
     interp.defineGlobal("ceil", Value{std::make_shared<NativeFunction>("ceil", 1, nativeCeil)});
     interp.defineGlobal("round", Value{std::make_shared<NativeFunction>("round", 1, nativeRound)});
+    interp.defineGlobal("trunc", Value{std::make_shared<NativeFunction>("trunc", 1, nativeTrunc)});
+    interp.defineGlobal("log", Value{std::make_shared<NativeFunction>("log", 1, nativeLog)});
+    interp.defineGlobal("log2", Value{std::make_shared<NativeFunction>("log2", 1, nativeLog2)});
+    interp.defineGlobal("log10", Value{std::make_shared<NativeFunction>("log10", 1, nativeLog10)});
     interp.defineGlobal("sin", Value{std::make_shared<NativeFunction>("sin", 1, nativeSin)});
     interp.defineGlobal("cos", Value{std::make_shared<NativeFunction>("cos", 1, nativeCos)});
     interp.defineGlobal("tan", Value{std::make_shared<NativeFunction>("tan", 1, nativeTan)});
+    interp.defineGlobal("asin", Value{std::make_shared<NativeFunction>("asin", 1, nativeAsin)});
+    interp.defineGlobal("acos", Value{std::make_shared<NativeFunction>("acos", 1, nativeAcos)});
+    interp.defineGlobal("atan", Value{std::make_shared<NativeFunction>("atan", 1, nativeAtan)});
+    interp.defineGlobal("atan2", Value{std::make_shared<NativeFunction>("atan2", 2, nativeAtan2)});
+    interp.defineGlobal("hypot", Value{std::make_shared<NativeFunction>("hypot", -1, nativeHypot)});
     interp.defineGlobal("min", Value{std::make_shared<NativeFunction>("min", -1, nativeMin)});
     interp.defineGlobal("max", Value{std::make_shared<NativeFunction>("max", -1, nativeMax)});
 
@@ -2828,12 +2957,13 @@ void registerNativeFunctions(Interpreter& interp) {
     interp.defineGlobal("startsWith", Value{std::make_shared<NativeFunction>("startsWith", 2, nativeStartsWith)});
     interp.defineGlobal("endsWith", Value{std::make_shared<NativeFunction>("endsWith", 2, nativeEndsWith)});
     interp.defineGlobal("indexOf", Value{std::make_shared<NativeFunction>("indexOf", 2, nativeIndexOf)});
+    interp.defineGlobal("contains", Value{std::make_shared<NativeFunction>("contains", 2, nativeContains)});
 
     // std.array functions
     interp.defineGlobal("map", Value{std::make_shared<NativeFunction>("map", 2, nativeMap)});
     interp.defineGlobal("filter", Value{std::make_shared<NativeFunction>("filter", 2, nativeFilter)});
     interp.defineGlobal("reduce", Value{std::make_shared<NativeFunction>("reduce", -1, nativeReduce)});
-    interp.defineGlobal("sort", Value{std::make_shared<NativeFunction>("sort", 1, nativeSort)});
+    interp.defineGlobal("sort", Value{std::make_shared<NativeFunction>("sort", -1, nativeSort)});
     interp.defineGlobal("reverse", Value{std::make_shared<NativeFunction>("reverse", 1, nativeReverse)});
     interp.defineGlobal("concat", Value{std::make_shared<NativeFunction>("concat", 2, nativeConcat)});
     interp.defineGlobal("slice", Value{std::make_shared<NativeFunction>("slice", -1, nativeSlice)});

@@ -54,15 +54,25 @@ auto nativeAbs(Interpreter& interp, const std::vector<Value>& arguments) -> Valu
 auto nativeFloor(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 auto nativeCeil(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 auto nativeRound(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeTrunc(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeLog(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeLog2(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeLog10(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeRandom(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 auto nativeSin(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 auto nativeCos(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 auto nativeTan(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeAsin(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeAcos(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeAtan(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeAtan2(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 auto nativeMin(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 auto nativeMax(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 auto nativeClamp(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 auto nativeSign(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 auto nativeIsFinite(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 auto nativeIsNaN(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeHypot(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 
 // std.string functions
 auto nativeSubstring(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
@@ -75,6 +85,7 @@ auto nativeReplace(Interpreter& interp, const std::vector<Value>& arguments) -> 
 auto nativeStartsWith(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 auto nativeEndsWith(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 auto nativeIndexOf(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
+auto nativeContains(Interpreter& interp, const std::vector<Value>& arguments) -> Value;
 
 // std.array functions
 auto nativeMap(Interpreter& interp, const std::vector<Value>& arguments) -> Value;

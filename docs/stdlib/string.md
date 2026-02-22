@@ -76,6 +76,15 @@ Replaces **all** occurrences of `from` in `str` with `to`.
 print(string.replace("aabbcc", "b", "X"));  // "aaXXcc"
 ```
 
+#### `contains(str, substring)`
+
+Returns `true` if `str` contains `substring`, `false` otherwise.
+
+```izilang
+print(string.contains("Hello, World!", "World"));  // true
+print(string.contains("Hello, World!", "xyz"));    // false
+```
+
 #### `indexOf(str, substring)`
 
 Returns the index of the first occurrence of `substring` in `str`, or `-1` if not found.

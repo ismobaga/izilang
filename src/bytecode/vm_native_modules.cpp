@@ -5,6 +5,7 @@
 #include "vm_native_image.hpp"
 #include "vm.hpp"
 #include <cmath>
+#include <limits>
 #include <sstream>
 
 namespace izi {
@@ -17,6 +18,12 @@ Value createVmMathModule(VM& vm) {
     module->entries["PI"] = M_PI;
     module->entries["e"] = M_E;
     module->entries["E"] = M_E;
+    module->entries["LN2"] = M_LN2;
+    module->entries["LN10"] = M_LN10;
+    module->entries["LOG2E"] = M_LOG2E;
+    module->entries["LOG10E"] = M_LOG10E;
+    module->entries["SQRT2"] = M_SQRT2;
+    module->entries["INF"] = std::numeric_limits<double>::infinity();
 
     // Functions
     module->entries["sqrt"] = Value{std::make_shared<VmNativeFunction>("sqrt", 1, vmNativeSqrt)};
@@ -25,9 +32,19 @@ Value createVmMathModule(VM& vm) {
     module->entries["floor"] = Value{std::make_shared<VmNativeFunction>("floor", 1, vmNativeFloor)};
     module->entries["ceil"] = Value{std::make_shared<VmNativeFunction>("ceil", 1, vmNativeCeil)};
     module->entries["round"] = Value{std::make_shared<VmNativeFunction>("round", 1, vmNativeRound)};
+    module->entries["trunc"] = Value{std::make_shared<VmNativeFunction>("trunc", 1, vmNativeTrunc)};
+    module->entries["log"] = Value{std::make_shared<VmNativeFunction>("log", 1, vmNativeLog)};
+    module->entries["log2"] = Value{std::make_shared<VmNativeFunction>("log2", 1, vmNativeLog2)};
+    module->entries["log10"] = Value{std::make_shared<VmNativeFunction>("log10", 1, vmNativeLog10)};
+    module->entries["random"] = Value{std::make_shared<VmNativeFunction>("random", 0, vmNativeRandom)};
     module->entries["sin"] = Value{std::make_shared<VmNativeFunction>("sin", 1, vmNativeSin)};
     module->entries["cos"] = Value{std::make_shared<VmNativeFunction>("cos", 1, vmNativeCos)};
     module->entries["tan"] = Value{std::make_shared<VmNativeFunction>("tan", 1, vmNativeTan)};
+    module->entries["asin"] = Value{std::make_shared<VmNativeFunction>("asin", 1, vmNativeAsin)};
+    module->entries["acos"] = Value{std::make_shared<VmNativeFunction>("acos", 1, vmNativeAcos)};
+    module->entries["atan"] = Value{std::make_shared<VmNativeFunction>("atan", 1, vmNativeAtan)};
+    module->entries["atan2"] = Value{std::make_shared<VmNativeFunction>("atan2", 2, vmNativeAtan2)};
+    module->entries["hypot"] = Value{std::make_shared<VmNativeFunction>("hypot", -1, vmNativeHypot)};
     module->entries["min"] = Value{std::make_shared<VmNativeFunction>("min", -1, vmNativeMin)};
     module->entries["max"] = Value{std::make_shared<VmNativeFunction>("max", -1, vmNativeMax)};
 
@@ -48,6 +65,7 @@ Value createVmStringModule(VM& vm) {
     module->entries["startsWith"] = Value{std::make_shared<VmNativeFunction>("startsWith", 2, vmNativeStartsWith)};
     module->entries["endsWith"] = Value{std::make_shared<VmNativeFunction>("endsWith", 2, vmNativeEndsWith)};
     module->entries["indexOf"] = Value{std::make_shared<VmNativeFunction>("indexOf", 2, vmNativeIndexOf)};
+    module->entries["contains"] = Value{std::make_shared<VmNativeFunction>("contains", 2, vmNativeContains)};
 
     return Value{module};
 }
@@ -59,7 +77,7 @@ Value createVmArrayModule(VM& vm) {
     module->entries["map"] = Value{std::make_shared<VmNativeFunction>("map", 2, vmNativeMap)};
     module->entries["filter"] = Value{std::make_shared<VmNativeFunction>("filter", 2, vmNativeFilter)};
     module->entries["reduce"] = Value{std::make_shared<VmNativeFunction>("reduce", -1, vmNativeReduce)};
-    module->entries["sort"] = Value{std::make_shared<VmNativeFunction>("sort", 1, vmNativeSort)};
+    module->entries["sort"] = Value{std::make_shared<VmNativeFunction>("sort", -1, vmNativeSort)};
     module->entries["reverse"] = Value{std::make_shared<VmNativeFunction>("reverse", 1, vmNativeReverse)};
     module->entries["concat"] = Value{std::make_shared<VmNativeFunction>("concat", 2, vmNativeConcat)};
     module->entries["slice"] = Value{std::make_shared<VmNativeFunction>("slice", -1, vmNativeSlice)};
