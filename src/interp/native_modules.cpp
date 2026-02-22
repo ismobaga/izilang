@@ -1,6 +1,7 @@
 #include "native_modules.hpp"
 #include "native.hpp"
 #include "native_ui.hpp"
+#include "native_audio.hpp"
 #include "interpreter.hpp"
 #include <cmath>
 
@@ -239,7 +240,8 @@ bool isNativeModule(const std::string& path) {
            path == "assert" || path == "std.assert" || path == "env" || path == "std.env" || path == "process" ||
            path == "std.process" || path == "path" || path == "std.path" || path == "fs" || path == "std.fs" ||
            path == "time" || path == "std.time" || path == "regex" || path == "std.regex" ||
-           path == "ui" || path == "std.ui" || path == "ipc" || path == "std.ipc" ||
+           path == "ui" || path == "std.ui" || path == "audio" || path == "std.audio" ||
+           path == "ipc" || path == "std.ipc" ||
            path == "net" || path == "std.net";
 }
 
@@ -274,6 +276,8 @@ Value getNativeModule(const std::string& name, Interpreter& interp) {
         return createHttpModule(interp);
     } else if (name == "ui" || name == "std.ui") {
         return createUiModule(interp);
+    } else if (name == "audio" || name == "std.audio") {
+        return createAudioModule(interp);
     } else if (name == "ipc" || name == "std.ipc") {
         return createIpcModule(interp);
     } else if (name == "net" || name == "std.net") {
