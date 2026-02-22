@@ -279,6 +279,88 @@ static Value vmBuildPanelObject(std::shared_ptr<VmUiPanel> panel) {
 #endif
         })};
 
+    obj->entries["drawTriangle"] = Value{std::make_shared<VmNativeFunction>("drawTriangle", 7,
+        [panel](VM&, const std::vector<Value>& args) -> Value {
+            if (args.size() != 7) {
+                throw std::runtime_error(
+                    "panel.drawTriangle() takes 7 arguments (x1, y1, x2, y2, x3, y3, color).");
+            }
+#ifdef HAVE_RAYLIB
+            float x1 = static_cast<float>(asNumber(args[0])) + static_cast<float>(panel->x);
+            float y1 = static_cast<float>(asNumber(args[1])) + static_cast<float>(panel->y);
+            float x2 = static_cast<float>(asNumber(args[2])) + static_cast<float>(panel->x);
+            float y2 = static_cast<float>(asNumber(args[3])) + static_cast<float>(panel->y);
+            float x3 = static_cast<float>(asNumber(args[4])) + static_cast<float>(panel->x);
+            float y3 = static_cast<float>(asNumber(args[5])) + static_cast<float>(panel->y);
+            ::Color color = vmExtractRaylibColor(args[6]);
+            DrawTriangle({x1, y1}, {x2, y2}, {x3, y3}, color);
+#else
+            throw std::runtime_error("ui module requires raylib (build with -DHAVE_RAYLIB).");
+#endif
+            return Nil{};
+        })};
+
+    obj->entries["drawTriangleLines"] = Value{std::make_shared<VmNativeFunction>("drawTriangleLines", 7,
+        [panel](VM&, const std::vector<Value>& args) -> Value {
+            if (args.size() != 7) {
+                throw std::runtime_error(
+                    "panel.drawTriangleLines() takes 7 arguments (x1, y1, x2, y2, x3, y3, color).");
+            }
+#ifdef HAVE_RAYLIB
+            float x1 = static_cast<float>(asNumber(args[0])) + static_cast<float>(panel->x);
+            float y1 = static_cast<float>(asNumber(args[1])) + static_cast<float>(panel->y);
+            float x2 = static_cast<float>(asNumber(args[2])) + static_cast<float>(panel->x);
+            float y2 = static_cast<float>(asNumber(args[3])) + static_cast<float>(panel->y);
+            float x3 = static_cast<float>(asNumber(args[4])) + static_cast<float>(panel->x);
+            float y3 = static_cast<float>(asNumber(args[5])) + static_cast<float>(panel->y);
+            ::Color color = vmExtractRaylibColor(args[6]);
+            DrawTriangleLines({x1, y1}, {x2, y2}, {x3, y3}, color);
+#else
+            throw std::runtime_error("ui module requires raylib (build with -DHAVE_RAYLIB).");
+#endif
+            return Nil{};
+        })};
+
+    obj->entries["fillRectGradientV"] = Value{std::make_shared<VmNativeFunction>("fillRectGradientV", 6,
+        [panel](VM&, const std::vector<Value>& args) -> Value {
+            if (args.size() != 6) {
+                throw std::runtime_error(
+                    "panel.fillRectGradientV() takes 6 arguments (x, y, width, height, colorTop, colorBottom).");
+            }
+#ifdef HAVE_RAYLIB
+            int x = static_cast<int>(asNumber(args[0])) + panel->x;
+            int y = static_cast<int>(asNumber(args[1])) + panel->y;
+            int w = static_cast<int>(asNumber(args[2]));
+            int h = static_cast<int>(asNumber(args[3]));
+            ::Color top = vmExtractRaylibColor(args[4]);
+            ::Color bottom = vmExtractRaylibColor(args[5]);
+            DrawRectangleGradientV(x, y, w, h, top, bottom);
+#else
+            throw std::runtime_error("ui module requires raylib (build with -DHAVE_RAYLIB).");
+#endif
+            return Nil{};
+        })};
+
+    obj->entries["fillRectGradientH"] = Value{std::make_shared<VmNativeFunction>("fillRectGradientH", 6,
+        [panel](VM&, const std::vector<Value>& args) -> Value {
+            if (args.size() != 6) {
+                throw std::runtime_error(
+                    "panel.fillRectGradientH() takes 6 arguments (x, y, width, height, colorLeft, colorRight).");
+            }
+#ifdef HAVE_RAYLIB
+            int x = static_cast<int>(asNumber(args[0])) + panel->x;
+            int y = static_cast<int>(asNumber(args[1])) + panel->y;
+            int w = static_cast<int>(asNumber(args[2]));
+            int h = static_cast<int>(asNumber(args[3]));
+            ::Color left = vmExtractRaylibColor(args[4]);
+            ::Color right = vmExtractRaylibColor(args[5]);
+            DrawRectangleGradientH(x, y, w, h, left, right);
+#else
+            throw std::runtime_error("ui module requires raylib (build with -DHAVE_RAYLIB).");
+#endif
+            return Nil{};
+        })};
+
     return Value{obj};
 }
 
@@ -608,6 +690,101 @@ static Value vmBuildWindowObject(std::shared_ptr<VmUiWindow> win) {
             return vmBuildPanelObject(p);
         })};
 
+    obj->entries["drawTriangle"] = Value{std::make_shared<VmNativeFunction>("drawTriangle", 7,
+        [](VM&, const std::vector<Value>& args) -> Value {
+            if (args.size() != 7) {
+                throw std::runtime_error(
+                    "win.drawTriangle() takes 7 arguments (x1, y1, x2, y2, x3, y3, color).");
+            }
+#ifdef HAVE_RAYLIB
+            float x1 = static_cast<float>(asNumber(args[0]));
+            float y1 = static_cast<float>(asNumber(args[1]));
+            float x2 = static_cast<float>(asNumber(args[2]));
+            float y2 = static_cast<float>(asNumber(args[3]));
+            float x3 = static_cast<float>(asNumber(args[4]));
+            float y3 = static_cast<float>(asNumber(args[5]));
+            ::Color color = vmExtractRaylibColor(args[6]);
+            DrawTriangle({x1, y1}, {x2, y2}, {x3, y3}, color);
+#else
+            throw std::runtime_error("ui module requires raylib (build with -DHAVE_RAYLIB).");
+#endif
+            return Nil{};
+        })};
+
+    obj->entries["drawTriangleLines"] = Value{std::make_shared<VmNativeFunction>("drawTriangleLines", 7,
+        [](VM&, const std::vector<Value>& args) -> Value {
+            if (args.size() != 7) {
+                throw std::runtime_error(
+                    "win.drawTriangleLines() takes 7 arguments (x1, y1, x2, y2, x3, y3, color).");
+            }
+#ifdef HAVE_RAYLIB
+            float x1 = static_cast<float>(asNumber(args[0]));
+            float y1 = static_cast<float>(asNumber(args[1]));
+            float x2 = static_cast<float>(asNumber(args[2]));
+            float y2 = static_cast<float>(asNumber(args[3]));
+            float x3 = static_cast<float>(asNumber(args[4]));
+            float y3 = static_cast<float>(asNumber(args[5]));
+            ::Color color = vmExtractRaylibColor(args[6]);
+            DrawTriangleLines({x1, y1}, {x2, y2}, {x3, y3}, color);
+#else
+            throw std::runtime_error("ui module requires raylib (build with -DHAVE_RAYLIB).");
+#endif
+            return Nil{};
+        })};
+
+    obj->entries["fillRectGradientV"] = Value{std::make_shared<VmNativeFunction>("fillRectGradientV", 6,
+        [](VM&, const std::vector<Value>& args) -> Value {
+            if (args.size() != 6) {
+                throw std::runtime_error(
+                    "win.fillRectGradientV() takes 6 arguments (x, y, width, height, colorTop, colorBottom).");
+            }
+#ifdef HAVE_RAYLIB
+            int x = static_cast<int>(asNumber(args[0]));
+            int y = static_cast<int>(asNumber(args[1]));
+            int w = static_cast<int>(asNumber(args[2]));
+            int h = static_cast<int>(asNumber(args[3]));
+            ::Color top = vmExtractRaylibColor(args[4]);
+            ::Color bottom = vmExtractRaylibColor(args[5]);
+            DrawRectangleGradientV(x, y, w, h, top, bottom);
+#else
+            throw std::runtime_error("ui module requires raylib (build with -DHAVE_RAYLIB).");
+#endif
+            return Nil{};
+        })};
+
+    obj->entries["fillRectGradientH"] = Value{std::make_shared<VmNativeFunction>("fillRectGradientH", 6,
+        [](VM&, const std::vector<Value>& args) -> Value {
+            if (args.size() != 6) {
+                throw std::runtime_error(
+                    "win.fillRectGradientH() takes 6 arguments (x, y, width, height, colorLeft, colorRight).");
+            }
+#ifdef HAVE_RAYLIB
+            int x = static_cast<int>(asNumber(args[0]));
+            int y = static_cast<int>(asNumber(args[1]));
+            int w = static_cast<int>(asNumber(args[2]));
+            int h = static_cast<int>(asNumber(args[3]));
+            ::Color left = vmExtractRaylibColor(args[4]);
+            ::Color right = vmExtractRaylibColor(args[5]);
+            DrawRectangleGradientH(x, y, w, h, left, right);
+#else
+            throw std::runtime_error("ui module requires raylib (build with -DHAVE_RAYLIB).");
+#endif
+            return Nil{};
+        })};
+
+    obj->entries["drawFPS"] = Value{std::make_shared<VmNativeFunction>("drawFPS", 2,
+        [](VM&, const std::vector<Value>& args) -> Value {
+            if (args.size() != 2) {
+                throw std::runtime_error("win.drawFPS() takes 2 arguments (x, y).");
+            }
+#ifdef HAVE_RAYLIB
+            DrawFPS(static_cast<int>(asNumber(args[0])), static_cast<int>(asNumber(args[1])));
+#else
+            throw std::runtime_error("ui module requires raylib (build with -DHAVE_RAYLIB).");
+#endif
+            return Nil{};
+        })};
+
     return Value{obj};
 }
 
@@ -756,6 +933,76 @@ Value createVmUiModule(VM& /*vm*/) {
         [](VM&, const std::vector<Value>&) -> Value {
 #ifdef HAVE_RAYLIB
             return static_cast<double>(GetTime());
+#else
+            throw std::runtime_error("ui module requires raylib (build with -DHAVE_RAYLIB).");
+#endif
+        })};
+
+    module->entries["keyReleased"] = Value{std::make_shared<VmNativeFunction>("keyReleased", 1,
+        [](VM&, const std::vector<Value>& args) -> Value {
+            if (args.size() != 1) {
+                throw std::runtime_error("ui.keyReleased() takes 1 argument.");
+            }
+#ifdef HAVE_RAYLIB
+            int key = static_cast<int>(asNumber(args[0]));
+            return static_cast<bool>(IsKeyReleased(key));
+#else
+            (void)args;
+            throw std::runtime_error("ui module requires raylib (build with -DHAVE_RAYLIB).");
+#endif
+        })};
+
+    module->entries["mouseReleased"] = Value{std::make_shared<VmNativeFunction>("mouseReleased", 1,
+        [](VM&, const std::vector<Value>& args) -> Value {
+            if (args.size() != 1) {
+                throw std::runtime_error("ui.mouseReleased() takes 1 argument.");
+            }
+#ifdef HAVE_RAYLIB
+            int btn = static_cast<int>(asNumber(args[0]));
+            return static_cast<bool>(IsMouseButtonReleased(btn));
+#else
+            (void)args;
+            throw std::runtime_error("ui module requires raylib (build with -DHAVE_RAYLIB).");
+#endif
+        })};
+
+    module->entries["getMouseDelta"] = Value{std::make_shared<VmNativeFunction>("getMouseDelta", 0,
+        [](VM&, const std::vector<Value>&) -> Value {
+#ifdef HAVE_RAYLIB
+            ::Vector2 delta = GetMouseDelta();
+            auto m = std::make_shared<Map>();
+            m->entries["x"] = static_cast<double>(delta.x);
+            m->entries["y"] = static_cast<double>(delta.y);
+            return Value{m};
+#else
+            throw std::runtime_error("ui module requires raylib (build with -DHAVE_RAYLIB).");
+#endif
+        })};
+
+    module->entries["hideCursor"] = Value{std::make_shared<VmNativeFunction>("hideCursor", 0,
+        [](VM&, const std::vector<Value>&) -> Value {
+#ifdef HAVE_RAYLIB
+            HideCursor();
+#else
+            throw std::runtime_error("ui module requires raylib (build with -DHAVE_RAYLIB).");
+#endif
+            return Nil{};
+        })};
+
+    module->entries["showCursor"] = Value{std::make_shared<VmNativeFunction>("showCursor", 0,
+        [](VM&, const std::vector<Value>&) -> Value {
+#ifdef HAVE_RAYLIB
+            ShowCursor();
+#else
+            throw std::runtime_error("ui module requires raylib (build with -DHAVE_RAYLIB).");
+#endif
+            return Nil{};
+        })};
+
+    module->entries["isCursorOnScreen"] = Value{std::make_shared<VmNativeFunction>("isCursorOnScreen", 0,
+        [](VM&, const std::vector<Value>&) -> Value {
+#ifdef HAVE_RAYLIB
+            return static_cast<bool>(IsCursorOnScreen());
 #else
             throw std::runtime_error("ui module requires raylib (build with -DHAVE_RAYLIB).");
 #endif
