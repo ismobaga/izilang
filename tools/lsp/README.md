@@ -43,6 +43,14 @@ A fully-functional Language Server Protocol implementation for IziLang providing
   - All classes
   - Function parameters
 
+- ✅ **Signature Help**: Function signature information while typing
+  - Triggered on `(` and `,`
+  - Shows function name and parameters
+  - Highlights the active parameter
+
+- ✅ **Code Actions**: Quick-fix suggestions for diagnostics
+  - Prefix unused variables with `_` to suppress the warning
+
 ## Building
 
 ```bash
@@ -149,6 +157,8 @@ The server implements the following LSP methods:
 - `textDocument/references` - Find references
 - `textDocument/rename` - Rename symbol
 - `textDocument/documentSymbol` - Document outline
+- `textDocument/signatureHelp` - Signature help (triggered by `(` and `,`)
+- `textDocument/codeAction` - Code actions and quick fixes
 
 ### Diagnostics
 - `textDocument/publishDiagnostics` - Publish errors/warnings (server → client)
@@ -201,8 +211,6 @@ This approach works around the AST storing symbol names as strings without posit
 
 - [ ] Incremental document sync for better performance
 - [ ] Cross-file symbol resolution (imports)
-- [ ] Signature help for function calls
-- [ ] Code actions and quick fixes
 - [ ] Semantic tokens for better syntax highlighting
 - [ ] Workspace symbols for cross-file search
 - [ ] Document formatting

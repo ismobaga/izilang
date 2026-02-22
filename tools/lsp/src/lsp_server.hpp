@@ -45,6 +45,8 @@ private:
     json handleReferences(const json& params);
     json handleRename(const json& params);
     json handleDocumentSymbol(const json& params);
+    json handleSignatureHelp(const json& params);
+    json handleCodeAction(const json& params);
     
     // Diagnostics
     void publishDiagnostics(const std::string& uri);

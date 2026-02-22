@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - LSP & Editor Tooling Improvements
+- **Signature Help** (`textDocument/signatureHelp`): The LSP server now returns function
+  signature information when the cursor is inside a function call. Triggered automatically
+  by `(` and `,` in VS Code and other editors.
+- **Code Actions** (`textDocument/codeAction`): Quick-fix suggestions are now returned for
+  applicable diagnostics. Currently supported: prefix an unused variable with `_` to suppress
+  the "Unused variable" warning.
+- **Syntax Grammar Enhancements** (VS Code extension): The TextMate grammar now correctly
+  highlights all IziLang keywords including `match`, `extends`, `this`, `super`, `from`,
+  `as`, `throw`, `and`, `or`, `async`, `await`, `macro`, `print`, and `default`. Compound
+  assignment operators (`+=`, `-=`, `*=`, `/=`, `%=`) are also highlighted. F-string
+  interpolation (`f"...${expr}..."`) is highlighted with embedded expression support.
+- **VS Code `commands` contribution**: The `IziLang: Restart Language Server` command is
+  now declared in `package.json` so it appears in the VS Code command palette.
+- **LSP build fix**: Added the missing `ConditionalExpr`, `SpreadExpr`, `AwaitExpr`, and
+  `ReExportStmt` visitor stubs in `SymbolTableBuilder` so the LSP server compiles cleanly
+  against the current AST.
+
 ### Added - Package Manager MVP
 - **`izi-pkg sync`**: Resolves local-path and git-URL dependencies into `libs/`, generating a
   content-hash lock file (`izi.lock`) with version and SHA-256 for every resolved package.

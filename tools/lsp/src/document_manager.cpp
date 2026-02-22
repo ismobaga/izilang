@@ -279,6 +279,21 @@ public:
 
     Value visit(ThisExpr& expr) override { return Value(); }
     Value visit(SuperExpr& expr) override { return Value(); }
+    Value visit(ConditionalExpr& expr) override {
+        if (expr.condition) expr.condition->accept(*this);
+        if (expr.thenBranch) expr.thenBranch->accept(*this);
+        if (expr.elseBranch) expr.elseBranch->accept(*this);
+        return Value();
+    }
+    Value visit(SpreadExpr& expr) override {
+        if (expr.argument) expr.argument->accept(*this);
+        return Value();
+    }
+    Value visit(AwaitExpr& expr) override {
+        if (expr.value) expr.value->accept(*this);
+        return Value();
+    }
+    void visit(ReExportStmt& stmt) override {}
 
 private:
     Document* document_;
