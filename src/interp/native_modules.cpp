@@ -5,6 +5,7 @@
 #include "native_image.hpp"
 #include "interpreter.hpp"
 #include <cmath>
+#include <limits>
 
 namespace izi {
 
@@ -16,6 +17,12 @@ Value createMathModule(Interpreter& interp) {
     module->entries["PI"] = M_PI;
     module->entries["e"] = M_E;
     module->entries["E"] = M_E;
+    module->entries["LN2"] = M_LN2;
+    module->entries["LN10"] = M_LN10;
+    module->entries["LOG2E"] = M_LOG2E;
+    module->entries["LOG10E"] = M_LOG10E;
+    module->entries["SQRT2"] = M_SQRT2;
+    module->entries["INF"] = std::numeric_limits<double>::infinity();
 
     // Functions
     module->entries["sqrt"] = Value{std::make_shared<NativeFunction>("sqrt", 1, nativeSqrt)};
@@ -24,9 +31,19 @@ Value createMathModule(Interpreter& interp) {
     module->entries["floor"] = Value{std::make_shared<NativeFunction>("floor", 1, nativeFloor)};
     module->entries["ceil"] = Value{std::make_shared<NativeFunction>("ceil", 1, nativeCeil)};
     module->entries["round"] = Value{std::make_shared<NativeFunction>("round", 1, nativeRound)};
+    module->entries["trunc"] = Value{std::make_shared<NativeFunction>("trunc", 1, nativeTrunc)};
+    module->entries["log"] = Value{std::make_shared<NativeFunction>("log", 1, nativeLog)};
+    module->entries["log2"] = Value{std::make_shared<NativeFunction>("log2", 1, nativeLog2)};
+    module->entries["log10"] = Value{std::make_shared<NativeFunction>("log10", 1, nativeLog10)};
+    module->entries["random"] = Value{std::make_shared<NativeFunction>("random", 0, nativeRandom)};
     module->entries["sin"] = Value{std::make_shared<NativeFunction>("sin", 1, nativeSin)};
     module->entries["cos"] = Value{std::make_shared<NativeFunction>("cos", 1, nativeCos)};
     module->entries["tan"] = Value{std::make_shared<NativeFunction>("tan", 1, nativeTan)};
+    module->entries["asin"] = Value{std::make_shared<NativeFunction>("asin", 1, nativeAsin)};
+    module->entries["acos"] = Value{std::make_shared<NativeFunction>("acos", 1, nativeAcos)};
+    module->entries["atan"] = Value{std::make_shared<NativeFunction>("atan", 1, nativeAtan)};
+    module->entries["atan2"] = Value{std::make_shared<NativeFunction>("atan2", 2, nativeAtan2)};
+    module->entries["hypot"] = Value{std::make_shared<NativeFunction>("hypot", -1, nativeHypot)};
     module->entries["min"] = Value{std::make_shared<NativeFunction>("min", -1, nativeMin)};
     module->entries["max"] = Value{std::make_shared<NativeFunction>("max", -1, nativeMax)};
     module->entries["clamp"] = Value{std::make_shared<NativeFunction>("clamp", 3, nativeClamp)};
@@ -51,6 +68,7 @@ Value createStringModule(Interpreter& interp) {
     module->entries["startsWith"] = Value{std::make_shared<NativeFunction>("startsWith", 2, nativeStartsWith)};
     module->entries["endsWith"] = Value{std::make_shared<NativeFunction>("endsWith", 2, nativeEndsWith)};
     module->entries["indexOf"] = Value{std::make_shared<NativeFunction>("indexOf", 2, nativeIndexOf)};
+    module->entries["contains"] = Value{std::make_shared<NativeFunction>("contains", 2, nativeContains)};
 
     return Value{module};
 }
@@ -62,7 +80,7 @@ Value createArrayModule(Interpreter& interp) {
     module->entries["map"] = Value{std::make_shared<NativeFunction>("map", 2, nativeMap)};
     module->entries["filter"] = Value{std::make_shared<NativeFunction>("filter", 2, nativeFilter)};
     module->entries["reduce"] = Value{std::make_shared<NativeFunction>("reduce", -1, nativeReduce)};
-    module->entries["sort"] = Value{std::make_shared<NativeFunction>("sort", 1, nativeSort)};
+    module->entries["sort"] = Value{std::make_shared<NativeFunction>("sort", -1, nativeSort)};
     module->entries["reverse"] = Value{std::make_shared<NativeFunction>("reverse", 1, nativeReverse)};
     module->entries["concat"] = Value{std::make_shared<NativeFunction>("concat", 2, nativeConcat)};
     module->entries["slice"] = Value{std::make_shared<NativeFunction>("slice", -1, nativeSlice)};

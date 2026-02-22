@@ -52,9 +52,19 @@ Value vmNativeAbs(VM& vm, const std::vector<Value>& arguments);
 Value vmNativeFloor(VM& vm, const std::vector<Value>& arguments);
 Value vmNativeCeil(VM& vm, const std::vector<Value>& arguments);
 Value vmNativeRound(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeTrunc(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeLog(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeLog2(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeLog10(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeRandom(VM& vm, const std::vector<Value>& arguments);
 Value vmNativeSin(VM& vm, const std::vector<Value>& arguments);
 Value vmNativeCos(VM& vm, const std::vector<Value>& arguments);
 Value vmNativeTan(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeAsin(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeAcos(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeAtan(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeAtan2(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeHypot(VM& vm, const std::vector<Value>& arguments);
 Value vmNativeMin(VM& vm, const std::vector<Value>& arguments);
 Value vmNativeMax(VM& vm, const std::vector<Value>& arguments);
 
@@ -69,6 +79,7 @@ Value vmNativeReplace(VM& vm, const std::vector<Value>& arguments);
 Value vmNativeStartsWith(VM& vm, const std::vector<Value>& arguments);
 Value vmNativeEndsWith(VM& vm, const std::vector<Value>& arguments);
 Value vmNativeIndexOf(VM& vm, const std::vector<Value>& arguments);
+Value vmNativeContains(VM& vm, const std::vector<Value>& arguments);
 
 // std.array native functions
 Value vmNativeMap(VM& vm, const std::vector<Value>& arguments);

@@ -14,6 +14,24 @@ import { test, replace } from "std.regex";
 
 ## Functions
 
+### `match(text, pattern)`
+
+Returns an array of all non-overlapping matches of `pattern` in `text`. Returns an empty array if there are no matches.
+
+> **Note**: Since `match` is a reserved keyword in IziLang, this function must be accessed via bracket notation: `regex["match"](text, pattern)`.
+
+```izilang
+import * as regex from "std.regex";
+
+var matchFn = regex["match"];
+var digits = matchFn("foo123bar456", "[0-9]+");
+print(digits);       // [123, 456]
+print(len(digits));  // 2
+
+var words = matchFn("hello world foo", "[a-z]+");
+print(words);  // [hello, world, foo]
+```
+
 ### `test(text, pattern)`
 
 Returns `true` if `pattern` matches anywhere in `text`, `false` otherwise.
@@ -97,10 +115,11 @@ print(isEmail("user@example.com"));  // true
 print(isEmail("not-an-email"));      // false
 ```
 
-## Known Limitations
+## Notes
 
-- `regex.match()` is currently **disabled** due to a segmentation fault bug. Calling it throws a runtime error.
-- Use `regex.test()` to check for a match and `regex.replace()` for extraction via capture groups.
+- `regex.replace` replaces **all** occurrences, not just the first.
+- `regex["match"]` returns an array of all matches; use bracket notation to call it since `match` is a reserved keyword.
+- Backreferences in `replace()` use `$1`, `$2`, … syntax.
 
 ## See Also
 
