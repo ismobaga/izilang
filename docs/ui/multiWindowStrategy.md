@@ -68,11 +68,20 @@ while win.isOpen() {
 | `setTitle` | `(title)` | Change the window title |
 | `getSize` | `() -> {width, height}` | Query current window dimensions |
 | `getFps` | `() -> number` | Current frames-per-second |
+| `setTargetFPS` | `(fps)` | Set the target frames-per-second cap |
+| `getFrameTime` | `() -> number` | Seconds elapsed during the last frame (delta time) |
+| `setWindowMinSize` | `(width, height)` | Set the minimum resizable window dimensions |
+| `toggleFullscreen` | `()` | Toggle between windowed and fullscreen mode |
+| `isWindowFocused` | `() -> bool` | True when the window has input focus |
+| `measureText` | `(text, fontSize) -> number` | Return the pixel width of a text string |
 | `drawText` | `(x, y, text, fontSize, color)` | Draw text at window coordinates |
 | `fillRect` | `(x, y, w, h, color)` | Draw a filled rectangle at window coordinates |
 | `drawRect` | `(x, y, w, h, color)` | Draw a rectangle outline at window coordinates |
+| `fillRectRounded` | `(x, y, w, h, roundness, color)` | Draw a filled rounded rectangle (roundness 0–1) |
+| `drawRectRounded` | `(x, y, w, h, roundness, color)` | Draw a rounded rectangle outline (roundness 0–1) |
 | `drawLine` | `(x1, y1, x2, y2, thickness, color)` | Draw a line at window coordinates |
 | `drawCircle` | `(x, y, radius, color)` | Draw a filled circle at window coordinates |
+| `drawCircleLines` | `(x, y, radius, color)` | Draw a circle outline at window coordinates |
 | `close` | `()` | Close the window |
 
 ### `Panel` methods
@@ -88,11 +97,15 @@ to the panel bounds; `panel.end()` removes it.
 | `end` | `()` | Deactivate scissor clipping |
 | `getMousePosition` | `() -> {x, y}` | Mouse position in panel-local coordinates |
 | `containsMouse` | `() -> bool` | True when the mouse cursor is inside this panel |
+| `measureText` | `(text, fontSize) -> number` | Return the pixel width of a text string |
 | `drawText` | `(x, y, text, fontSize, color)` | Draw text in panel-local coordinates |
 | `fillRect` | `(x, y, w, h, color)` | Draw a filled rectangle in panel-local coordinates |
 | `drawRect` | `(x, y, w, h, color)` | Draw a rectangle outline in panel-local coordinates |
+| `fillRectRounded` | `(x, y, w, h, roundness, color)` | Draw a filled rounded rectangle (roundness 0–1) |
+| `drawRectRounded` | `(x, y, w, h, roundness, color)` | Draw a rounded rectangle outline (roundness 0–1) |
 | `drawLine` | `(x1, y1, x2, y2, thickness, color)` | Draw a line in panel-local coordinates |
 | `drawCircle` | `(x, y, radius, color)` | Draw a filled circle in panel-local coordinates |
+| `drawCircleLines` | `(x, y, radius, color)` | Draw a circle outline in panel-local coordinates |
 
 ### Implementation Notes (raylib backend)
 
@@ -148,3 +161,19 @@ true multi-window.
   - [x] `panel.containsMouse() -> bool`
 - [x] Add minimal sample demonstrating 2 panels in one window (`examples/ui_panels.izi`)
 - [x] Tests validate panel API (creation, method presence, coordinate helpers)
+
+## Additions (UI Enhancement)
+
+- [x] `win.measureText(text, fontSize) -> number` — pixel width of text for layout
+- [x] `win.drawCircleLines(x, y, radius, color)` — circle outline
+- [x] `win.fillRectRounded(x, y, w, h, roundness, color)` — filled rounded rectangle
+- [x] `win.drawRectRounded(x, y, w, h, roundness, color)` — rounded rectangle outline
+- [x] `win.toggleFullscreen()` — toggle windowed/fullscreen mode
+- [x] `win.isWindowFocused() -> bool` — check window focus
+- [x] `win.setWindowMinSize(width, height)` — enforce a minimum window size
+- [x] `panel.measureText(text, fontSize) -> number` — panel-level text measurement
+- [x] `panel.drawCircleLines(x, y, radius, color)` — panel-level circle outline
+- [x] `panel.fillRectRounded(...)` / `panel.drawRectRounded(...)` — rounded rects in panels
+- [x] `ui.getTime() -> number` — seconds elapsed since window initialization
+- [x] Expanded `ui.key` constants: full alphabet (a–z), F1–F12, backspace, tab, delete, shift, ctrl, alt
+- [x] Fixed `win.close()` double-assignment of `win->open = false`

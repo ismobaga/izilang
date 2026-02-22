@@ -12,6 +12,9 @@ import ui
 
 var win = ui.createWindow("IZI VM + raylib", 900, 600)
 
+// Enforce a minimum window size
+win.setWindowMinSize(400, 300)
+
 // Set a target frame rate for the game loop
 win.setTargetFPS(60)
 
@@ -20,34 +23,49 @@ while (win.isOpen()) {
     win.close()
   }
 
+  // Toggle fullscreen with F11
+  if (ui.keyPressed(ui.key.f11)) {
+    win.toggleFullscreen()
+  }
+
   // Delta time for frame-rate-independent logic
   var dt = win.getFrameTime()
 
   win.beginDrawing()
   win.clear(ui.color(20, 20, 24))
 
-  // Draw a filled rectangle that follows the mouse
+  // Draw a filled rounded rectangle that follows the mouse
   var pos = ui.getMousePosition()
   var mx = pos.x
   var my = pos.y
-  win.fillRect(mx - 50, my - 20, 100, 40, ui.color(80, 140, 255))
+  win.fillRectRounded(mx - 50, my - 20, 100, 40, 0.4, ui.color(80, 140, 255))
 
   // Draw text
   win.drawText(20, 20, "Hello IZI VM", 24, ui.color(240, 240, 240))
-  win.drawText(20, 54, "Move mouse, press ESC to quit", 16, ui.color(180, 180, 180))
+  win.drawText(20, 54, "Move mouse, press ESC to quit, F11 for fullscreen", 16, ui.color(180, 180, 180))
 
-  // Draw a circle at a fixed position
+  // Measure text width for centered label
+  var label = "Centered"
+  var labelWidth = win.measureText(label, 20)
+  win.drawText(450 - labelWidth / 2, 260, label, 20, ui.color(255, 220, 100))
+
+  // Draw a filled circle at a fixed position
   win.drawCircle(450, 300, 40, ui.color(255, 80, 80))
 
-  // Draw an outlined rectangle
-  win.drawRect(200, 200, 150, 80, ui.color(80, 255, 80))
+  // Draw a circle outline around it
+  win.drawCircleLines(450, 300, 50, ui.color(255, 160, 160))
+
+  // Draw a rounded-corner outlined rectangle
+  win.drawRectRounded(200, 200, 150, 80, 0.3, ui.color(80, 255, 80))
 
   // Draw a line
   win.drawLine(0, 0, 900, 600, 2, ui.color(255, 255, 0))
 
-  // Show FPS and frame time
+  // Show FPS, frame time, elapsed time, and focus state
   var fps = win.getFps()
-  win.drawText(20, 570, "FPS: " + str(fps) + "  dt: " + str(dt), 14, ui.color(120, 120, 120))
+  var elapsed = ui.getTime()
+  var focused = win.isWindowFocused()
+  win.drawText(20, 570, "FPS: " + str(fps) + "  dt: " + str(dt) + "  t: " + str(elapsed) + "  focused: " + str(focused), 14, ui.color(120, 120, 120))
 
   win.endDrawing()
 }

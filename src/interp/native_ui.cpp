@@ -327,6 +327,85 @@ static Value buildPanelObject(std::shared_ptr<UiPanel> panel) {
             return Nil{};
         })};
 
+    // panel.drawCircleLines(x, y, radius, color) - panel-local coordinates
+    obj->entries["drawCircleLines"] = Value{std::make_shared<NativeFunction>("drawCircleLines", 4,
+        [panel](Interpreter&, const std::vector<Value>& args) -> Value {
+            if (args.size() != 4) {
+                throw std::runtime_error(
+                    "panel.drawCircleLines() takes 4 arguments (x, y, radius, color).");
+            }
+#ifdef HAVE_RAYLIB
+            int x = static_cast<int>(asNumber(args[0])) + panel->x;
+            int y = static_cast<int>(asNumber(args[1])) + panel->y;
+            float radius = static_cast<float>(asNumber(args[2]));
+            ::Color color = extractRaylibColor(args[3]);
+            DrawCircleLines(x, y, radius, color);
+#else
+            throw std::runtime_error("ui module requires raylib (build with -DHAVE_RAYLIB).");
+#endif
+            return Nil{};
+        })};
+
+    // panel.fillRectRounded(x, y, width, height, roundness, color) - panel-local coordinates
+    obj->entries["fillRectRounded"] = Value{std::make_shared<NativeFunction>("fillRectRounded", 6,
+        [panel](Interpreter&, const std::vector<Value>& args) -> Value {
+            if (args.size() != 6) {
+                throw std::runtime_error(
+                    "panel.fillRectRounded() takes 6 arguments (x, y, width, height, roundness, color).");
+            }
+#ifdef HAVE_RAYLIB
+            float x = static_cast<float>(asNumber(args[0])) + static_cast<float>(panel->x);
+            float y = static_cast<float>(asNumber(args[1])) + static_cast<float>(panel->y);
+            float w = static_cast<float>(asNumber(args[2]));
+            float h = static_cast<float>(asNumber(args[3]));
+            float roundness = static_cast<float>(asNumber(args[4]));
+            ::Color color = extractRaylibColor(args[5]);
+            DrawRectangleRounded({x, y, w, h}, roundness, 8, color);
+#else
+            throw std::runtime_error("ui module requires raylib (build with -DHAVE_RAYLIB).");
+#endif
+            return Nil{};
+        })};
+
+    // panel.drawRectRounded(x, y, width, height, roundness, color) - panel-local coordinates
+    obj->entries["drawRectRounded"] = Value{std::make_shared<NativeFunction>("drawRectRounded", 6,
+        [panel](Interpreter&, const std::vector<Value>& args) -> Value {
+            if (args.size() != 6) {
+                throw std::runtime_error(
+                    "panel.drawRectRounded() takes 6 arguments (x, y, width, height, roundness, color).");
+            }
+#ifdef HAVE_RAYLIB
+            float x = static_cast<float>(asNumber(args[0])) + static_cast<float>(panel->x);
+            float y = static_cast<float>(asNumber(args[1])) + static_cast<float>(panel->y);
+            float w = static_cast<float>(asNumber(args[2]));
+            float h = static_cast<float>(asNumber(args[3]));
+            float roundness = static_cast<float>(asNumber(args[4]));
+            ::Color color = extractRaylibColor(args[5]);
+            DrawRectangleRoundedLines({x, y, w, h}, roundness, 8, color);
+#else
+            throw std::runtime_error("ui module requires raylib (build with -DHAVE_RAYLIB).");
+#endif
+            return Nil{};
+        })};
+
+    // panel.measureText(text, fontSize) -> number
+    obj->entries["measureText"] = Value{std::make_shared<NativeFunction>("measureText", 2,
+        [](Interpreter&, const std::vector<Value>& args) -> Value {
+            if (args.size() != 2) {
+                throw std::runtime_error(
+                    "panel.measureText() takes 2 arguments (text, fontSize).");
+            }
+#ifdef HAVE_RAYLIB
+            std::string text = std::holds_alternative<std::string>(args[0])
+                                   ? std::get<std::string>(args[0])
+                                   : valueToString(args[0]);
+            int fontSize = static_cast<int>(asNumber(args[1]));
+            return static_cast<double>(MeasureText(text.c_str(), fontSize));
+#else
+            throw std::runtime_error("ui module requires raylib (build with -DHAVE_RAYLIB).");
+#endif
+        })};
+
     return Value{obj};
 }
 
@@ -354,7 +433,6 @@ static Value buildWindowObject(std::shared_ptr<UiWindow> win) {
 #ifdef HAVE_RAYLIB
             if (win->open) {
                 CloseWindow();
-                win->open = false;
             }
 #endif
             win->open = false;
@@ -555,6 +633,116 @@ static Value buildWindowObject(std::shared_ptr<UiWindow> win) {
             return Nil{};
         })};
 
+    // win.drawCircleLines(x, y, radius, color)
+    obj->entries["drawCircleLines"] = Value{std::make_shared<NativeFunction>("drawCircleLines", 4,
+        [](Interpreter&, const std::vector<Value>& args) -> Value {
+            if (args.size() != 4) {
+                throw std::runtime_error("win.drawCircleLines() takes 4 arguments (x, y, radius, color).");
+            }
+#ifdef HAVE_RAYLIB
+            int x = static_cast<int>(asNumber(args[0]));
+            int y = static_cast<int>(asNumber(args[1]));
+            float radius = static_cast<float>(asNumber(args[2]));
+            ::Color color = extractRaylibColor(args[3]);
+            DrawCircleLines(x, y, radius, color);
+#else
+            throw std::runtime_error("ui module requires raylib (build with -DHAVE_RAYLIB).");
+#endif
+            return Nil{};
+        })};
+
+    // win.fillRectRounded(x, y, width, height, roundness, color)
+    obj->entries["fillRectRounded"] = Value{std::make_shared<NativeFunction>("fillRectRounded", 6,
+        [](Interpreter&, const std::vector<Value>& args) -> Value {
+            if (args.size() != 6) {
+                throw std::runtime_error("win.fillRectRounded() takes 6 arguments (x, y, width, height, roundness, color).");
+            }
+#ifdef HAVE_RAYLIB
+            float x = static_cast<float>(asNumber(args[0]));
+            float y = static_cast<float>(asNumber(args[1]));
+            float w = static_cast<float>(asNumber(args[2]));
+            float h = static_cast<float>(asNumber(args[3]));
+            float roundness = static_cast<float>(asNumber(args[4]));
+            ::Color color = extractRaylibColor(args[5]);
+            DrawRectangleRounded({x, y, w, h}, roundness, 8, color);
+#else
+            throw std::runtime_error("ui module requires raylib (build with -DHAVE_RAYLIB).");
+#endif
+            return Nil{};
+        })};
+
+    // win.drawRectRounded(x, y, width, height, roundness, color)
+    obj->entries["drawRectRounded"] = Value{std::make_shared<NativeFunction>("drawRectRounded", 6,
+        [](Interpreter&, const std::vector<Value>& args) -> Value {
+            if (args.size() != 6) {
+                throw std::runtime_error("win.drawRectRounded() takes 6 arguments (x, y, width, height, roundness, color).");
+            }
+#ifdef HAVE_RAYLIB
+            float x = static_cast<float>(asNumber(args[0]));
+            float y = static_cast<float>(asNumber(args[1]));
+            float w = static_cast<float>(asNumber(args[2]));
+            float h = static_cast<float>(asNumber(args[3]));
+            float roundness = static_cast<float>(asNumber(args[4]));
+            ::Color color = extractRaylibColor(args[5]);
+            DrawRectangleRoundedLines({x, y, w, h}, roundness, 8, color);
+#else
+            throw std::runtime_error("ui module requires raylib (build with -DHAVE_RAYLIB).");
+#endif
+            return Nil{};
+        })};
+
+    // win.measureText(text, fontSize) -> number
+    obj->entries["measureText"] = Value{std::make_shared<NativeFunction>("measureText", 2,
+        [](Interpreter&, const std::vector<Value>& args) -> Value {
+            if (args.size() != 2) {
+                throw std::runtime_error("win.measureText() takes 2 arguments (text, fontSize).");
+            }
+#ifdef HAVE_RAYLIB
+            std::string text = std::holds_alternative<std::string>(args[0])
+                                   ? std::get<std::string>(args[0])
+                                   : valueToString(args[0]);
+            int fontSize = static_cast<int>(asNumber(args[1]));
+            return static_cast<double>(MeasureText(text.c_str(), fontSize));
+#else
+            throw std::runtime_error("ui module requires raylib (build with -DHAVE_RAYLIB).");
+#endif
+        })};
+
+    // win.toggleFullscreen()
+    obj->entries["toggleFullscreen"] = Value{std::make_shared<NativeFunction>("toggleFullscreen", 0,
+        [](Interpreter&, const std::vector<Value>&) -> Value {
+#ifdef HAVE_RAYLIB
+            ToggleFullscreen();
+#else
+            throw std::runtime_error("ui module requires raylib (build with -DHAVE_RAYLIB).");
+#endif
+            return Nil{};
+        })};
+
+    // win.isWindowFocused() -> bool
+    obj->entries["isWindowFocused"] = Value{std::make_shared<NativeFunction>("isWindowFocused", 0,
+        [](Interpreter&, const std::vector<Value>&) -> Value {
+#ifdef HAVE_RAYLIB
+            return static_cast<bool>(IsWindowFocused());
+#else
+            return false;
+#endif
+        })};
+
+    // win.setWindowMinSize(width, height)
+    obj->entries["setWindowMinSize"] = Value{std::make_shared<NativeFunction>("setWindowMinSize", 2,
+        [](Interpreter&, const std::vector<Value>& args) -> Value {
+            if (args.size() != 2) {
+                throw std::runtime_error("win.setWindowMinSize() takes 2 arguments (width, height).");
+            }
+#ifdef HAVE_RAYLIB
+            SetWindowMinSize(static_cast<int>(asNumber(args[0])), static_cast<int>(asNumber(args[1])));
+#else
+            throw std::runtime_error("ui module requires raylib (build with -DHAVE_RAYLIB).");
+#endif
+            return Nil{};
+        })};
+
     // win.createPanel(x, y, width, height) -> Panel
     obj->entries["createPanel"] = Value{std::make_shared<NativeFunction>("createPanel", 4,
         [](Interpreter&, const std::vector<Value>& args) -> Value {
@@ -633,6 +821,16 @@ Value createUiModule(Interpreter& interp) {
     module->entries["getCharPressed"] =
         Value{std::make_shared<NativeFunction>("getCharPressed", 0, nativeUiGetCharPressed)};
 
+    // ui.getTime() -> number  (seconds since window was initialized)
+    module->entries["getTime"] = Value{std::make_shared<NativeFunction>("getTime", 0,
+        [](Interpreter&, const std::vector<Value>&) -> Value {
+#ifdef HAVE_RAYLIB
+            return static_cast<double>(GetTime());
+#else
+            throw std::runtime_error("ui module requires raylib (build with -DHAVE_RAYLIB).");
+#endif
+        })};
+
     // Key constants sub-map
     {
         auto keys = std::make_shared<Map>();
@@ -640,29 +838,113 @@ Value createUiModule(Interpreter& interp) {
         keys->entries["escape"] = static_cast<double>(KEY_ESCAPE);
         keys->entries["enter"] = static_cast<double>(KEY_ENTER);
         keys->entries["space"] = static_cast<double>(KEY_SPACE);
+        keys->entries["backspace"] = static_cast<double>(KEY_BACKSPACE);
+        keys->entries["tab"] = static_cast<double>(KEY_TAB);
+        keys->entries["delete"] = static_cast<double>(KEY_DELETE);
         keys->entries["left"] = static_cast<double>(KEY_LEFT);
         keys->entries["right"] = static_cast<double>(KEY_RIGHT);
         keys->entries["up"] = static_cast<double>(KEY_UP);
         keys->entries["down"] = static_cast<double>(KEY_DOWN);
+        keys->entries["leftShift"] = static_cast<double>(KEY_LEFT_SHIFT);
+        keys->entries["leftCtrl"] = static_cast<double>(KEY_LEFT_CONTROL);
+        keys->entries["leftAlt"] = static_cast<double>(KEY_LEFT_ALT);
+        keys->entries["rightShift"] = static_cast<double>(KEY_RIGHT_SHIFT);
+        keys->entries["rightCtrl"] = static_cast<double>(KEY_RIGHT_CONTROL);
+        keys->entries["rightAlt"] = static_cast<double>(KEY_RIGHT_ALT);
         keys->entries["a"] = static_cast<double>(KEY_A);
         keys->entries["b"] = static_cast<double>(KEY_B);
-        keys->entries["w"] = static_cast<double>(KEY_W);
-        keys->entries["s"] = static_cast<double>(KEY_S);
+        keys->entries["c"] = static_cast<double>(KEY_C);
         keys->entries["d"] = static_cast<double>(KEY_D);
+        keys->entries["e"] = static_cast<double>(KEY_E);
+        keys->entries["f"] = static_cast<double>(KEY_F);
+        keys->entries["g"] = static_cast<double>(KEY_G);
+        keys->entries["h"] = static_cast<double>(KEY_H);
+        keys->entries["i"] = static_cast<double>(KEY_I);
+        keys->entries["j"] = static_cast<double>(KEY_J);
+        keys->entries["k"] = static_cast<double>(KEY_K);
+        keys->entries["l"] = static_cast<double>(KEY_L);
+        keys->entries["m"] = static_cast<double>(KEY_M);
+        keys->entries["n"] = static_cast<double>(KEY_N);
+        keys->entries["o"] = static_cast<double>(KEY_O);
+        keys->entries["p"] = static_cast<double>(KEY_P);
+        keys->entries["q"] = static_cast<double>(KEY_Q);
+        keys->entries["r"] = static_cast<double>(KEY_R);
+        keys->entries["s"] = static_cast<double>(KEY_S);
+        keys->entries["t"] = static_cast<double>(KEY_T);
+        keys->entries["u"] = static_cast<double>(KEY_U);
+        keys->entries["v"] = static_cast<double>(KEY_V);
+        keys->entries["w"] = static_cast<double>(KEY_W);
+        keys->entries["x"] = static_cast<double>(KEY_X);
+        keys->entries["y"] = static_cast<double>(KEY_Y);
+        keys->entries["z"] = static_cast<double>(KEY_Z);
+        keys->entries["f1"] = static_cast<double>(KEY_F1);
+        keys->entries["f2"] = static_cast<double>(KEY_F2);
+        keys->entries["f3"] = static_cast<double>(KEY_F3);
+        keys->entries["f4"] = static_cast<double>(KEY_F4);
+        keys->entries["f5"] = static_cast<double>(KEY_F5);
+        keys->entries["f6"] = static_cast<double>(KEY_F6);
+        keys->entries["f7"] = static_cast<double>(KEY_F7);
+        keys->entries["f8"] = static_cast<double>(KEY_F8);
+        keys->entries["f9"] = static_cast<double>(KEY_F9);
+        keys->entries["f10"] = static_cast<double>(KEY_F10);
+        keys->entries["f11"] = static_cast<double>(KEY_F11);
+        keys->entries["f12"] = static_cast<double>(KEY_F12);
 #else
         // Provide standard key code values (raylib compatible) even without raylib
         keys->entries["escape"] = 256.0;
         keys->entries["enter"] = 257.0;
         keys->entries["space"] = 32.0;
+        keys->entries["backspace"] = 259.0;
+        keys->entries["tab"] = 258.0;
+        keys->entries["delete"] = 261.0;
         keys->entries["left"] = 263.0;
         keys->entries["right"] = 262.0;
         keys->entries["up"] = 265.0;
         keys->entries["down"] = 264.0;
+        keys->entries["leftShift"] = 340.0;
+        keys->entries["leftCtrl"] = 341.0;
+        keys->entries["leftAlt"] = 342.0;
+        keys->entries["rightShift"] = 344.0;
+        keys->entries["rightCtrl"] = 345.0;
+        keys->entries["rightAlt"] = 346.0;
         keys->entries["a"] = 65.0;
         keys->entries["b"] = 66.0;
-        keys->entries["w"] = 87.0;
-        keys->entries["s"] = 83.0;
+        keys->entries["c"] = 67.0;
         keys->entries["d"] = 68.0;
+        keys->entries["e"] = 69.0;
+        keys->entries["f"] = 70.0;
+        keys->entries["g"] = 71.0;
+        keys->entries["h"] = 72.0;
+        keys->entries["i"] = 73.0;
+        keys->entries["j"] = 74.0;
+        keys->entries["k"] = 75.0;
+        keys->entries["l"] = 76.0;
+        keys->entries["m"] = 77.0;
+        keys->entries["n"] = 78.0;
+        keys->entries["o"] = 79.0;
+        keys->entries["p"] = 80.0;
+        keys->entries["q"] = 81.0;
+        keys->entries["r"] = 82.0;
+        keys->entries["s"] = 83.0;
+        keys->entries["t"] = 84.0;
+        keys->entries["u"] = 85.0;
+        keys->entries["v"] = 86.0;
+        keys->entries["w"] = 87.0;
+        keys->entries["x"] = 88.0;
+        keys->entries["y"] = 89.0;
+        keys->entries["z"] = 90.0;
+        keys->entries["f1"] = 290.0;
+        keys->entries["f2"] = 291.0;
+        keys->entries["f3"] = 292.0;
+        keys->entries["f4"] = 293.0;
+        keys->entries["f5"] = 294.0;
+        keys->entries["f6"] = 295.0;
+        keys->entries["f7"] = 296.0;
+        keys->entries["f8"] = 297.0;
+        keys->entries["f9"] = 298.0;
+        keys->entries["f10"] = 299.0;
+        keys->entries["f11"] = 300.0;
+        keys->entries["f12"] = 301.0;
 #endif
         module->entries["key"] = Value{keys};
     }
