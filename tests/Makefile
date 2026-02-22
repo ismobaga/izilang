@@ -82,6 +82,7 @@ GENERATED += $(OBJDIR)/formatter.o
 GENERATED += $(OBJDIR)/interpreter.o
 GENERATED += $(OBJDIR)/izi_class.o
 GENERATED += $(OBJDIR)/lexer.o
+GENERATED += $(OBJDIR)/miniaudio_impl.o
 GENERATED += $(OBJDIR)/module_path.o
 GENERATED += $(OBJDIR)/native.o
 GENERATED += $(OBJDIR)/native_audio.o
@@ -92,6 +93,7 @@ GENERATED += $(OBJDIR)/native_ui.o
 GENERATED += $(OBJDIR)/optimizer.o
 GENERATED += $(OBJDIR)/parser.o
 GENERATED += $(OBJDIR)/semantic_analyzer.o
+GENERATED += $(OBJDIR)/stb_impl.o
 GENERATED += $(OBJDIR)/test_ast_printer.o
 GENERATED += $(OBJDIR)/test_async.o
 GENERATED += $(OBJDIR)/test_audio.o
@@ -145,6 +147,7 @@ OBJECTS += $(OBJDIR)/formatter.o
 OBJECTS += $(OBJDIR)/interpreter.o
 OBJECTS += $(OBJDIR)/izi_class.o
 OBJECTS += $(OBJDIR)/lexer.o
+OBJECTS += $(OBJDIR)/miniaudio_impl.o
 OBJECTS += $(OBJDIR)/module_path.o
 OBJECTS += $(OBJDIR)/native.o
 OBJECTS += $(OBJDIR)/native_audio.o
@@ -155,6 +158,7 @@ OBJECTS += $(OBJDIR)/native_ui.o
 OBJECTS += $(OBJDIR)/optimizer.o
 OBJECTS += $(OBJDIR)/parser.o
 OBJECTS += $(OBJDIR)/semantic_analyzer.o
+OBJECTS += $(OBJDIR)/stb_impl.o
 OBJECTS += $(OBJDIR)/test_ast_printer.o
 OBJECTS += $(OBJDIR)/test_async.o
 OBJECTS += $(OBJDIR)/test_audio.o
@@ -354,6 +358,12 @@ $(OBJDIR)/lexer.o: ../src/parse/lexer.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/parser.o: ../src/parse/parser.cpp
+	@echo "$(notdir $<)"
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/miniaudio_impl.o: ../src/vendor/miniaudio_impl.cpp
+	@echo "$(notdir $<)"
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/stb_impl.o: ../src/vendor/stb_impl.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/test_ast_printer.o: test_ast_printer.cpp
