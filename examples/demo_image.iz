@@ -1,0 +1,45 @@
+// demo_image.iz - Image manipulation demo for izilang
+// Requires raylib support (build with -DHAVE_RAYLIB)
+
+import "image";
+
+// Load an image from disk
+var img = image.load("photo.png");
+
+// Query dimensions
+print("Width:  " + img.getWidth());
+print("Height: " + img.getHeight());
+
+// Resize to 320x240
+var resized = img.resize(320, 240);
+
+// Crop a 100x100 region starting at (10, 10)
+var cropped = img.crop(10, 10, 100, 100);
+
+// Rotate 90 degrees clockwise
+var rotated = img.rotate(90);
+
+// Flip horizontally
+var flipped = img.flipHorizontal();
+
+// Flip vertically
+var flippedV = img.flipVertical();
+
+// Apply a Gaussian blur (blur size = 4)
+var blurred = img.blur(4);
+
+// Save the result (format determined by file extension)
+resized.save("output_resized.png");
+rotated.save("output_rotated.png");
+blurred.save("output_blurred.jpg");
+
+// Release resources when done
+img.unload();
+resized.unload();
+cropped.unload();
+rotated.unload();
+flipped.unload();
+flippedV.unload();
+blurred.unload();
+
+print("Image manipulation complete.");
