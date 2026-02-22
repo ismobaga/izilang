@@ -37,6 +37,8 @@ All standard library functions are also available **globally** without any impor
 | [regex](regex.md) | `"std.regex"` | Regular expression matching and replacement |
 | [http](http.md) | `"http"` / `"std.http"` | Synchronous HTTP client |
 | [ui](ui.md) | `"ui"` / `"std.ui"` | Graphical window and drawing (requires raylib) |
+| [audio](audio.md) | `"audio"` / `"std.audio"` | Audio playback (miniaudio; optional raylib) |
+| [image](image.md) | `"image"` / `"std.image"` | Image loading and processing (stb_image; optional raylib) |
 | [ipc](ipc.md) | `"std.ipc"` | Inter-process communication via named pipes |
 
 ## Global Built-ins

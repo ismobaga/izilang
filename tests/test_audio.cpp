@@ -65,7 +65,7 @@ TEST_CASE("Audio module - interpreter: module is registered", "[audio][modules]"
         REQUIRE_NOTHROW(interp.interpret(program));
     }
 
-    SECTION("audio.initDevice() throws without raylib") {
+    SECTION("audio.initDevice() works without raylib") {
         std::string source = R"(
             import "audio";
             audio.initDevice();
@@ -77,15 +77,12 @@ TEST_CASE("Audio module - interpreter: module is registered", "[audio][modules]"
         auto program = parser.parse();
 
         Interpreter interp(source);
-#ifndef HAVE_RAYLIB
-        REQUIRE_THROWS(interp.interpret(program));
-#else
-        // With raylib, this should succeed (audio device initialization)
+        // initDevice() uses miniaudio when raylib is unavailable. It succeeds even
+        // on headless systems because miniaudio falls back to a null audio device.
         REQUIRE_NOTHROW(interp.interpret(program));
-#endif
     }
 
-    SECTION("audio.loadSound() throws without raylib") {
+    SECTION("audio.loadSound() throws when file is missing") {
         std::string source = R"(
             import "audio";
             var snd = audio.loadSound("test.wav");
@@ -96,13 +93,12 @@ TEST_CASE("Audio module - interpreter: module is registered", "[audio][modules]"
         Parser parser(std::move(tokens));
         auto program = parser.parse();
 
+        // Throws because test.wav does not exist (or device init required first).
         Interpreter interp(source);
-#ifndef HAVE_RAYLIB
         REQUIRE_THROWS(interp.interpret(program));
-#endif
     }
 
-    SECTION("audio.loadMusic() throws without raylib") {
+    SECTION("audio.loadMusic() throws when file is missing") {
         std::string source = R"(
             import "audio";
             var music = audio.loadMusic("test.mp3");
@@ -113,13 +109,12 @@ TEST_CASE("Audio module - interpreter: module is registered", "[audio][modules]"
         Parser parser(std::move(tokens));
         auto program = parser.parse();
 
+        // Throws because test.mp3 does not exist (or device init required first).
         Interpreter interp(source);
-#ifndef HAVE_RAYLIB
         REQUIRE_THROWS(interp.interpret(program));
-#endif
     }
 
-    SECTION("audio.setMasterVolume() throws without raylib") {
+    SECTION("audio.setMasterVolume() works without raylib") {
         std::string source = R"(
             import "audio";
             audio.setMasterVolume(0.5);
@@ -131,9 +126,9 @@ TEST_CASE("Audio module - interpreter: module is registered", "[audio][modules]"
         auto program = parser.parse();
 
         Interpreter interp(source);
-#ifndef HAVE_RAYLIB
-        REQUIRE_THROWS(interp.interpret(program));
-#endif
+        // setMasterVolume() stores the value and applies it when a device is
+        // initialized; it does not require a device to be open first.
+        REQUIRE_NOTHROW(interp.interpret(program));
     }
 }
 

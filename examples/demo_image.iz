@@ -1,5 +1,12 @@
 // demo_image.iz - Image manipulation demo for izilang
-// Requires raylib support (build with -DHAVE_RAYLIB)
+// Works without raylib: uses stb_image / stb_image_write (bundled in src/vendor/).
+// With raylib (build with --raylib=<path>), the raylib image API is used instead.
+//
+// Usage:
+//   ./izi examples/demo_image.iz
+//
+// Provide an input image named "photo.png" in the working directory, or
+// change the path below to point to any PNG, JPEG, or BMP file.
 
 import "image";
 
@@ -25,10 +32,10 @@ var flipped = img.flipHorizontal();
 // Flip vertically
 var flippedV = img.flipVertical();
 
-// Apply a Gaussian blur (blur size = 4)
+// Apply a blur (radius = 4)
 var blurred = img.blur(4);
 
-// Save the result (format determined by file extension)
+// Save results (format determined by file extension: .png, .jpg, .bmp)
 resized.save("output_resized.png");
 rotated.save("output_rotated.png");
 blurred.save("output_blurred.jpg");
@@ -43,3 +50,4 @@ flippedV.unload();
 blurred.unload();
 
 print("Image manipulation complete.");
+
