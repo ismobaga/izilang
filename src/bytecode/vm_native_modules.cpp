@@ -2,6 +2,7 @@
 #include "vm_native.hpp"
 #include "vm_native_ui.hpp"
 #include "vm_native_audio.hpp"
+#include "vm_native_image.hpp"
 #include "vm.hpp"
 #include <cmath>
 #include <sstream>
@@ -236,6 +237,7 @@ bool isVmNativeModule(const std::string& path) {
            path == "path" || path == "std.path" || path == "fs" || path == "std.fs" || path == "time" ||
            path == "std.time" || path == "regex" || path == "std.regex" ||
            path == "ui" || path == "std.ui" || path == "audio" || path == "std.audio" ||
+           path == "image" || path == "std.image" ||
            path == "ipc" || path == "std.ipc" ||
            path == "net" || path == "std.net";
 }
@@ -275,6 +277,8 @@ Value getVmNativeModule(const std::string& name, VM& vm) {
         return createVmUiModule(vm);
     } else if (name == "audio" || name == "std.audio") {
         return createVmAudioModule(vm);
+    } else if (name == "image" || name == "std.image") {
+        return createVmImageModule(vm);
     } else if (name == "ipc" || name == "std.ipc") {
         auto module = std::make_shared<Map>();
         module->entries["createPipe"] = Value{std::make_shared<VmNativeFunction>("createPipe", 1, vmNativeIpcCreatePipe)};

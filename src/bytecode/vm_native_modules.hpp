@@ -18,4 +18,7 @@ Value createVmUiModule(VM& vm);
 // Create the audio native module for the bytecode VM
 Value createVmAudioModule(VM& vm);
 
+// Create the image native module for the bytecode VM
+Value createVmImageModule(VM& vm);
+
 }  // namespace izi
