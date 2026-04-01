@@ -186,6 +186,12 @@ size_t Disassembler::disassembleInstruction(const Chunk& chunk, size_t offset, s
             return simpleInstruction("INHERIT", offset, out);
         case OpCode::LOAD_MODULE:
             return namedInstruction("LOAD_MODULE", chunk, offset, out);
+        case OpCode::BUILD_ARRAY:
+            return byteInstruction("BUILD_ARRAY", chunk, offset, out);
+        case OpCode::BUILD_MAP:
+            return byteInstruction("BUILD_MAP", chunk, offset, out);
+        case OpCode::JUMP_IF_NOT_NIL:
+            return jumpInstruction("JUMP_IF_NOT_NIL", 1, chunk, offset, out);
         default:
             out << "UNKNOWN(" << static_cast<int>(chunk.code[offset]) << ")\n";
             return offset + 1;

@@ -87,6 +87,41 @@ int BytecodeCompiler::resolveLocal(const std::string& name) const {
 
 //  --- ExprVisitor
 Value BytecodeCompiler::visit(BinaryExpr& expr) {
+    // Short-circuit AND: left && right
+    // If left is falsy, result is left (skip right).
+    if (expr.op.type == TokenType::AND) {
+        emitExpression(*expr.left);
+        size_t endJump = emitJump(OpCode::JUMP_IF_FALSE);
+        emitOp(OpCode::POP);  // left was truthy, pop it
+        emitExpression(*expr.right);
+        patchJump(endJump);
+        return Nil{};
+    }
+
+    // Short-circuit OR: left || right
+    // If left is truthy, result is left (skip right).
+    if (expr.op.type == TokenType::OR) {
+        emitExpression(*expr.left);
+        size_t elseJump = emitJump(OpCode::JUMP_IF_FALSE);  // if falsy, try right
+        size_t endJump = emitJump(OpCode::JUMP);            // truthy: skip right
+        patchJump(elseJump);
+        emitOp(OpCode::POP);  // left was falsy, pop it
+        emitExpression(*expr.right);
+        patchJump(endJump);
+        return Nil{};
+    }
+
+    // Nullish coalescing: left ?? right
+    // If left is nil, result is right; otherwise result is left.
+    if (expr.op.type == TokenType::QUESTION_QUESTION) {
+        emitExpression(*expr.left);
+        size_t endJump = emitJump(OpCode::JUMP_IF_NOT_NIL);  // not nil: skip right
+        emitOp(OpCode::POP);  // left was nil, pop it
+        emitExpression(*expr.right);
+        patchJump(endJump);
+        return Nil{};
+    }
+
     emitExpression(*expr.left);
     emitExpression(*expr.right);
 
@@ -248,10 +283,29 @@ Value BytecodeCompiler::visit(SetIndexExpr& expr) {
 }
 
 Value BytecodeCompiler::visit(FunctionExpr& expr) {
-    // For now, we don't support function expressions in bytecode mode
-    // This would require compiling the function body to bytecode and creating
-    // a VmCallable at runtime
-    throw std::runtime_error("Function expressions are not yet supported in bytecode mode.");
+    // Compile the function body into a separate chunk, just like FunctionStmt.
+    BytecodeCompiler functionCompiler;
+    functionCompiler.inFunction = true;
+
+    for (const auto& param : expr.params) {
+        functionCompiler.locals.push_back(param);
+    }
+
+    for (const auto& bodyStmt : expr.body) {
+        functionCompiler.emitStatement(*bodyStmt);
+    }
+
+    functionCompiler.emitOp(OpCode::NIL);
+    functionCompiler.emitOp(OpCode::RETURN);
+
+    auto functionChunk = std::make_shared<Chunk>(std::move(functionCompiler.chunk));
+    auto vmFunction = std::make_shared<VmUserFunction>("<lambda>", expr.params, functionChunk);
+
+    uint8_t constantIndex = makeConstant(vmFunction);
+    emitOp(OpCode::CONSTANT);
+    emitByte(constantIndex);
+
+    return Nil{};
 }
 
 Value BytecodeCompiler::visit(MatchExpr& expr) {
@@ -264,9 +318,8 @@ Value BytecodeCompiler::visit(ArrayExpr& expr) {
     for (const auto& element : expr.elements) {
         emitExpression(*element);
     }
-    uint8_t count = static_cast<uint8_t>(expr.elements.size());
-    emitOp(OpCode::CONSTANT);
-    emitByte(makeConstant(static_cast<double>(count)));  // Store count as constant
+    emitOp(OpCode::BUILD_ARRAY);
+    emitByte(static_cast<uint8_t>(expr.elements.size()));
     return Nil{};
 }
 
@@ -279,13 +332,13 @@ Value BytecodeCompiler::visit(SpreadExpr& expr) {
 
 Value BytecodeCompiler::visit(MapExpr& expr) {
     for (const auto& [key, valueExpr] : expr.entries) {
-        emitExpression(*valueExpr);
+        // Keys are always string constants; push key then value for each entry.
         emitOp(OpCode::CONSTANT);
-        emitByte(makeConstant(key));  // Store key as constant
+        emitByte(makeConstant(key));
+        emitExpression(*valueExpr);
     }
-    uint8_t count = static_cast<uint8_t>(expr.entries.size());
-    emitOp(OpCode::CONSTANT);
-    emitByte(makeConstant(static_cast<double>(count)));  // Store count as constant
+    emitOp(OpCode::BUILD_MAP);
+    emitByte(static_cast<uint8_t>(expr.entries.size()));
     return Nil{};
 }
 //  --- StmtVisitor
@@ -355,21 +408,31 @@ void BytecodeCompiler::visit(VarStmt& stmt) {
         throw std::runtime_error("Bytecode compiler does not yet support destructuring syntax.");
     }
 
-    Value initValue = Nil{};
     if (stmt.initializer) {
         emitExpression(*stmt.initializer);
     } else {
         emitOp(OpCode::NIL);
     }
-    uint8_t nameIndex = makeName(stmt.name);
-    emitOp(OpCode::SET_GLOBAL);
-    emitByte(nameIndex);
-    emitOp(OpCode::POP);  // Pop the value left by SET_GLOBAL
+
+    if (inFunction) {
+        // Inside a function body: allocate a local variable slot on the stack.
+        // The initializer value is already on the stack; registering the name
+        // in `locals` at the current position "claims" that stack slot.
+        locals.push_back(stmt.name);
+        // Do NOT pop — the value stays on the stack as the local variable slot.
+    } else {
+        // Top-level: store as a global variable.
+        uint8_t nameIndex = makeName(stmt.name);
+        emitOp(OpCode::SET_GLOBAL);
+        emitByte(nameIndex);
+        emitOp(OpCode::POP);  // Pop the value left by SET_GLOBAL
+    }
 }
 
 void BytecodeCompiler::visit(FunctionStmt& stmt) {
     // Compile function body into a separate chunk
     BytecodeCompiler functionCompiler;
+    functionCompiler.inFunction = true;
 
     // Register allocation: pre-register each parameter as a local variable slot.
     // VmUserFunction::call() will push argument values onto the VM stack in the
@@ -391,16 +454,22 @@ void BytecodeCompiler::visit(FunctionStmt& stmt) {
     auto functionChunk = std::make_shared<Chunk>(std::move(functionCompiler.chunk));
     auto vmFunction = std::make_shared<VmUserFunction>(stmt.name, stmt.params, functionChunk);
 
-    // Store the function in a constant
+    // Store the function in a constant and push it
     uint8_t constantIndex = makeConstant(vmFunction);
     emitOp(OpCode::CONSTANT);
     emitByte(constantIndex);
 
-    // Store it in a global variable
-    uint8_t nameIndex = makeName(stmt.name);
-    emitOp(OpCode::SET_GLOBAL);
-    emitByte(nameIndex);
-    emitOp(OpCode::POP);  // Pop the value left by SET_GLOBAL
+    if (inFunction) {
+        // Inside a function body: register the function as a local variable slot.
+        locals.push_back(stmt.name);
+        // Do NOT pop — value stays on the stack as the local variable slot.
+    } else {
+        // Top-level: store it in a global variable.
+        uint8_t nameIndex = makeName(stmt.name);
+        emitOp(OpCode::SET_GLOBAL);
+        emitByte(nameIndex);
+        emitOp(OpCode::POP);  // Pop the value left by SET_GLOBAL
+    }
 }
 
 void BytecodeCompiler::visit(ImportStmt& stmt) {
