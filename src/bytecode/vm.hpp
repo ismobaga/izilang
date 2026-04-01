@@ -9,6 +9,8 @@
 
 namespace izi {
 
+class VmUserFunction;
+
 constexpr size_t STACK_MAX = 256;
 constexpr size_t MAX_CALL_FRAMES = 256;  // Maximum call depth for stack overflow protection
 
@@ -16,6 +18,7 @@ struct CallFrame {
     const Chunk* chunk;
     const uint8_t* ip;  // Instruction pointer
     size_t stackBase;  // Start index in the VM stack for this call frame
+    std::shared_ptr<VmUserFunction> function;
 };
 
 // Exception handler for try-catch-finally blocks
@@ -31,7 +34,8 @@ class VM {
    public:
     VM();
 
-    Value run(const Chunk& chunk, const std::vector<Value>& initialLocals = {});
+    Value run(const Chunk& chunk, const std::vector<Value>& initialLocals = {},
+              std::shared_ptr<VmUserFunction> function = nullptr);
 
     void setGlobal(const std::string& name, const Value& value);
 

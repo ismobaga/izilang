@@ -2,8 +2,11 @@
 #include "bytecode/opcode.hpp"
 #include "bytecode/mv_callable.hpp"
 #include "bytecode/vm_class.hpp"
+#include "bytecode/vm_user_function.hpp"
 #include "bytecode/vm_native_modules.hpp"
 #include "interp/izi_class.hpp"
+
+#include <algorithm>
 #include <cmath>
 
 namespace izi {
@@ -33,7 +36,8 @@ uint16_t VM::readShort() {
     return (high << 8) | low;
 }
 
-Value VM::run(const Chunk& entry, const std::vector<Value>& initialLocals) {
+Value VM::run(const Chunk& entry, const std::vector<Value>& initialLocals,
+              std::shared_ptr<VmUserFunction> function) {
     bool wasRunning = isRunning;
     isRunning = true;
 
@@ -43,7 +47,7 @@ Value VM::run(const Chunk& entry, const std::vector<Value>& initialLocals) {
     }
 
     size_t startingFrameCount = frames.size();
-    CallFrame mainFrame{&entry, entry.code.data(), stack.size()};
+    CallFrame mainFrame{&entry, entry.code.data(), stack.size(), std::move(function)};
 
     frames.push_back(mainFrame);
 
@@ -73,6 +77,42 @@ Value VM::run(const Chunk& entry, const std::vector<Value>& initialLocals) {
                 case OpCode::CONSTANT: {
                     uint8_t index = readByte();
                     const Value& constant = currentFrame()->chunk->constants[index];
+                    if (std::holds_alternative<std::shared_ptr<VmCallable>>(constant)) {
+                        auto callable = std::get<std::shared_ptr<VmCallable>>(constant);
+                        auto functionTemplate = std::dynamic_pointer_cast<VmUserFunction>(callable);
+                        if (functionTemplate && !functionTemplate->captureNames().empty()) {
+                            std::unordered_map<std::string, Value> capturedVars;
+                            for (const auto& name : functionTemplate->captureNames()) {
+                                bool bound = false;
+                                if (currentFrame()->function) {
+                                    const auto& localNames = currentFrame()->function->localNames();
+                                    auto localIt = std::find(localNames.begin(), localNames.end(), name);
+                                    if (localIt != localNames.end()) {
+                                        size_t slot = static_cast<size_t>(std::distance(localNames.begin(), localIt));
+                                        size_t stackIndex = currentFrame()->stackBase + slot;
+                                        if (stackIndex < stack.size()) {
+                                            capturedVars[name] = stack[stackIndex];
+                                            bound = true;
+                                        }
+                                    }
+                                    if (!bound) {
+                                        if (const Value* captured = currentFrame()->function->getCapturedVar(name)) {
+                                            capturedVars[name] = *captured;
+                                            bound = true;
+                                        }
+                                    }
+                                }
+                                if (!bound) {
+                                    auto globalIt = globals.find(name);
+                                    if (globalIt != globals.end()) {
+                                        capturedVars[name] = globalIt->second;
+                                    }
+                                }
+                            }
+                            push(std::static_pointer_cast<VmCallable>(functionTemplate->bindCaptured(std::move(capturedVars))));
+                            break;
+                        }
+                    }
                     push(constant);
                     break;
                 }
@@ -91,6 +131,12 @@ Value VM::run(const Chunk& entry, const std::vector<Value>& initialLocals) {
                 case OpCode::GET_GLOBAL: {
                     uint8_t nameIndex = readByte();
                     const std::string& name = currentFrame()->chunk->names[nameIndex];
+                    if (currentFrame()->function) {
+                        if (const Value* captured = currentFrame()->function->getCapturedVar(name)) {
+                            push(*captured);
+                            break;
+                        }
+                    }
                     auto it = globals.find(name);
                     if (it == globals.end()) {
                         throw std::runtime_error("Undefined variable '" + name + "'.");
@@ -102,6 +148,9 @@ Value VM::run(const Chunk& entry, const std::vector<Value>& initialLocals) {
                     uint8_t nameIndex = readByte();
                     const std::string& name = currentFrame()->chunk->names[nameIndex];
                     Value value = stack.back();  // Peek at the value
+                    if (currentFrame()->function && currentFrame()->function->setCapturedVar(name, value)) {
+                        break;
+                    }
                     globals[name] = value;
                     break;
                 }

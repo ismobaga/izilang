@@ -6,6 +6,7 @@
 #include "bytecode/vm_native_modules.hpp"
 #include "bytecode/chunk_serializer.hpp"
 #include "bytecode/opcode.hpp"
+#include "compile/upvalue_collector.hpp"
 #include "parse/lexer.hpp"
 #include "parse/parser.hpp"
 #include <stdexcept>
@@ -287,6 +288,17 @@ Value BytecodeCompiler::visit(FunctionExpr& expr) {
     BytecodeCompiler functionCompiler;
     functionCompiler.inFunction = true;
 
+    std::vector<std::string> seedLocals = expr.params;
+    std::vector<std::string> referencedNames = UpvalueCollector::collectFromStatements(expr.body, seedLocals);
+    std::vector<std::string> captureNames;
+    if (inFunction) {
+        for (const auto& name : referencedNames) {
+            if (resolveLocal(name) >= 0) {
+                captureNames.push_back(name);
+            }
+        }
+    }
+
     for (const auto& param : expr.params) {
         functionCompiler.locals.push_back(param);
     }
@@ -299,7 +311,8 @@ Value BytecodeCompiler::visit(FunctionExpr& expr) {
     functionCompiler.emitOp(OpCode::RETURN);
 
     auto functionChunk = std::make_shared<Chunk>(std::move(functionCompiler.chunk));
-    auto vmFunction = std::make_shared<VmUserFunction>("<lambda>", expr.params, functionChunk);
+    auto vmFunction = std::make_shared<VmUserFunction>("<lambda>", expr.params, functionChunk,
+                                                       functionCompiler.locals, captureNames);
 
     uint8_t constantIndex = makeConstant(vmFunction);
     emitOp(OpCode::CONSTANT);
@@ -434,6 +447,17 @@ void BytecodeCompiler::visit(FunctionStmt& stmt) {
     BytecodeCompiler functionCompiler;
     functionCompiler.inFunction = true;
 
+    std::vector<std::string> seedLocals = stmt.params;
+    std::vector<std::string> referencedNames = UpvalueCollector::collectFromStatements(stmt.body, seedLocals);
+    std::vector<std::string> captureNames;
+    if (inFunction) {
+        for (const auto& name : referencedNames) {
+            if (resolveLocal(name) >= 0) {
+                captureNames.push_back(name);
+            }
+        }
+    }
+
     // Register allocation: pre-register each parameter as a local variable slot.
     // VmUserFunction::call() will push argument values onto the VM stack in the
     // same order, so GET_LOCAL 0 retrieves the first argument, etc.
@@ -452,7 +476,8 @@ void BytecodeCompiler::visit(FunctionStmt& stmt) {
 
     // Create a VmUserFunction and store it as a constant
     auto functionChunk = std::make_shared<Chunk>(std::move(functionCompiler.chunk));
-    auto vmFunction = std::make_shared<VmUserFunction>(stmt.name, stmt.params, functionChunk);
+    auto vmFunction = std::make_shared<VmUserFunction>(stmt.name, stmt.params, functionChunk,
+                                                       functionCompiler.locals, captureNames);
 
     // Store the function in a constant and push it
     uint8_t constantIndex = makeConstant(vmFunction);
@@ -791,8 +816,9 @@ void BytecodeCompiler::visit(TryStmt& stmt) {
             patchJump(tryEndJump);
             patchJump(catchEndJump);
         } else {
-            // Jump to finally block
-            size_t catchToFinallyJump = emitJump(OpCode::JUMP);
+            // On successful try execution, jump to finally start.
+            // On exception, execution enters catch and then falls through
+            // into finally naturally (no extra jump needed).
             patchJump(tryEndJump);
 
             // Emit finally block
@@ -802,9 +828,6 @@ void BytecodeCompiler::visit(TryStmt& stmt) {
             chunk.code[finallyOffsetPos + 1] = finallyOffset & 0xff;
 
             emitStatement(*stmt.finallyBlock);
-
-            // Patch the jumps to finally
-            patchJump(catchToFinallyJump);
         }
     } else if (stmt.finallyBlock != nullptr) {
         // No catch, but there's finally

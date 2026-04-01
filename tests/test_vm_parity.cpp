@@ -131,7 +131,7 @@ TEST_CASE("VM parity: nullish and logic", "[vm-parity][p0]") {
     )");
 }
 
-TEST_CASE("VM known gap: try/catch/finally parity", "[vm-gap][!mayfail]") {
+TEST_CASE("VM parity: try/catch/finally", "[vm-parity][p0]") {
     requireSameOutput(R"(
         try {
             throw "boom";
