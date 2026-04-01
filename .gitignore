@@ -8,6 +8,7 @@
 **/*.d
 bin/
 obj/
+build/
 test_basic_print.iz
 test_comment.iz
 test_debug.iz
