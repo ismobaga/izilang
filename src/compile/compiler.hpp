@@ -66,6 +66,11 @@ class BytecodeCompiler : public ExprVisitor, public StmtVisitor {
     // variables whose names appear in this table.
     std::vector<std::string> locals;  // locals[i] = name of local at slot i
 
+    // True when this compiler instance is compiling a function body.
+    // In this mode, VarStmt and FunctionStmt allocate local variable slots
+    // on the stack instead of using global variables.
+    bool inFunction = false;
+
     // Loop context for break/continue
     struct LoopContext {
         std::vector<size_t> breakJumps;

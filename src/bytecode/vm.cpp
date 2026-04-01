@@ -478,6 +478,40 @@ Value VM::run(const Chunk& entry, const std::vector<Value>& initialLocals) {
                     push(getVmNativeModule(moduleName, *this));
                     break;
                 }
+                case OpCode::BUILD_ARRAY: {
+                    uint8_t count = readByte();
+                    auto arr = std::make_shared<Array>();
+                    arr->elements.resize(count);
+                    for (int i = count - 1; i >= 0; --i) {
+                        arr->elements[static_cast<size_t>(i)] = pop();
+                    }
+                    push(arr);
+                    break;
+                }
+                case OpCode::BUILD_MAP: {
+                    uint8_t count = readByte();
+                    auto map = std::make_shared<Map>();
+                    // Entries were pushed in order (key then value); pop in LIFO order (value first, then key).
+                    for (uint8_t i = 0; i < count; ++i) {
+                        Value value = pop();
+                        Value key = pop();
+                        if (!std::holds_alternative<std::string>(key)) {
+                            throw std::runtime_error("Map key must be a string.");
+                        }
+                        map->entries[std::get<std::string>(key)] = std::move(value);
+                    }
+                    push(map);
+                    break;
+                }
+                case OpCode::JUMP_IF_NOT_NIL: {
+                    uint16_t offset = readShort();
+                    // Peek at the top of stack; if NOT nil, jump (keep value on stack).
+                    // If nil, fall through (also keep value on stack — caller must POP).
+                    if (!std::holds_alternative<Nil>(stack.back())) {
+                        currentFrame()->ip += offset;
+                    }
+                    break;
+                }
                 default:
                     throw std::runtime_error("Unknown opcode encountered.");
             }

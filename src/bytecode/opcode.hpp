@@ -65,6 +65,13 @@ enum class OpCode : uint8_t {
 
     // Module support
     LOAD_MODULE,  // Load a native module by name and push it onto the stack
+
+    // Collection construction
+    BUILD_ARRAY,  // Build an array from N elements on the stack (followed by count byte)
+    BUILD_MAP,    // Build a map from N key-value pairs (key then value) on the stack (followed by count byte)
+
+    // Nullish-coalescing jump
+    JUMP_IF_NOT_NIL,  // Peek top of stack; if NOT nil, jump forward (don't pop). If nil, fall through (don't pop).
 };
 
 }  // namespace izi
