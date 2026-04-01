@@ -59,8 +59,3 @@ These functions are always available without any import:
 | `push(array, value)` | Append a value to an array (mutates in place) |
 | `pop(array)` | Remove and return the last element (mutates) |
 
-## See Also
-
-- [Language Tutorial](../TUTORIAL.md) — Learn IziLang from scratch
-- [CLI Reference](../CLI_REFERENCE.md) — Command-line interface
-- [Concurrency Guide](../CONCURRENCY.md) — Async/await and threads
