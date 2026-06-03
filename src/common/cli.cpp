@@ -21,6 +21,7 @@ void CliOptions::printHelp() {
     std::cout << "  repl                Start interactive REPL\n";
     std::cout << "  bench <file>        Run performance benchmark\n";
     std::cout << "  fmt <file|dir>      Format source code\n";
+    std::cout << "  doctor              Check local development setup\n";
     std::cout << "  version             Show version information\n";
     std::cout << "  help [command]      Show help for a specific command\n";
     std::cout << "\n";
@@ -137,15 +138,19 @@ void CliOptions::printCommandHelp(Command cmd) {
             std::cout << "Usage: izi test [options] [pattern]\n\n";
             std::cout << "Description:\n";
             std::cout << "  Discovers and executes test files in the tests/ directory.\n";
-            std::cout << "  Test files should have .iz extension.\n";
+            std::cout << "  Test files should have .iz extension. Subdirectories are\n";
+            std::cout << "  scanned recursively. Pass an optional pattern to filter\n";
+            std::cout << "  tests by filename.\n";
             std::cout << "\n";
             std::cout << "Options:\n";
-            std::cout << "  --vm       Use bytecode VM for tests\n";
-            std::cout << "  --debug    Show detailed test output\n";
+            std::cout << "  --vm           Use bytecode VM for tests\n";
+            std::cout << "  --debug        Show detailed test output\n";
+            std::cout << "  --examples     Also run tests in the examples/ directory\n";
             std::cout << "\n";
             std::cout << "Examples:\n";
             std::cout << "  izi test              Run all tests\n";
             std::cout << "  izi test lexer        Run tests matching 'lexer'\n";
+            std::cout << "  izi test --examples   Run tests and examples\n";
             break;
 
         case Command::Repl:
@@ -211,6 +216,17 @@ void CliOptions::printCommandHelp(Command cmd) {
             std::cout << "  izi bench --vm --iterations 10 benchmarks/loops.iz\n";
             break;
 
+        case Command::Doctor:
+            std::cout << "izi doctor - Check local development setup\n\n";
+            std::cout << "Usage: izi doctor\n\n";
+            std::cout << "Description:\n";
+            std::cout << "  Checks the local development environment and reports the\n";
+            std::cout << "  status of required and optional dependencies.\n";
+            std::cout << "\n";
+            std::cout << "Examples:\n";
+            std::cout << "  izi doctor\n";
+            break;
+
         default:
             printHelp();
             break;
@@ -271,6 +287,9 @@ CliOptions CliOptions::parse(int argc, char** argv) {
     } else if (firstArg == "fmt") {
         options.command = Command::Fmt;
         i++;
+    } else if (firstArg == "doctor") {
+        options.command = Command::Doctor;
+        return options;
     } else if (firstArg == "version") {
         options.command = Command::Version;
         return options;
@@ -294,6 +313,8 @@ CliOptions CliOptions::parse(int argc, char** argv) {
                 printCommandHelp(Command::Repl);
             } else if (helpCmd == "fmt") {
                 printCommandHelp(Command::Fmt);
+            } else if (helpCmd == "doctor") {
+                printCommandHelp(Command::Doctor);
             } else {
                 std::cerr << "Unknown command: " << helpCmd << "\n";
                 printHelp();
@@ -341,6 +362,9 @@ CliOptions CliOptions::parse(int argc, char** argv) {
             i++;
         } else if (arg == "--check" && options.command == Command::Fmt) {
             options.check = true;
+            i++;
+        } else if (arg == "--examples" && options.command == Command::Test) {
+            options.includeExamples = true;
             i++;
         } else if (arg == "-o" && (options.command == Command::Compile || options.command == Command::Chunk)) {
             // Output file for compile or chunk command

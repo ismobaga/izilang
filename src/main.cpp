@@ -8,6 +8,7 @@
 #include <chrono>
 #include <algorithm>
 #include <cctype>
+#include <cstdlib>
 #include <cstring>
 
 #ifdef HAVE_READLINE
@@ -644,21 +645,24 @@ void runRepl(bool useVM, bool debug) {
 int runTests(const CliOptions& options) {
     bool useVM = (options.engine == CliOptions::Engine::VM);
 
-    // Determine test directories
-    std::vector<std::string> testDirs = {"examples", "tests"};
+    // Determine test directories: always include tests/, optionally include examples/
+    std::vector<std::string> testDirs = {"tests"};
+    if (options.includeExamples) {
+        testDirs.push_back("examples");
+    }
     std::vector<fs::path> testFiles;
 
-    // Collect all .iz files from test directories
+    // Collect all .iz files from test directories (recursive)
     for (const auto& dir : testDirs) {
         if (fs::exists(dir) && fs::is_directory(dir)) {
-            for (const auto& entry : fs::directory_iterator(dir)) {
+            for (const auto& entry : fs::recursive_directory_iterator(dir)) {
                 if (entry.is_regular_file() && entry.path().extension() == ".iz") {
                     // Apply pattern filter if provided
                     bool match = true;
                     if (!options.args.empty()) {
                         match = false;
                         for (const auto& pattern : options.args) {
-                            if (entry.path().filename().string().find(pattern) != std::string::npos) {
+                            if (entry.path().string().find(pattern) != std::string::npos) {
                                 match = true;
                                 break;
                             }
@@ -671,6 +675,9 @@ int runTests(const CliOptions& options) {
             }
         }
     }
+
+    // Sort for deterministic ordering
+    std::sort(testFiles.begin(), testFiles.end());
 
     if (testFiles.empty()) {
         std::cout << "No test files found.\n";
@@ -834,6 +841,88 @@ int runBenchmark(const CliOptions& options) {
     return 0;
 }
 
+// Helper: print a doctor status line
+static void doctorLine(bool ok, const std::string& msg) {
+    std::cout << (ok ? "[ok]   " : "[warn] ") << msg << "\n";
+}
+
+int runDoctor() {
+    std::cout << "IziLang Doctor\n";
+    std::cout << "==============\n\n";
+
+    bool allOk = true;
+
+    // Check C++ compiler
+    {
+        int ret = std::system("c++ --version > /dev/null 2>&1");
+        bool found = (ret == 0);
+        if (!found) ret = std::system("g++ --version > /dev/null 2>&1");
+        found = found || (ret == 0);
+        doctorLine(found, found ? "C++ compiler found" : "C++ compiler not found (install g++ or clang++)");
+        if (!found) allOk = false;
+    }
+
+    // Check premake5
+    {
+        bool found = fs::exists("./premake5") || (std::system("premake5 --version > /dev/null 2>&1") == 0);
+        doctorLine(found, found ? "Premake5 found" : "Premake5 not found (required to generate build files)");
+        if (!found) allOk = false;
+    }
+
+    // Check readline (optional)
+    {
+#ifdef HAVE_READLINE
+        doctorLine(true, "readline support: enabled (compiled with HAVE_READLINE)");
+#else
+        doctorLine(true, "readline support: disabled (REPL uses fallback mode; build with --readline to enable)");
+#endif
+    }
+
+    // Check stdlib path
+    {
+        bool found = fs::exists("./std") && fs::is_directory("./std");
+        doctorLine(found, found ? "stdlib path found: ./std" : "stdlib path not found: ./std");
+        if (!found) allOk = false;
+    }
+
+    // Check examples path
+    {
+        bool found = fs::exists("./examples") && fs::is_directory("./examples");
+        doctorLine(found, found ? "examples path found: ./examples" : "examples path not found: ./examples");
+    }
+
+    // Check tests path
+    {
+        bool found = fs::exists("./tests") && fs::is_directory("./tests");
+        doctorLine(found, found ? "tests path found: ./tests" : "tests path not found: ./tests");
+        if (!found) allOk = false;
+    }
+
+    // Check build output paths
+    {
+        bool debugBin = fs::exists("./bin/Debug/izi/izi") || fs::exists("./bin/Debug/izi/izi.exe");
+        bool releaseBin = fs::exists("./bin/Release/izi/izi") || fs::exists("./bin/Release/izi/izi.exe");
+        if (debugBin) {
+            doctorLine(true, "debug build found: ./bin/Debug/izi/izi");
+        } else {
+            doctorLine(true, "debug build not found (run: make config=debug)");
+        }
+        if (releaseBin) {
+            doctorLine(true, "release build found: ./bin/Release/izi/izi");
+        } else {
+            doctorLine(true, "release build not found (run: make config=release)");
+        }
+    }
+
+    std::cout << "\n";
+    if (allOk) {
+        std::cout << "All required dependencies are present.\n";
+    } else {
+        std::cout << "Some required dependencies are missing. See warnings above.\n";
+    }
+    return allOk ? 0 : 1;
+}
+
 int main(int argc, char** argv) {
     CliOptions options = CliOptions::parse(argc, argv);
 
@@ -871,6 +960,11 @@ int main(int argc, char** argv) {
     // Handle bench command
     if (options.command == CliOptions::Command::Bench) {
         return runBenchmark(options);
+    }
+
+    // Handle doctor command
+    if (options.command == CliOptions::Command::Doctor) {
+        return runDoctor();
     }
 
     // Handle fmt command

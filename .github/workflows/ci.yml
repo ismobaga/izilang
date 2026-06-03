@@ -23,6 +23,10 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Install build dependencies (Ubuntu)
+      if: runner.os == 'Linux'
+      run: sudo apt-get update && sudo apt-get install -y build-essential
+
     - name: Install premake5 (Ubuntu)
       if: runner.os == 'Linux'
       run: |
@@ -60,13 +64,21 @@ jobs:
         premake5 vs2022
         msbuild IziLang.sln /p:Configuration=${{ matrix.config }} /m
 
-    - name: Run tests (Unix)
+    - name: Run C++ tests (Unix)
       if: runner.os != 'Windows'
       run: ./bin/${{ matrix.config }}/tests/tests
 
-    - name: Run tests (Windows)
+    - name: Run C++ tests (Windows)
       if: runner.os == 'Windows'
       run: .\bin\${{ matrix.config }}\tests\tests.exe
+
+    - name: Run IziLang tests (Unix)
+      if: runner.os != 'Windows'
+      run: ./bin/${{ matrix.config }}/izi/izi test
+
+    - name: Run IziLang tests (Windows)
+      if: runner.os == 'Windows'
+      run: .\bin\${{ matrix.config }}\izi\izi.exe test
 
     - name: Upload artifacts
       if: matrix.config == 'Release'

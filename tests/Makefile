@@ -125,6 +125,7 @@ GENERATED += $(OBJDIR)/test_try_catch.o
 GENERATED += $(OBJDIR)/test_value.o
 GENERATED += $(OBJDIR)/test_vm_complete.o
 GENERATED += $(OBJDIR)/test_vm_core.o
+GENERATED += $(OBJDIR)/test_vm_parity.o
 GENERATED += $(OBJDIR)/test_vm_simple.o
 GENERATED += $(OBJDIR)/test_vm_stack.o
 GENERATED += $(OBJDIR)/type.o
@@ -192,6 +193,7 @@ OBJECTS += $(OBJDIR)/test_try_catch.o
 OBJECTS += $(OBJDIR)/test_value.o
 OBJECTS += $(OBJDIR)/test_vm_complete.o
 OBJECTS += $(OBJDIR)/test_vm_core.o
+OBJECTS += $(OBJDIR)/test_vm_parity.o
 OBJECTS += $(OBJDIR)/test_vm_simple.o
 OBJECTS += $(OBJDIR)/test_vm_stack.o
 OBJECTS += $(OBJDIR)/type.o
@@ -461,6 +463,9 @@ $(OBJDIR)/test_vm_complete.o: test_vm_complete.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/test_vm_core.o: test_vm_core.cpp
+	@echo "$(notdir $<)"
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/test_vm_parity.o: test_vm_parity.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/test_vm_simple.o: test_vm_simple.cpp
