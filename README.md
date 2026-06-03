@@ -98,22 +98,20 @@ Features:
 ### Installation
 
 ```bash
-# Clone repository
 git clone https://github.com/ismobaga/izilang.git
 cd izilang
 
-# Build (readline disabled by default for minimal builds)
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --parallel
+
+./build/izi --version
+```
+
+#### Legacy Premake build
+
+```bash
 ./premake5 gmake2
 make config=release
-
-# Optional: build with readline support (requires libreadline-dev on Linux)
-# sudo apt-get install libreadline-dev   # Ubuntu/Debian
-# brew install readline                  # macOS
-./premake5 gmake2 --readline
-make config=release
-
-# Optional: Add to PATH
-export PATH="$PATH:$(pwd)/bin/Release/izi"
 ```
 
 ### Your First Program
