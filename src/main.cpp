@@ -862,10 +862,10 @@ int runDoctor() {
         if (!found) allOk = false;
     }
 
-    // Check premake5
+    // Check cmake
     {
-        bool found = fs::exists("./premake5") || (std::system("premake5 --version > /dev/null 2>&1") == 0);
-        doctorLine(found, found ? "Premake5 found" : "Premake5 not found (required to generate build files)");
+        bool found = (std::system("cmake --version > /dev/null 2>&1") == 0);
+        doctorLine(found, found ? "CMake found" : "CMake not found (install cmake to build from source)");
         if (!found) allOk = false;
     }
 
@@ -874,7 +874,7 @@ int runDoctor() {
 #ifdef HAVE_READLINE
         doctorLine(true, "readline support: enabled (compiled with HAVE_READLINE)");
 #else
-        doctorLine(true, "readline support: disabled (REPL uses fallback mode; build with --readline to enable)");
+        doctorLine(true, "readline support: disabled (REPL uses fallback mode; rebuild with -DIZI_ENABLE_READLINE=ON to enable)");
 #endif
     }
 
@@ -900,17 +900,19 @@ int runDoctor() {
 
     // Check build output paths
     {
-        bool debugBin = fs::exists("./bin/Debug/izi/izi") || fs::exists("./bin/Debug/izi/izi.exe");
-        bool releaseBin = fs::exists("./bin/Release/izi/izi") || fs::exists("./bin/Release/izi/izi.exe");
+        bool debugBin = fs::exists("./build/izi") || fs::exists("./build/izi.exe")
+                     || fs::exists("./build/Debug/izi") || fs::exists("./build/Debug/izi.exe");
+        bool releaseBin = fs::exists("./build-release/izi") || fs::exists("./build-release/izi.exe")
+                       || fs::exists("./build/Release/izi") || fs::exists("./build/Release/izi.exe");
         if (debugBin) {
-            doctorLine(true, "debug build found: ./bin/Debug/izi/izi");
+            doctorLine(true, "debug build found: ./build/izi");
         } else {
-            doctorLine(true, "debug build not found (run: make config=debug)");
+            doctorLine(true, "debug build not found (run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug && cmake --build build)");
         }
         if (releaseBin) {
-            doctorLine(true, "release build found: ./bin/Release/izi/izi");
+            doctorLine(true, "release build found: ./build-release/izi");
         } else {
-            doctorLine(true, "release build not found (run: make config=release)");
+            doctorLine(true, "release build not found (run: cmake -S . -B build-release -DCMAKE_BUILD_TYPE=Release && cmake --build build-release)");
         }
     }
 
