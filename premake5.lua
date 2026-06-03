@@ -13,10 +13,16 @@ newoption {
     description = "Path to raylib installation (enables HAVE_RAYLIB)"
 }
 
--- Optional: disable GNU readline support (enabled by default on Linux/macOS)
+-- Optional: enable GNU readline support (disabled by default; requires libreadline-dev)
+newoption {
+    trigger = "readline",
+    description = "Enable GNU readline support in the REPL (requires libreadline-dev)"
+}
+
+-- Deprecated: kept for backward compatibility; same effect as not passing --readline
 newoption {
     trigger = "no-readline",
-    description = "Disable GNU readline support in the REPL"
+    description = "Disable GNU readline support (now the default; this flag has no effect)"
 }
 
 project "izi"
@@ -39,7 +45,7 @@ if _OPTIONS["raylib"] then
     links {"raylib"}
 end
 
-if not _OPTIONS["no-readline"] then
+if _OPTIONS["readline"] then
     defines {"HAVE_READLINE"}
 end
 
@@ -59,12 +65,12 @@ links {"m", "dl", "pthread"}
 if _OPTIONS["raylib"] then
     links {"GL", "X11"}
 end
-if not _OPTIONS["no-readline"] then
+if _OPTIONS["readline"] then
     links {"readline"}
 end
 
 filter "system:macosx"
-if not _OPTIONS["no-readline"] then
+if _OPTIONS["readline"] then
     links {"readline"}
 end
 

@@ -43,7 +43,7 @@ Cannot add number and string. Operands must be two numbers or two strings.
 Powerful REPL with multi-line input, special commands, and error recovery:
 
 ```
-IziLang 0.3.0 REPL
+IziLang 0.4.0-dev REPL
 > fn add(x, y) {
 ... return x + y;
 ... }
@@ -65,10 +65,10 @@ IziLang 0.3.0 REPL
 - **Classes & OOP** - Classes with inheritance, constructors, `this` binding
 - **Gradual Typing** - Optional type annotations on variables and functions
 - **Semantic Analysis** - Static checks via `izi check` (unused vars, dead code)
-- **Async/Await** - Asynchronous functions with `async fn` and `await`
-- **Macros** - Compile-time macro definitions and expansion (`name!(args)`)
+- **Async/Await** - Asynchronous function syntax (`async fn` / `await`); full runtime event loop is planned
+- **Macros** - Compile-time macro definitions and expansion (`name!(args)`) — experimental
 - **Nullish Coalescing** - `??` operator returns left if not nil, otherwise right
-- **IPC** - Named-pipe inter-process communication via `std.ipc`
+- **IPC** - Named-pipe inter-process communication via `std.ipc` — experimental
 
 ### 📦 Dual Execution Modes
 
@@ -102,8 +102,14 @@ Features:
 git clone https://github.com/ismobaga/izilang.git
 cd izilang
 
-# Build
+# Build (readline disabled by default for minimal builds)
 ./premake5 gmake2
+make config=release
+
+# Optional: build with readline support (requires libreadline-dev on Linux)
+# sudo apt-get install libreadline-dev   # Ubuntu/Debian
+# brew install readline                  # macOS
+./premake5 gmake2 --readline
 make config=release
 
 # Optional: Add to PATH
@@ -321,21 +327,21 @@ Areas where help is needed:
 - ✅ Stack overflow protection and memory statistics
 
 **v0.4** (In Progress) - Concurrency & Ecosystem
-- ✅ Code formatter (`izi fmt`)
-- ✅ Async/await syntax and runtime
-- ✅ Macro system
-- ✅ Rich stdlib (json, time, regex, http, net, log, ipc)
+- ✅ Code formatter (`izi fmt`) — experimental
+- ✅ Async/await syntax (parse + partial runtime; event loop planned)
+- ✅ Macro system (experimental)
+- ✅ Rich stdlib (json, time, regex, http, net, log, ipc) — partial/experimental
 - ✅ Nullish coalescing operator (`??`)
-- ✅ LSP server (diagnostics, completion, signature help, code actions)
-- ✅ Package manager MVP (`izi-pkg`)
-- 🚧 Full async I/O (`std.async` event loop)
+- 🚧 LSP server — in progress, not yet stable
+- 🚧 Package manager MVP (`izi-pkg`) — planned, not yet implemented
+- 🚧 Full async I/O (`std.async` event loop) — planned
 
 **v1.0** (Target Q1 2027) - Stable
 - Language freeze (no breaking changes)
 - Package registry
 - Production deployments
 
-**[→ Full Roadmap](docs/ROADMAP.md)** | **[→ Project Analysis](docs/ANALYSIS.md)**
+**[→ Full Roadmap](docs/ROADMAP.md)** | **[→ Project Analysis](docs/ANALYSIS.md)** | **[→ Implementation Status](docs/IMPLEMENTATION_STATUS.md)**
 
 ## License
 
