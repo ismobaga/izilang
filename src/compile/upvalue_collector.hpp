@@ -92,8 +92,8 @@ class UpvalueCollector : public ExprVisitor, public StmtVisitor {
 
     Value visit(ConditionalExpr& expr) override {
         expr.condition->accept(*this);
-        expr.thenExpr->accept(*this);
-        expr.elseExpr->accept(*this);
+        expr.thenBranch->accept(*this);
+        expr.elseBranch->accept(*this);
         return Nil{};
     }
 
@@ -117,13 +117,13 @@ class UpvalueCollector : public ExprVisitor, public StmtVisitor {
     }
 
     Value visit(IndexExpr& expr) override {
-        expr.object->accept(*this);
+        expr.collection->accept(*this);
         expr.index->accept(*this);
         return Nil{};
     }
 
     Value visit(SetIndexExpr& expr) override {
-        expr.object->accept(*this);
+        expr.collection->accept(*this);
         expr.index->accept(*this);
         expr.value->accept(*this);
         return Nil{};
@@ -160,7 +160,7 @@ class UpvalueCollector : public ExprVisitor, public StmtVisitor {
     }
 
     Value visit(AwaitExpr& expr) override {
-        expr.argument->accept(*this);
+        expr.value->accept(*this);
         return Nil{};
     }
 

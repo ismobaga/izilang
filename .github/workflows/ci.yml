@@ -25,60 +25,31 @@ jobs:
 
     - name: Install build dependencies (Ubuntu)
       if: runner.os == 'Linux'
-      run: sudo apt-get update && sudo apt-get install -y build-essential
+      run: sudo apt-get update && sudo apt-get install -y build-essential cmake
 
-    - name: Install premake5 (Ubuntu)
-      if: runner.os == 'Linux'
-      run: |
-        wget https://github.com/premake/premake-core/releases/download/v5.0.0-beta2/premake-5.0.0-beta2-linux.tar.gz
-        tar -xzf premake-5.0.0-beta2-linux.tar.gz
-        sudo mv premake5 /usr/local/bin/
-        premake5 --version
+    - name: Configure project (Unix)
+      if: runner.os != 'Windows'
+      run: cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ matrix.config }} -DIZI_BUILD_TESTS=ON
 
-    - name: Install premake5 (macOS)
-      if: runner.os == 'macOS'
-      run: |
-        brew install premake
-
-    - name: Install premake5 (Windows)
+    - name: Configure project (Windows)
       if: runner.os == 'Windows'
-      run: |
-        curl -L https://github.com/premake/premake-core/releases/download/v5.0.0-beta2/premake-5.0.0-beta2-windows.zip -o premake5.zip
-        Expand-Archive premake5.zip -DestinationPath premake5-bin
-        echo "${{ github.workspace }}\premake5-bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-
-    - name: Generate build files
-      run: premake5 gmake2
+      run: cmake -S . -B build -DIZI_BUILD_TESTS=ON
 
     - name: Build project (Unix)
       if: runner.os != 'Windows'
-      run: make config=${{ matrix.config == 'Debug' && 'debug' || 'release' }} -j$(nproc 2>/dev/null || sysctl -n hw.ncpu)
-
-    - name: Setup MSBuild (Windows)
-      if: runner.os == 'Windows'
-      uses: microsoft/setup-msbuild@v2
+      run: cmake --build build --parallel
 
     - name: Build project (Windows)
       if: runner.os == 'Windows'
-      run: |
-        premake5 vs2022
-        msbuild IziLang.sln /p:Configuration=${{ matrix.config }} /m
+      run: cmake --build build --config ${{ matrix.config }} --parallel
 
-    - name: Run C++ tests (Unix)
+    - name: Run tests (Unix)
       if: runner.os != 'Windows'
-      run: ./bin/${{ matrix.config }}/tests/tests
+      run: ctest --test-dir build --output-on-failure
 
-    - name: Run C++ tests (Windows)
+    - name: Run tests (Windows)
       if: runner.os == 'Windows'
-      run: .\bin\${{ matrix.config }}\tests\tests.exe
-
-    - name: Run IziLang tests (Unix)
-      if: runner.os != 'Windows'
-      run: ./bin/${{ matrix.config }}/izi/izi test
-
-    - name: Run IziLang tests (Windows)
-      if: runner.os == 'Windows'
-      run: .\bin\${{ matrix.config }}\izi\izi.exe test
+      run: ctest --test-dir build --build-config ${{ matrix.config }} --output-on-failure
 
     - name: Upload artifacts
       if: matrix.config == 'Release'
@@ -86,5 +57,7 @@ jobs:
       with:
         name: izilang-${{ runner.os }}-${{ matrix.config }}
         path: |
-          bin/${{ matrix.config }}/izi/izi*
-          bin/${{ matrix.config }}/tests/tests*
+          build/izi*
+          build/${{ matrix.config }}/izi*
+          build/izilang_tests*
+          build/${{ matrix.config }}/izilang_tests*

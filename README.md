@@ -232,29 +232,37 @@ var config = envValue ?? fileValue ?? defaultValue;
 ### Building from Source
 
 ```bash
-# Generate build files
-./premake5 gmake2
+# Debug build
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+cmake --build build --parallel
 
-# Build debug version
-make config=debug
-
-# Build release version  
-make config=release
+# Release build
+cmake -S . -B build-release -DCMAKE_BUILD_TYPE=Release
+cmake --build build-release --parallel
 ```
 
-Binary location: `./bin/Debug/izi/izi` or `./bin/Release/izi/izi`
+Binary location: `./build/izi` or `./build-release/izi`
+
+#### Legacy (Premake) build flow
+
+```bash
+./premake5 gmake2
+make config=debug
+make config=release
+```
 
 ### Running Tests
 
 ```bash
-# Build tests
-make config=debug
+# Configure and build with tests enabled
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DIZI_BUILD_TESTS=ON
+cmake --build build --parallel
 
 # Run C++ unit tests
-./bin/Debug/tests/tests
+ctest --test-dir build --output-on-failure
 
 # Run IziLang test files
-izi test
+./build/izi test
 ```
 
 #### C++ Test Suite
@@ -263,17 +271,17 @@ Comprehensive unit and integration tests using Catch2:
 
 ```bash
 # Run all tests
-./bin/Debug/tests/tests
+./build/izilang_tests
 
 # Run specific test categories
-./bin/Debug/tests/tests [lexer]
-./bin/Debug/tests/tests [integration]
+./build/izilang_tests [lexer]
+./build/izilang_tests [integration]
 
 # List available tests
-./bin/Debug/tests/tests --list-tests
+./build/izilang_tests --list-tests
 
 # Verbose output
-./bin/Debug/tests/tests -s
+./build/izilang_tests -s
 ```
 
 **Test Coverage:**
