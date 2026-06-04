@@ -4,39 +4,24 @@
 #include "compile/compiler.hpp"
 #include "bytecode/vm.hpp"
 #include "bytecode/vm_native.hpp"
-#include <sstream>
+#include "vm_test_utils.hpp"
 
 using namespace izi;
 
-// Helper to capture stdout
-class OutputCapture {
-   public:
-    OutputCapture() : old_buf(std::cout.rdbuf()) { std::cout.rdbuf(buffer.rdbuf()); }
-    ~OutputCapture() { std::cout.rdbuf(old_buf); }
-    std::string getOutput() { return buffer.str(); }
-
-   private:
-    std::stringstream buffer;
-    std::streambuf* old_buf;
-};
-
 TEST_CASE("VM Try-Catch Simple", "[vm-exception-simple]") {
-    // Basic smoke test to verify try-catch doesn't cause infinite loops or crashes
-    std::string source = "var executed = 0; try { throw \"error\"; executed = 999; } catch(e) { executed = 1; }";
-    Lexer lexer(source);
-    auto tokens = lexer.scanTokens();
-    Parser parser(std::move(tokens), source);
-    auto program = parser.parse();
+    std::string source = R"(
+        var executed = 0;
+        try {
+            throw "error";
+            executed = 999;
+        } catch(e) {
+            executed = 1;
+        }
+        print(executed);
+    )";
 
-    BytecodeCompiler compiler;
-    Chunk chunk = compiler.compile(program);
-
-    VM vm;
-    vm.run(chunk);
-
-    // Test passes if execution completes without hanging
-    // The 'executed' variable should be 1 (catch block ran), not 999 (code after throw)
-    REQUIRE(true);
+    std::string output = testutil::runVmSourceAndCapture(source, true);
+    REQUIRE(output == "1\n");
 }
 
 TEST_CASE("VM Classes: Basic instantiation", "[vm-classes]") {
@@ -57,11 +42,11 @@ TEST_CASE("VM Classes: Basic instantiation", "[vm-classes]") {
 
         VM vm;
         registerVmNatives(vm);
-        OutputCapture capture;
+        testutil::OutputCapture capture;
 
         REQUIRE_NOTHROW(vm.run(chunk));
 
-        std::string output = capture.getOutput();
+        std::string output = capture.output();
         REQUIRE(output.find("<Empty instance>") != std::string::npos);
     }
 }
@@ -89,11 +74,11 @@ TEST_CASE("VM Classes: Property access", "[vm-classes]") {
 
         VM vm;
         registerVmNatives(vm);
-        OutputCapture capture;
+        testutil::OutputCapture capture;
 
         REQUIRE_NOTHROW(vm.run(chunk));
 
-        std::string output = capture.getOutput();
+        std::string output = capture.output();
         REQUIRE(output.find("5") != std::string::npos);
         REQUIRE(output.find("6") != std::string::npos);
     }
@@ -136,11 +121,11 @@ TEST_CASE("VM Classes: Methods", "[vm-classes]") {
 
         VM vm;
         registerVmNatives(vm);
-        OutputCapture capture;
+        testutil::OutputCapture capture;
 
         REQUIRE_NOTHROW(vm.run(chunk));
 
-        std::string output = capture.getOutput();
+        std::string output = capture.output();
         // Should print: 10, 15, 15
         size_t first_10 = output.find("10");
         REQUIRE(first_10 != std::string::npos);
@@ -187,11 +172,11 @@ TEST_CASE("VM Classes: Multiple instances", "[vm-classes][vm-instances]") {
 
         VM vm;
         registerVmNatives(vm);
-        OutputCapture capture;
+        testutil::OutputCapture capture;
 
         REQUIRE_NOTHROW(vm.run(chunk));
 
-        std::string output = capture.getOutput();
+        std::string output = capture.output();
         REQUIRE(output.find("2") != std::string::npos);
         REQUIRE(output.find("101") != std::string::npos);
     }
@@ -226,11 +211,11 @@ TEST_CASE("VM Classes: Instance storage", "[vm-classes][vm-storage]") {
 
         VM vm;
         registerVmNatives(vm);
-        OutputCapture capture;
+        testutil::OutputCapture capture;
 
         REQUIRE_NOTHROW(vm.run(chunk));
 
-        std::string output = capture.getOutput();
+        std::string output = capture.output();
         REQUIRE(output.find("5") != std::string::npos);
         REQUIRE(output.find("10") != std::string::npos);
     }

@@ -10,7 +10,7 @@ CompilePipeline::CompilePipeline(std::unique_ptr<CompileBackend> backend) : back
     }
 }
 
-Chunk CompilePipeline::compile(const CompileRequest& request) {
+BackendArtifact CompilePipeline::compile(const CompileRequest& request) {
     return backend_->compile(request);
 }
 

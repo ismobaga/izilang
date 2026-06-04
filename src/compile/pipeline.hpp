@@ -8,7 +8,7 @@ class CompilePipeline {
    public:
     explicit CompilePipeline(std::unique_ptr<CompileBackend> backend);
 
-    Chunk compile(const CompileRequest& request);
+    BackendArtifact compile(const CompileRequest& request);
     const char* backendName() const;
 
    private:

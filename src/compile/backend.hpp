@@ -6,6 +6,7 @@
 #include <memory>
 #include <string>
 #include <unordered_set>
+#include <variant>
 
 namespace izi {
 
@@ -20,11 +21,17 @@ struct CompileRequest {
     std::unordered_set<std::string>* importedModules = nullptr;
 };
 
+struct LlvmModuleArtifact {
+    std::string moduleName;
+};
+
+using BackendArtifact = std::variant<Chunk, LlvmModuleArtifact>;
+
 class CompileBackend {
    public:
     virtual ~CompileBackend() = default;
 
-    virtual Chunk compile(const CompileRequest& request) = 0;
+    virtual BackendArtifact compile(const CompileRequest& request) = 0;
     virtual const char* name() const = 0;
 };
 

@@ -5,6 +5,7 @@
 #include "compile/compiler.hpp"
 #include "bytecode/vm.hpp"
 #include "bytecode/vm_native.hpp"
+#include "vm_test_utils.hpp"
 #include <sstream>
 #include <filesystem>
 #include <fstream>
@@ -1074,15 +1075,7 @@ TEST_CASE("Native module system - ui module", "[modules][ui]") {
 namespace {
 // Helper: compile IZI source and run it through the bytecode VM.
 static bool vmRunNoThrow(const std::string& source) {
-    Lexer lexer(source);
-    auto tokens = lexer.scanTokens();
-    Parser parser(std::move(tokens), source);
-    auto program = parser.parse();
-    BytecodeCompiler compiler;
-    Chunk chunk = compiler.compile(program);
-    VM vm;
-    registerVmNatives(vm);
-    vm.run(chunk);
+    testutil::runVmSource(source, true);
     return true;
 }
 }  // namespace
@@ -1217,7 +1210,8 @@ TEST_CASE("Module scope isolation - wildcard file import", "[modules][isolation]
             var internal = 42;
         )");
 
-        std::string mainSrc = "import * as m from \"" + (tempDir / "ns_math.izi").string() + "\";\n"
+        std::string mainSrc = "import * as m from \"" + (tempDir / "ns_math.izi").string() +
+                              "\";\n"
                               "var pi = m.PI;\n"
                               "var sq = m.square(4);\n";
 
@@ -1231,7 +1225,11 @@ TEST_CASE("Module scope isolation - wildcard file import", "[modules][isolation]
 
         // internal variable should NOT be in globals
         bool threw = false;
-        try { interp.getGlobals()->get("internal"); } catch (...) { threw = true; }
+        try {
+            interp.getGlobals()->get("internal");
+        } catch (...) {
+            threw = true;
+        }
         REQUIRE(threw);
     }
 
@@ -1241,7 +1239,8 @@ TEST_CASE("Module scope isolation - wildcard file import", "[modules][isolation]
             var secret = 999;
         )");
 
-        std::string mainSrc = "import * as mod from \"" + (tempDir / "ns_scope.izi").string() + "\";\n"
+        std::string mainSrc = "import * as mod from \"" + (tempDir / "ns_scope.izi").string() +
+                              "\";\n"
                               "var x = mod.exported;\n";
 
         Lexer lex(mainSrc);
@@ -1254,7 +1253,11 @@ TEST_CASE("Module scope isolation - wildcard file import", "[modules][isolation]
 
         // 'secret' must not be in globals
         bool threw = false;
-        try { interp.getGlobals()->get("secret"); } catch (...) { threw = true; }
+        try {
+            interp.getGlobals()->get("secret");
+        } catch (...) {
+            threw = true;
+        }
         REQUIRE(threw);
     }
 
@@ -1271,7 +1274,8 @@ TEST_CASE("Module scope isolation - named file import with validation", "[module
             export var LIMIT = 100;
         )");
 
-        std::string mainSrc = "import { double, LIMIT } from \"" + (tempDir / "nv_util.izi").string() + "\";\n"
+        std::string mainSrc = "import { double, LIMIT } from \"" + (tempDir / "nv_util.izi").string() +
+                              "\";\n"
                               "var result = double(5);\n";
 
         Lexer lex(mainSrc);
@@ -1312,7 +1316,8 @@ TEST_CASE("Default exports", "[modules][default-export]") {
             export default fn greet(name) { return "Hello " + name; }
         )");
 
-        std::string mainSrc = "import { default as greet } from \"" + (tempDir / "de_fn.izi").string() + "\";\n"
+        std::string mainSrc = "import { default as greet } from \"" + (tempDir / "de_fn.izi").string() +
+                              "\";\n"
                               "var msg = greet(\"World\");\n";
 
         Lexer lex(mainSrc);
@@ -1329,7 +1334,8 @@ TEST_CASE("Default exports", "[modules][default-export]") {
             export default 42;
         )");
 
-        std::string mainSrc = "import * as mod from \"" + (tempDir / "de_expr.izi").string() + "\";\n"
+        std::string mainSrc = "import * as mod from \"" + (tempDir / "de_expr.izi").string() +
+                              "\";\n"
                               "var v = mod.default;\n";
 
         Lexer lex(mainSrc);
@@ -1372,7 +1378,8 @@ TEST_CASE("Re-export syntax", "[modules][reexport]") {
         writeFile((tempDir / "re_index.izi").string(),
                   "export * from \"" + (tempDir / "re_base.izi").string() + "\";\n");
 
-        std::string mainSrc = "import * as idx from \"" + (tempDir / "re_index.izi").string() + "\";\n"
+        std::string mainSrc = "import * as idx from \"" + (tempDir / "re_index.izi").string() +
+                              "\";\n"
                               "var f = idx.FOO;\n"
                               "var b = idx.bar();\n";
 
@@ -1394,7 +1401,8 @@ TEST_CASE("Re-export syntax", "[modules][reexport]") {
         writeFile((tempDir / "re_partial.izi").string(),
                   "export { A, B } from \"" + (tempDir / "re_source.izi").string() + "\";\n");
 
-        std::string mainSrc = "import * as mod from \"" + (tempDir / "re_partial.izi").string() + "\";\n"
+        std::string mainSrc = "import * as mod from \"" + (tempDir / "re_partial.izi").string() +
+                              "\";\n"
                               "var a = mod.A;\n"
                               "var b = mod.B;\n";
 
@@ -1411,7 +1419,9 @@ TEST_CASE("Re-export syntax", "[modules][reexport]") {
         try {
             interp.getGlobals()->get("mod");  // mod exists
             // access mod.C would fail at runtime in izi code, but not via getGlobals
-        } catch (...) { threw = true; }
+        } catch (...) {
+            threw = true;
+        }
     }
 
     SECTION("Named re-export of non-existent name throws") {

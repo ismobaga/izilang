@@ -10,6 +10,7 @@
 #include <cctype>
 #include <cstdlib>
 #include <cstring>
+#include <variant>
 
 #ifdef HAVE_READLINE
 #include <readline/readline.h>
@@ -40,6 +41,15 @@
 
 using namespace izi;
 namespace fs = std::filesystem;
+
+static Value runVmArtifact(VM& vm, const BackendArtifact& artifact, const char* backendName) {
+    const Chunk* chunk = std::get_if<Chunk>(&artifact);
+    if (chunk == nullptr) {
+        throw std::runtime_error(std::string("Backend '") + backendName +
+                                 "' produced a non-VM artifact for VM execution.");
+    }
+    return vm.run(*chunk);
+}
 
 void runCode(const std::string& src, bool useVM, bool debug, bool optimize, const std::string& filename = "<stdin>",
              const std::vector<std::string>& args = {}) {
@@ -96,11 +106,11 @@ void runCode(const std::string& src, bool useVM, bool debug, bool optimize, cons
             request.program = &program;
             request.currentFile = filename;
             request.importedModules = &importedModules;
-            Chunk chunk = pipeline.compile(request);
+            BackendArtifact artifact = pipeline.compile(request);
             VM vm;
             vm.setCommandLineArgs(args);
             registerVmNatives(vm);
-            Value result = vm.run(chunk);
+            Value result = runVmArtifact(vm, artifact, pipeline.backendName());
         }
     } catch (const ParserError& e) {
         ErrorReporter reporter(src);
@@ -172,8 +182,8 @@ void runReplLine(const std::string& src, Interpreter* interp, VM* vm, bool useVM
             request.program = &program;
             request.currentFile = filename;
             request.importedModules = &importedModules;
-            Chunk chunk = pipeline.compile(request);
-            Value result = vm->run(chunk);
+            BackendArtifact artifact = pipeline.compile(request);
+            Value result = runVmArtifact(*vm, artifact, pipeline.backendName());
         }
 
         // Hand ownership of the AST back to the caller so that raw pointers

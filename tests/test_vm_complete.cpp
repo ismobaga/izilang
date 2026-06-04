@@ -1,44 +1,17 @@
 #include "catch.hpp"
 #include "bytecode/chunk.hpp"
 #include "bytecode/opcode.hpp"
-#include "bytecode/vm.hpp"
-#include "bytecode/vm_native.hpp"
-#include "compile/compiler.hpp"
-#include "parse/lexer.hpp"
-#include "parse/parser.hpp"
-#include <sstream>
+#include "vm_test_utils.hpp"
 
 using namespace izi;
 
 // Helper to compile and run source code, returning the VM's final value.
 static Value compileAndRun(const std::string& source) {
-    Lexer lexer(source);
-    auto tokens = lexer.scanTokens();
-    Parser parser(std::move(tokens), source);
-    auto program = parser.parse();
-    BytecodeCompiler compiler;
-    Chunk chunk = compiler.compile(program);
-    VM vm;
-    registerVmNatives(vm);
-    return vm.run(chunk);
+    return testutil::runVmSource(source, true);
 }
 
-// Helper to capture stdout while running.
-class OutputCapture {
-   public:
-    OutputCapture() : old_buf(std::cout.rdbuf()) { std::cout.rdbuf(buffer.rdbuf()); }
-    ~OutputCapture() { std::cout.rdbuf(old_buf); }
-    std::string get() { return buffer.str(); }
-
-   private:
-    std::stringstream buffer;
-    std::streambuf* old_buf;
-};
-
 static std::string runAndCapture(const std::string& source) {
-    OutputCapture capture;
-    compileAndRun(source);
-    return capture.get();
+    return testutil::runVmSourceAndCapture(source, true);
 }
 
 // ============================================================
@@ -388,14 +361,17 @@ TEST_CASE("VM JUMP_IF_NOT_NIL opcode: manual chunk", "[vm-complete][nullish][low
         uint8_t i42 = static_cast<uint8_t>(chunk.addConstant(42.0));
         uint8_t i99 = static_cast<uint8_t>(chunk.addConstant(99.0));
         // Push 42
-        chunk.write(static_cast<uint8_t>(OpCode::CONSTANT), 1); chunk.write(i42, 1);
+        chunk.write(static_cast<uint8_t>(OpCode::CONSTANT), 1);
+        chunk.write(i42, 1);
         // JUMP_IF_NOT_NIL over POP+CONSTANT(99)
         chunk.write(static_cast<uint8_t>(OpCode::JUMP_IF_NOT_NIL), 1);
-        chunk.write(0); chunk.write(3);  // skip 3 bytes: POP + CONSTANT + index
+        chunk.write(0);
+        chunk.write(3);  // skip 3 bytes: POP + CONSTANT + index
         // POP
         chunk.write(static_cast<uint8_t>(OpCode::POP), 1);
         // CONSTANT 99
-        chunk.write(static_cast<uint8_t>(OpCode::CONSTANT), 1); chunk.write(i99, 1);
+        chunk.write(static_cast<uint8_t>(OpCode::CONSTANT), 1);
+        chunk.write(i99, 1);
         // RETURN
         chunk.write(static_cast<uint8_t>(OpCode::RETURN), 1);
 
@@ -413,11 +389,13 @@ TEST_CASE("VM JUMP_IF_NOT_NIL opcode: manual chunk", "[vm-complete][nullish][low
         chunk.write(static_cast<uint8_t>(OpCode::NIL), 1);
         // JUMP_IF_NOT_NIL (does NOT jump because value is nil)
         chunk.write(static_cast<uint8_t>(OpCode::JUMP_IF_NOT_NIL), 1);
-        chunk.write(0); chunk.write(3);  // offset 3: skip POP + CONSTANT + index
+        chunk.write(0);
+        chunk.write(3);  // offset 3: skip POP + CONSTANT + index
         // POP the nil
         chunk.write(static_cast<uint8_t>(OpCode::POP), 1);
         // CONSTANT 99
-        chunk.write(static_cast<uint8_t>(OpCode::CONSTANT), 1); chunk.write(i99, 1);
+        chunk.write(static_cast<uint8_t>(OpCode::CONSTANT), 1);
+        chunk.write(i99, 1);
         // RETURN
         chunk.write(static_cast<uint8_t>(OpCode::RETURN), 1);
 

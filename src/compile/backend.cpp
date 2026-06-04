@@ -10,7 +10,7 @@ namespace {
 
 class VmBytecodeBackend final : public CompileBackend {
    public:
-    Chunk compile(const CompileRequest& request) override {
+    BackendArtifact compile(const CompileRequest& request) override {
         if (request.program == nullptr) {
             throw std::runtime_error("Compile request missing program.");
         }
@@ -28,7 +28,7 @@ class VmBytecodeBackend final : public CompileBackend {
 
 class LlvmNativeBackend final : public CompileBackend {
    public:
-    Chunk compile(const CompileRequest& request) override {
+    BackendArtifact compile(const CompileRequest& request) override {
         (void)request;
         throw std::runtime_error("LLVM native backend scaffolding is present but codegen is not implemented yet.");
     }

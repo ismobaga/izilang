@@ -1,28 +1,17 @@
 #include "catch.hpp"
 #include "interp/interpreter.hpp"
-#include "parse/lexer.hpp"
-#include "parse/parser.hpp"
-#include "compile/compiler.hpp"
-#include "bytecode/vm.hpp"
-#include "bytecode/vm_native.hpp"
+#include "vm_test_utils.hpp"
 
 #include <sstream>
 #include <stdexcept>
 
 using namespace izi;
 
-static std::vector<StmtPtr> parseProgram(const std::string& source) {
-    Lexer lexer(source);
-    auto tokens = lexer.scanTokens();
-    Parser parser(std::move(tokens), source);
-    return parser.parse();
-}
-
 static std::string runWithInterpreter(const std::string& source) {
     std::ostringstream out;
     std::streambuf* old = std::cout.rdbuf(out.rdbuf());
     try {
-        auto program = parseProgram(source);
+        auto program = testutil::parseProgram(source);
         Interpreter interp(source);
         interp.interpret(program);
     } catch (...) {
@@ -34,21 +23,7 @@ static std::string runWithInterpreter(const std::string& source) {
 }
 
 static std::string runWithVm(const std::string& source) {
-    std::ostringstream out;
-    std::streambuf* old = std::cout.rdbuf(out.rdbuf());
-    try {
-        auto program = parseProgram(source);
-        BytecodeCompiler compiler;
-        Chunk chunk = compiler.compile(program);
-        VM vm;
-        registerVmNatives(vm);
-        (void)vm.run(chunk);
-    } catch (...) {
-        std::cout.rdbuf(old);
-        throw;
-    }
-    std::cout.rdbuf(old);
-    return out.str();
+    return testutil::runVmSourceAndCapture(source, true);
 }
 
 static void requireSameOutput(const std::string& source) {
