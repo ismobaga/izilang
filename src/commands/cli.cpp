@@ -25,6 +25,7 @@
 #include "parse/lexer.hpp"
 #include "parse/parser.hpp"
 #include "compile/compiler.hpp"
+#include "compile/pipeline.hpp"
 #include "compile/formatter.hpp"
 #include "compile/optimizer.hpp"
 #include "compile/native_compiler.hpp"
@@ -90,10 +91,12 @@ void runCode(const std::string& src, bool useVM, bool debug, bool optimize, cons
             interp.interpret(program);
         } else {
             std::unordered_set<std::string> importedModules;
-            BytecodeCompiler compiler;
-            compiler.setCurrentFile(filename);  // Set current file for relative imports
-            compiler.setImportedModules(&importedModules);
-            Chunk chunk = compiler.compile(program);
+            CompilePipeline pipeline(makeBackend(BackendTarget::VmBytecode));
+            CompileRequest request;
+            request.program = &program;
+            request.currentFile = filename;
+            request.importedModules = &importedModules;
+            Chunk chunk = pipeline.compile(request);
             VM vm;
             vm.setCommandLineArgs(args);
             registerVmNatives(vm);
@@ -164,10 +167,12 @@ void runReplLine(const std::string& src, Interpreter* interp, VM* vm, bool useVM
             interp->interpret(program);
         } else if (useVM && vm) {
             std::unordered_set<std::string> importedModules;
-            BytecodeCompiler compiler;
-            compiler.setCurrentFile(filename);
-            compiler.setImportedModules(&importedModules);
-            Chunk chunk = compiler.compile(program);
+            CompilePipeline pipeline(makeBackend(BackendTarget::VmBytecode));
+            CompileRequest request;
+            request.program = &program;
+            request.currentFile = filename;
+            request.importedModules = &importedModules;
+            Chunk chunk = pipeline.compile(request);
             Value result = vm->run(chunk);
         }
 
