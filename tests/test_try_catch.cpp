@@ -20,10 +20,18 @@ TEST_CASE("VM: Try-Catch basic exception handling", "[vm][exception]") {
         Chunk chunk = compiler.compile(program);
 
         VM vm;
-        Value result = vm.run(chunk);
+        REQUIRE_NOTHROW(vm.run(chunk));
 
-        // Test passes if no uncaught exception escapes
-        REQUIRE(true);
+        const auto& globals = vm.getGlobals();
+        auto caughtIt = globals.find("caught");
+        auto afterIt = globals.find("after");
+
+        REQUIRE(caughtIt != globals.end());
+        REQUIRE(afterIt != globals.end());
+        REQUIRE(std::holds_alternative<double>(caughtIt->second));
+        REQUIRE(std::holds_alternative<double>(afterIt->second));
+        REQUIRE(std::get<double>(caughtIt->second) == 1.0);
+        REQUIRE(std::get<double>(afterIt->second) == 2.0);
     }
 
     SECTION("Try-catch with no exception thrown") {
@@ -38,10 +46,13 @@ TEST_CASE("VM: Try-Catch basic exception handling", "[vm][exception]") {
         Chunk chunk = compiler.compile(program);
 
         VM vm;
-        vm.run(chunk);
+        REQUIRE_NOTHROW(vm.run(chunk));
 
-        // Test passes if execution completes successfully
-        REQUIRE(true);
+        const auto& globals = vm.getGlobals();
+        auto it = globals.find("executed");
+        REQUIRE(it != globals.end());
+        REQUIRE(std::holds_alternative<double>(it->second));
+        REQUIRE(std::get<double>(it->second) == 1.0);
     }
 }
 
@@ -58,9 +69,13 @@ TEST_CASE("VM: Try-Finally blocks", "[vm][exception]") {
         Chunk chunk = compiler.compile(program);
 
         VM vm;
-        vm.run(chunk);
+        REQUIRE_NOTHROW(vm.run(chunk));
 
-        REQUIRE(true);  // Test passes if execution completes
+        const auto& globals = vm.getGlobals();
+        auto it = globals.find("state");
+        REQUIRE(it != globals.end());
+        REQUIRE(std::holds_alternative<double>(it->second));
+        REQUIRE(std::get<double>(it->second) == 11.0);
     }
 
     SECTION("Finally block executes with exception") {
@@ -76,9 +91,36 @@ TEST_CASE("VM: Try-Finally blocks", "[vm][exception]") {
         Chunk chunk = compiler.compile(program);
 
         VM vm;
-        vm.run(chunk);
+        REQUIRE_NOTHROW(vm.run(chunk));
 
-        REQUIRE(true);  // Test passes if execution completes
+        const auto& globals = vm.getGlobals();
+        auto it = globals.find("state");
+        REQUIRE(it != globals.end());
+        REQUIRE(std::holds_alternative<double>(it->second));
+        REQUIRE(std::get<double>(it->second) == 11.0);
+    }
+
+    SECTION("Try-finally without catch propagates after finally") {
+        std::string source = "var state = 0; try { throw \"boom\"; } finally { state = 1; } var after = 2;";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+
+        BytecodeCompiler compiler;
+        Chunk chunk = compiler.compile(program);
+
+        VM vm;
+        REQUIRE_NOTHROW(vm.run(chunk));
+
+        const auto& globals = vm.getGlobals();
+        auto stateIt = globals.find("state");
+        auto afterIt = globals.find("after");
+
+        REQUIRE(stateIt != globals.end());
+        REQUIRE(std::holds_alternative<double>(stateIt->second));
+        REQUIRE(std::get<double>(stateIt->second) == 1.0);
+        REQUIRE(afterIt == globals.end());
     }
 }
 
@@ -97,8 +139,42 @@ TEST_CASE("VM: Nested try-catch blocks", "[vm][exception]") {
         Chunk chunk = compiler.compile(program);
 
         VM vm;
-        vm.run(chunk);
+        REQUIRE_NOTHROW(vm.run(chunk));
 
-        REQUIRE(true);  // Test passes if execution completes (verifies inner catch handles exception)
+        const auto& globals = vm.getGlobals();
+        auto it = globals.find("state");
+        REQUIRE(it != globals.end());
+        REQUIRE(std::holds_alternative<double>(it->second));
+        REQUIRE(std::get<double>(it->second) == 3.0);
+
+        // Inner catch variable binding should not leak to outer/global scope.
+        REQUIRE(globals.find("e") == globals.end());
     }
+
+    SECTION("Catch variable restores previous global binding") {
+        std::string source =
+            "var e = \"outer\"; var seen = \"\"; try { throw \"inner\"; } catch(e) { seen = e; } var after = e;";
+        Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        Parser parser(std::move(tokens), source);
+        auto program = parser.parse();
+
+        BytecodeCompiler compiler;
+        Chunk chunk = compiler.compile(program);
+
+        VM vm;
+        REQUIRE_NOTHROW(vm.run(chunk));
+
+        const auto& globals = vm.getGlobals();
+        auto seenIt = globals.find("seen");
+        auto afterIt = globals.find("after");
+
+        REQUIRE(seenIt != globals.end());
+        REQUIRE(afterIt != globals.end());
+        REQUIRE(std::holds_alternative<std::string>(seenIt->second));
+        REQUIRE(std::holds_alternative<std::string>(afterIt->second));
+        REQUIRE(std::get<std::string>(seenIt->second) == "inner");
+        REQUIRE(std::get<std::string>(afterIt->second) == "outer");
+    }
+
 }

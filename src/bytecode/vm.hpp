@@ -28,6 +28,10 @@ struct ExceptionHandler {
     const uint8_t* finallyIp;  // Instruction pointer to finally block (nullptr if no finally)
     size_t stackSize;  // Stack size when handler was set up
     std::string catchVariable;  // Variable name to bind exception to in catch block
+    bool hadPreviousCatchBinding = false;
+    Value previousCatchBinding = Nil{};
+    bool hasPendingException = false;
+    Value pendingException = Nil{};
 };
 
 class VM {

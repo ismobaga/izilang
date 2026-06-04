@@ -407,7 +407,22 @@ Value VM::run(const Chunk& entry, const std::vector<Value>& initialLocals,
                     // End of try-catch-finally block
                     // Pop the exception handler from the stack
                     if (!exceptionHandlers.empty()) {
+                        ExceptionHandler handler = std::move(exceptionHandlers.back());
                         exceptionHandlers.pop_back();
+
+                        // Catch bindings are temporary and scoped to the catch block.
+                        if (!handler.catchVariable.empty()) {
+                            if (handler.hadPreviousCatchBinding) {
+                                globals[handler.catchVariable] = std::move(handler.previousCatchBinding);
+                            } else {
+                                globals.erase(handler.catchVariable);
+                            }
+                        }
+
+                        // For try/finally without a catch, propagate after finally runs.
+                        if (handler.hasPendingException) {
+                            throwException(handler.pendingException);
+                        }
                     }
                     break;
                 }
@@ -651,24 +666,39 @@ bool VM::handleException(const Value& exception) {
             // Push exception value to stack
             push(exception);
 
-            // Set the catch variable as a global
-            // NOTE: This is a simplification - ideally catch variables should be local to the catch block
-            // However, the current VM implementation uses globals for all variables accessed by name
-            globals[handler.catchVariable] = exception;
+            if (!handler.catchVariable.empty()) {
+                auto previousBinding = globals.find(handler.catchVariable);
+                if (previousBinding != globals.end()) {
+                    handler.hadPreviousCatchBinding = true;
+                    handler.previousCatchBinding = previousBinding->second;
+                } else {
+                    handler.hadPreviousCatchBinding = false;
+                }
+
+                // VM variables are currently name-based globals, so bind catch temporarily.
+                globals[handler.catchVariable] = exception;
+            }
 
             // Jump to catch block
             currentFrame()->ip = handler.catchIp;
+
+            // A handler should only enter its catch block once.
+            handler.catchIp = nullptr;
 
             // The END_TRY opcode will clean up the handler
             return true;
         }
 
         // If there's only a finally block (no catch), jump to it
-        // NOTE: In a full implementation, the exception should be re-thrown after finally executes
-        // For this initial implementation, we execute the finally block and consider the exception handled
         if (handler.finallyIp != nullptr) {
+            handler.hasPendingException = true;
+            handler.pendingException = exception;
+
             // Jump to finally block
             currentFrame()->ip = handler.finallyIp;
+
+            // A handler should only enter its finally block once.
+            handler.finallyIp = nullptr;
             return true;
         }
 
