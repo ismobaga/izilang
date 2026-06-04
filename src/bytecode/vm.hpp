@@ -38,6 +38,8 @@ class VM {
               std::shared_ptr<VmUserFunction> function = nullptr);
 
     void setGlobal(const std::string& name, const Value& value);
+    void setCommandLineArgs(const std::vector<std::string>& args) { commandLineArgs = args; }
+    const std::vector<std::string>& getCommandLineArgs() const { return commandLineArgs; }
 
     // Runtime safety limits
     size_t getCallDepth() const { return frames.size(); }
@@ -53,6 +55,7 @@ class VM {
     std::vector<Value> stack;
     std::vector<CallFrame> frames;
     std::unordered_map<std::string, Value> globals;
+    std::vector<std::string> commandLineArgs;
     std::vector<ExceptionHandler> exceptionHandlers;  // Stack of exception handlers
     bool isRunning = false;
 

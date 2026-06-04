@@ -65,6 +65,42 @@ Value vmNativeClock(VM& vm, const std::vector<Value>& arguments) {
     return static_cast<double>(ms) / 1000.0;
 }
 
+Value vmNativeAwait(VM& vm, const std::vector<Value>& arguments) {
+    if (arguments.size() != 1) {
+        throw std::runtime_error("await() takes exactly one argument.");
+    }
+
+    if (!std::holds_alternative<std::shared_ptr<Task>>(arguments[0])) {
+        return arguments[0];
+    }
+
+    auto task = std::get<std::shared_ptr<Task>>(arguments[0]);
+
+    if (task->osMutex != nullptr) {
+        std::unique_lock<std::mutex> lock(*task->osMutex);
+        task->osCv->wait(
+            lock, [&task] { return task->state == Task::State::Completed || task->state == Task::State::Failed; });
+        if (task->state == Task::State::Failed) {
+            throw std::runtime_error("Thread failed: " + task->errorMessage);
+        }
+        return task->result;
+    }
+
+    if (task->state == Task::State::Running) {
+        throw std::runtime_error("await() called re-entrantly on an already running task.");
+    }
+
+    if (task->state == Task::State::Failed) {
+        throw std::runtime_error("Task failed: " + task->errorMessage);
+    }
+
+    if (task->state == Task::State::Completed) {
+        return task->result;
+    }
+
+    throw std::runtime_error("VM await() does not support lazy task execution yet.");
+}
+
 Value vmNativePush(VM& vm, const std::vector<Value>& arguments) {
     if (arguments.size() != 2) {
         throw std::runtime_error("push() takes exactly two arguments.");
@@ -257,6 +293,92 @@ Value vmNativeEntries(VM& vm, const std::vector<Value>& arguments) {
         entriesArray->elements.push_back(entry);
     }
     return entriesArray;
+}
+
+Value vmNativeEnvGet(VM& vm, const std::vector<Value>& arguments) {
+    if (arguments.size() != 1) {
+        throw std::runtime_error("env.get() takes exactly one argument.");
+    }
+    if (!std::holds_alternative<std::string>(arguments[0])) {
+        throw std::runtime_error("env.get() argument must be a string.");
+    }
+
+    const std::string& name = std::get<std::string>(arguments[0]);
+    const char* value = std::getenv(name.c_str());
+    if (value == nullptr) {
+        return Nil{};
+    }
+    return std::string(value);
+}
+
+Value vmNativeEnvSet(VM& vm, const std::vector<Value>& arguments) {
+    if (arguments.size() != 2) {
+        throw std::runtime_error("env.set() takes exactly two arguments.");
+    }
+    if (!std::holds_alternative<std::string>(arguments[0])) {
+        throw std::runtime_error("env.set() first argument must be a string.");
+    }
+    if (!std::holds_alternative<std::string>(arguments[1])) {
+        throw std::runtime_error("env.set() second argument must be a string.");
+    }
+
+    const std::string& name = std::get<std::string>(arguments[0]);
+    const std::string& value = std::get<std::string>(arguments[1]);
+
+#ifdef _WIN32
+    int result = _putenv_s(name.c_str(), value.c_str());
+#else
+    int result = setenv(name.c_str(), value.c_str(), 1);
+#endif
+    if (result != 0) {
+        throw std::runtime_error("env.set() failed to set environment variable '" + name + "'");
+    }
+
+    return Nil{};
+}
+
+Value vmNativeEnvExists(VM& vm, const std::vector<Value>& arguments) {
+    if (arguments.size() != 1) {
+        throw std::runtime_error("env.exists() takes exactly one argument.");
+    }
+    if (!std::holds_alternative<std::string>(arguments[0])) {
+        throw std::runtime_error("env.exists() argument must be a string.");
+    }
+
+    const std::string& name = std::get<std::string>(arguments[0]);
+    return std::getenv(name.c_str()) != nullptr;
+}
+
+Value vmNativeProcessExit(VM& vm, const std::vector<Value>& arguments) {
+    if (arguments.size() != 1) {
+        throw std::runtime_error("process.exit() takes exactly one argument.");
+    }
+    if (!std::holds_alternative<double>(arguments[0])) {
+        throw std::runtime_error("process.exit() argument must be a number.");
+    }
+
+    int exitCode = static_cast<int>(std::get<double>(arguments[0]));
+    std::exit(exitCode);
+    return Nil{};
+}
+
+Value vmNativeProcessStatus(VM& vm, const std::vector<Value>& arguments) {
+    if (!arguments.empty()) {
+        throw std::runtime_error("process.status() takes no arguments.");
+    }
+    return 0.0;
+}
+
+Value vmNativeProcessArgs(VM& vm, const std::vector<Value>& arguments) {
+    if (!arguments.empty()) {
+        throw std::runtime_error("process.args() takes no arguments.");
+    }
+
+    auto argsArray = std::make_shared<Array>();
+    for (const auto& arg : vm.getCommandLineArgs()) {
+        argsArray->elements.push_back(arg);
+    }
+    return argsArray;
 }
 
 // ============ Set functions ============
@@ -1587,8 +1709,7 @@ Value vmNativeIpcOpenWrite(VM& /*vm*/, const std::vector<Value>& arguments) {
     std::string path = vmIpcPipePath(name);
     int fd = open(path.c_str(), O_WRONLY | O_NONBLOCK);
     if (fd < 0) {
-        throw std::runtime_error("ipc.openWrite() failed to open pipe '" + name +
-                                 "': " + strerror(errno) +
+        throw std::runtime_error("ipc.openWrite() failed to open pipe '" + name + "': " + strerror(errno) +
                                  " (ensure a reader has opened the pipe first)");
     }
     int flags = fcntl(fd, F_GETFL, 0);
@@ -1613,12 +1734,8 @@ Value vmNativeIpcSend(VM& /*vm*/, const std::vector<Value>& arguments) {
         throw std::runtime_error("ipc.send() called on a read-only handle.");
     }
     uint32_t len = static_cast<uint32_t>(message.size());
-    uint8_t lenBuf[4] = {
-        static_cast<uint8_t>((len >> 24) & 0xFF),
-        static_cast<uint8_t>((len >> 16) & 0xFF),
-        static_cast<uint8_t>((len >> 8) & 0xFF),
-        static_cast<uint8_t>(len & 0xFF)
-    };
+    uint8_t lenBuf[4] = {static_cast<uint8_t>((len >> 24) & 0xFF), static_cast<uint8_t>((len >> 16) & 0xFF),
+                         static_cast<uint8_t>((len >> 8) & 0xFF), static_cast<uint8_t>(len & 0xFF)};
     if (write(h.fd, lenBuf, 4) != 4) {
         throw std::runtime_error("ipc.send() failed to write message length: " + std::string(strerror(errno)));
     }
@@ -1650,10 +1767,8 @@ Value vmNativeIpcRecv(VM& /*vm*/, const std::vector<Value>& arguments) {
     if (n != 4) {
         throw std::runtime_error("ipc.recv() failed to read message length: " + std::string(strerror(errno)));
     }
-    uint32_t len = (static_cast<uint32_t>(lenBuf[0]) << 24) |
-                   (static_cast<uint32_t>(lenBuf[1]) << 16) |
-                   (static_cast<uint32_t>(lenBuf[2]) << 8)  |
-                    static_cast<uint32_t>(lenBuf[3]);
+    uint32_t len = (static_cast<uint32_t>(lenBuf[0]) << 24) | (static_cast<uint32_t>(lenBuf[1]) << 16) |
+                   (static_cast<uint32_t>(lenBuf[2]) << 8) | static_cast<uint32_t>(lenBuf[3]);
     std::string message(len, '\0');
     ssize_t total = 0;
     while (static_cast<uint32_t>(total) < len) {
@@ -1695,10 +1810,8 @@ Value vmNativeIpcTryRecv(VM& /*vm*/, const std::vector<Value>& arguments) {
     if (n != 4) {
         throw std::runtime_error("ipc.tryRecv() failed to read message length: " + std::string(strerror(errno)));
     }
-    uint32_t len = (static_cast<uint32_t>(lenBuf[0]) << 24) |
-                   (static_cast<uint32_t>(lenBuf[1]) << 16) |
-                   (static_cast<uint32_t>(lenBuf[2]) << 8)  |
-                    static_cast<uint32_t>(lenBuf[3]);
+    uint32_t len = (static_cast<uint32_t>(lenBuf[0]) << 24) | (static_cast<uint32_t>(lenBuf[1]) << 16) |
+                   (static_cast<uint32_t>(lenBuf[2]) << 8) | static_cast<uint32_t>(lenBuf[3]);
     std::string message(len, '\0');
     ssize_t total = 0;
     while (static_cast<uint32_t>(total) < len) {
@@ -1840,8 +1953,8 @@ Value vmNativeNetListen(VM& /*vm*/, const std::vector<Value>& arguments) {
         addr.sin_port = htons(static_cast<uint16_t>(port));
         if (bind(sock, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr)) < 0) {
             ::close(sock);
-            throw std::runtime_error("net.listen(): failed to bind port " + std::to_string(port) +
-                                     ": " + strerror(errno));
+            throw std::runtime_error("net.listen(): failed to bind port " + std::to_string(port) + ": " +
+                                     strerror(errno));
         }
     } else {
         int opt = 1;
@@ -1854,15 +1967,15 @@ Value vmNativeNetListen(VM& /*vm*/, const std::vector<Value>& arguments) {
         addr.sin6_port = htons(static_cast<uint16_t>(port));
         if (bind(sock, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr)) < 0) {
             ::close(sock);
-            throw std::runtime_error("net.listen(): failed to bind port " + std::to_string(port) +
-                                     ": " + strerror(errno));
+            throw std::runtime_error("net.listen(): failed to bind port " + std::to_string(port) + ": " +
+                                     strerror(errno));
         }
     }
 
     if (listen(sock, 128) < 0) {
         ::close(sock);
-        throw std::runtime_error("net.listen(): failed to listen on port " + std::to_string(port) +
-                                 ": " + strerror(errno));
+        throw std::runtime_error("net.listen(): failed to listen on port " + std::to_string(port) + ": " +
+                                 strerror(errno));
     }
 
     int handle = vmNetAllocHandle(sock, true);
@@ -2003,6 +2116,7 @@ void registerVmNatives(VM& vm) {
     vm.setGlobal("print", std::make_shared<VmNativeFunction>("print", -1, vmNativePrint));
     vm.setGlobal("len", std::make_shared<VmNativeFunction>("len", 1, vmNativeLen));
     vm.setGlobal("clock", std::make_shared<VmNativeFunction>("clock", 0, vmNativeClock));
+    vm.setGlobal("await", std::make_shared<VmNativeFunction>("await", 1, vmNativeAwait));
 
     // Array functions
     vm.setGlobal("push", std::make_shared<VmNativeFunction>("push", 2, vmNativePush));
@@ -2075,6 +2189,16 @@ void registerVmNatives(VM& vm) {
     vm.setGlobal("writeFile", std::make_shared<VmNativeFunction>("writeFile", 2, vmNativeWriteFile));
     vm.setGlobal("appendFile", std::make_shared<VmNativeFunction>("appendFile", 2, vmNativeAppendFile));
     vm.setGlobal("fileExists", std::make_shared<VmNativeFunction>("fileExists", 1, vmNativeFileExists));
+
+    // std.env functions
+    vm.setGlobal("envGet", std::make_shared<VmNativeFunction>("envGet", 1, vmNativeEnvGet));
+    vm.setGlobal("envSet", std::make_shared<VmNativeFunction>("envSet", 2, vmNativeEnvSet));
+    vm.setGlobal("envExists", std::make_shared<VmNativeFunction>("envExists", 1, vmNativeEnvExists));
+
+    // std.process functions
+    vm.setGlobal("processExit", std::make_shared<VmNativeFunction>("processExit", 1, vmNativeProcessExit));
+    vm.setGlobal("processStatus", std::make_shared<VmNativeFunction>("processStatus", 0, vmNativeProcessStatus));
+    vm.setGlobal("processArgs", std::make_shared<VmNativeFunction>("processArgs", 0, vmNativeProcessArgs));
 }
 
 }  // namespace izi

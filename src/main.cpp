@@ -95,6 +95,7 @@ void runCode(const std::string& src, bool useVM, bool debug, bool optimize, cons
             compiler.setImportedModules(&importedModules);
             Chunk chunk = compiler.compile(program);
             VM vm;
+            vm.setCommandLineArgs(args);
             registerVmNatives(vm);
             Value result = vm.run(chunk);
         }
@@ -129,8 +130,7 @@ void runCode(const std::string& src, bool useVM, bool debug, bool optimize, cons
 }
 
 void runReplLine(const std::string& src, Interpreter* interp, VM* vm, bool useVM, bool debug, bool optimize,
-                 const std::string& filename = "<repl>",
-                 std::vector<StmtPtr>* outProgram = nullptr) {
+                 const std::string& filename = "<repl>", std::vector<StmtPtr>* outProgram = nullptr) {
     try {
         if (debug) {
             std::cout << "[DEBUG] Lexing and parsing...\n";
@@ -219,21 +219,20 @@ void runReplLine(const std::string& src, Interpreter* interp, VM* vm, bool useVM
 
 // IziLang keywords for syntax highlighting and auto-completion
 static const std::vector<std::string> REPL_KEYWORDS = {
-    "fn", "var", "if", "else", "while", "for", "return", "break", "continue",
-    "class", "true", "false", "nil", "and", "or", "import", "export", "from",
-    "as", "try", "catch", "finally", "throw", "match", "super", "this",
-    "extends", "print"};
+    "fn",    "var",     "if",    "else",  "while", "for",    "return",  "break", "continue", "class",
+    "true",  "false",   "nil",   "and",   "or",    "import", "export",  "from",  "as",       "try",
+    "catch", "finally", "throw", "match", "super", "this",   "extends", "print"};
 
 // Apply ANSI syntax highlighting to a source string
 static std::string syntaxHighlight(const std::string& input) {
     if (input.empty()) return input;
 
     // ANSI color codes
-    static const char* RESET    = "\033[0m";
-    static const char* KEYWORD  = "\033[1;34m";  // Bold blue
-    static const char* STRING   = "\033[0;32m";  // Green
-    static const char* NUMBER   = "\033[0;33m";  // Yellow
-    static const char* COMMENT  = "\033[0;90m";  // Dark gray
+    static const char* RESET = "\033[0m";
+    static const char* KEYWORD = "\033[1;34m";  // Bold blue
+    static const char* STRING = "\033[0;32m";  // Green
+    static const char* NUMBER = "\033[0;33m";  // Yellow
+    static const char* COMMENT = "\033[0;90m";  // Dark gray
     static const char* OPERATOR = "\033[0;36m";  // Cyan
 
     std::string result;
@@ -277,8 +276,7 @@ static std::string syntaxHighlight(const std::string& input) {
         // Numeric literals
         if (std::isdigit(static_cast<unsigned char>(c))) {
             result += NUMBER;
-            while (i < input.size() &&
-                   (std::isdigit(static_cast<unsigned char>(input[i])) || input[i] == '.')) {
+            while (i < input.size() && (std::isdigit(static_cast<unsigned char>(input[i])) || input[i] == '.')) {
                 result += input[i++];
             }
             result += RESET;
@@ -288,12 +286,10 @@ static std::string syntaxHighlight(const std::string& input) {
         // Identifiers and keywords
         if (std::isalpha(static_cast<unsigned char>(c)) || c == '_') {
             std::string word;
-            while (i < input.size() &&
-                   (std::isalnum(static_cast<unsigned char>(input[i])) || input[i] == '_')) {
+            while (i < input.size() && (std::isalnum(static_cast<unsigned char>(input[i])) || input[i] == '_')) {
                 word += input[i++];
             }
-            bool isKw = std::find(REPL_KEYWORDS.begin(), REPL_KEYWORDS.end(), word) !=
-                        REPL_KEYWORDS.end();
+            bool isKw = std::find(REPL_KEYWORDS.begin(), REPL_KEYWORDS.end(), word) != REPL_KEYWORDS.end();
             if (isKw) {
                 result += KEYWORD;
                 result += word;
@@ -305,8 +301,8 @@ static std::string syntaxHighlight(const std::string& input) {
         }
 
         // Operators
-        if (c == '+' || c == '-' || c == '*' || c == '/' || c == '=' ||
-            c == '<' || c == '>' || c == '!' || c == '%' || c == '&' || c == '|') {
+        if (c == '+' || c == '-' || c == '*' || c == '/' || c == '=' || c == '<' || c == '>' || c == '!' || c == '%' ||
+            c == '&' || c == '|') {
             result += OPERATOR;
             result += c;
             result += RESET;
@@ -323,8 +319,8 @@ static std::string syntaxHighlight(const std::string& input) {
 #ifdef HAVE_READLINE
 // Global interpreter/VM pointers used by readline callbacks
 static Interpreter* g_replInterp = nullptr;
-static VM*          g_replVm     = nullptr;
-static bool         g_replUseVM  = false;
+static VM* g_replVm = nullptr;
+static bool g_replUseVM = false;
 
 // readline redisplay callback: redraws the current input line with syntax highlighting
 static void replHighlightRedisplay() {
@@ -362,8 +358,7 @@ static char* replCompletionGenerator(const char* text, int state) {
 
             // Language keywords
             for (const auto& kw : REPL_KEYWORDS) {
-                if (kw.size() >= prefix.size() &&
-                    kw.compare(0, prefix.size(), prefix) == 0) {
+                if (kw.size() >= prefix.size() && kw.compare(0, prefix.size(), prefix) == 0) {
                     matches.push_back(kw);
                 }
             }
@@ -373,16 +368,14 @@ static char* replCompletionGenerator(const char* text, int state) {
                 auto globals = g_replInterp->getGlobals();
                 if (globals) {
                     for (const auto& [name, _] : globals->getAll()) {
-                        if (name.size() >= prefix.size() &&
-                            name.compare(0, prefix.size(), prefix) == 0) {
+                        if (name.size() >= prefix.size() && name.compare(0, prefix.size(), prefix) == 0) {
                             matches.push_back(name);
                         }
                     }
                 }
             } else if (g_replUseVM && g_replVm) {
                 for (const auto& [name, _] : g_replVm->getGlobals()) {
-                    if (name.size() >= prefix.size() &&
-                        name.compare(0, prefix.size(), prefix) == 0) {
+                    if (name.size() >= prefix.size() && name.compare(0, prefix.size(), prefix) == 0) {
                         matches.push_back(name);
                     }
                 }
@@ -426,16 +419,17 @@ void runRepl(bool useVM, bool debug) {
         interp = new Interpreter("");
     } else {
         vm = new VM();
+        vm->setCommandLineArgs({});
         registerVmNatives(*vm);
     }
 
 #ifdef HAVE_READLINE
     // Register readline callbacks for completion and syntax highlighting
     g_replInterp = interp;
-    g_replVm     = vm;
-    g_replUseVM  = useVM;
+    g_replVm = vm;
+    g_replUseVM = useVM;
     rl_attempted_completion_function = replCompletion;
-    rl_redisplay_function            = replHighlightRedisplay;
+    rl_redisplay_function = replHighlightRedisplay;
     // Enable history
     using_history();
 #endif
@@ -507,6 +501,7 @@ void runRepl(bool useVM, bool debug) {
                 } else {
                     delete vm;
                     vm = new VM();
+                    vm->setCommandLineArgs({});
                     registerVmNatives(*vm);
                 }
                 importedModules.clear();
@@ -578,10 +573,14 @@ void runRepl(bool useVM, bool debug) {
         for (size_t ci = 0; ci < line.size(); ++ci) {
             char c = line[ci];
             if (inStr) {
-                if (c == '\\' && ci + 1 < line.size()) { ++ci; continue; }
+                if (c == '\\' && ci + 1 < line.size()) {
+                    ++ci;
+                    continue;
+                }
                 if (c == strChar) inStr = false;
             } else if (c == '"' || c == '\'') {
-                inStr = true; strChar = c;
+                inStr = true;
+                strChar = c;
             } else if (c == '/' && ci + 1 < line.size() && line[ci + 1] == '/') {
                 break;  // rest of line is a comment; ignore braces in it
             } else if (c == '{') {
@@ -636,7 +635,7 @@ void runRepl(bool useVM, bool debug) {
     // Cleanup
 #ifdef HAVE_READLINE
     g_replInterp = nullptr;
-    g_replVm     = nullptr;
+    g_replVm = nullptr;
 #endif
     if (interp) delete interp;
     if (vm) delete vm;
@@ -874,7 +873,9 @@ int runDoctor() {
 #ifdef HAVE_READLINE
         doctorLine(true, "readline support: enabled (compiled with HAVE_READLINE)");
 #else
-        doctorLine(true, "readline support: disabled (REPL uses fallback mode; rebuild with -DIZI_ENABLE_READLINE=ON to enable)");
+        doctorLine(
+            true,
+            "readline support: disabled (REPL uses fallback mode; rebuild with -DIZI_ENABLE_READLINE=ON to enable)");
 #endif
     }
 
@@ -900,19 +901,23 @@ int runDoctor() {
 
     // Check build output paths
     {
-        bool debugBin = fs::exists("./build/izi") || fs::exists("./build/izi.exe")
-                     || fs::exists("./build/Debug/izi") || fs::exists("./build/Debug/izi.exe");
-        bool releaseBin = fs::exists("./build-release/izi") || fs::exists("./build-release/izi.exe")
-                       || fs::exists("./build/Release/izi") || fs::exists("./build/Release/izi.exe");
+        bool debugBin = fs::exists("./build/izi") || fs::exists("./build/izi.exe") || fs::exists("./build/Debug/izi") ||
+                        fs::exists("./build/Debug/izi.exe");
+        bool releaseBin = fs::exists("./build-release/izi") || fs::exists("./build-release/izi.exe") ||
+                          fs::exists("./build/Release/izi") || fs::exists("./build/Release/izi.exe");
         if (debugBin) {
             doctorLine(true, "debug build found: ./build/izi");
         } else {
-            doctorLine(true, "debug build not found (run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug && cmake --build build)");
+            doctorLine(
+                true,
+                "debug build not found (run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug && cmake --build build)");
         }
         if (releaseBin) {
             doctorLine(true, "release build found: ./build-release/izi");
         } else {
-            doctorLine(true, "release build not found (run: cmake -S . -B build-release -DCMAKE_BUILD_TYPE=Release && cmake --build build-release)");
+            doctorLine(true,
+                       "release build not found (run: cmake -S . -B build-release -DCMAKE_BUILD_TYPE=Release && cmake "
+                       "--build build-release)");
         }
     }
 
@@ -1260,6 +1265,7 @@ int main(int argc, char** argv) {
                 }
 
                 VM vm;
+                vm.setCommandLineArgs(options.args);
                 registerVmNatives(vm);
                 Value result = vm.run(chunk);
 

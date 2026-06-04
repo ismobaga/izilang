@@ -22,7 +22,7 @@ izi test               # Run test suite
 izi repl               # Interactive REPL
 ```
 
-**[→ See CLI Reference](docs/CLI_REFERENCE.md)**
+Supported commands and current implementation notes are tracked in [docs/IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md).
 
 ### 🎯 Excellent Error Messages
 
@@ -36,7 +36,7 @@ Runtime Error at line 3, column 10:
 Cannot add number and string. Operands must be two numbers or two strings.
 ```
 
-**[→ See Error Guide](docs/ERRORS_TROUBLESHOOTING.md)**
+**[→ See implementation status](docs/IMPLEMENTATION_STATUS.md)**
 
 ### 💻 Interactive REPL
 
@@ -52,7 +52,7 @@ IziLang 0.4.0-dev REPL
 > :help    # Show available commands
 ```
 
-**[→ Getting Started](docs/GETTING_STARTED.md)**
+For the current runtime and tooling surface, see [docs/IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md).
 
 ### 🔧 Rich Language Features
 
@@ -133,35 +133,41 @@ izi hello.iz
 # Output: Hello, World!
 ```
 
-**[→ Complete Getting Started Guide](docs/GETTING_STARTED.md)**
+For setup and usage details, see [docs/IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md) and the [Standard Library Reference](docs/stdlib/README.md).
 
 ## Documentation
 
-### Learning Resources
-
-- **[Tutorial](docs/TUTORIAL.md)** - Learn IziLang in Y minutes: guided tour with exercises
-- **[Getting Started](docs/GETTING_STARTED.md)** - Installation, basics, examples
-- **[Cookbook](docs/COOKBOOK.md)** - Practical patterns, best practices, real-world examples
+The documentation set in this repository currently focuses on implementation status, VM parity, stdlib coverage, and the browser playground.
 
 ### Reference
 
-- **[Language Specification](docs/LANGUAGE_SPEC.md)** - Formal grammar (EBNF), type system, semantics
-- **[Standard Library](docs/STANDARD_LIBRARY.md)** - All built-in modules and functions with examples
-- **[CLI Reference](docs/CLI_REFERENCE.md)** - Complete command-line guide
+- **[Implementation Status](docs/IMPLEMENTATION_STATUS.md)** - Source of truth for feature coverage and tooling status
+- **[VM Parity Checklist](docs/VM_PARITY_CHECKLIST.md)** - Bytecode VM feature parity tracking
+- **[Standard Library Reference](docs/stdlib/README.md)** - Module overview and built-in functions
+- **[Web Playground](docs/WEB_PLAYGROUND.md)** - Browser playground architecture and implementation notes
 
-### Guides
+### Module Docs
 
-- **[IPC Module](docs/IPC.md)** - Inter-process communication via named pipes
-- **[Module System](docs/MODULE_SYSTEM.md)** - Import/export and module organisation
-- **[Error System](docs/ERROR_SYSTEM.md)** - Error types and handling
-- **[Testing](docs/TESTING.md)** - How to run and write tests
-- **[Editor Setup](docs/EDITOR_SETUP.md)** - VS Code, Vim, Emacs integration
-- **[Troubleshooting](docs/ERRORS_TROUBLESHOOTING.md)** - Common errors and solutions
+- **[assert](docs/stdlib/assert.md)** - Assertions for testing and validation
+- **[env](docs/stdlib/env.md)** - Environment variable access
+- **[io](docs/stdlib/io.md)** - File I/O and console output
+- **[http](docs/stdlib/http.md)** - Synchronous HTTP client
+- **[json](docs/stdlib/json.md)** - JSON parsing and serialization
+- **[math](docs/stdlib/math.md)** - Mathematical constants and functions
+- **[string](docs/stdlib/string.md)** - String manipulation functions
+- **[time](docs/stdlib/time.md)** - Time, sleep, and formatting
+- **[regex](docs/stdlib/regex.md)** - Regular expression matching and replacement
+- **[array](docs/stdlib/array.md)** - Array utilities and higher-order functions
+- **[ipc](docs/stdlib/ipc.md)** - Inter-process communication via named pipes
+- **[image](docs/stdlib/image.md)** - Image loading and processing
+- **[audio](docs/stdlib/audio.md)** - Audio playback
+- **[ui](docs/stdlib/ui.md)** - Graphical window and drawing support
 
-### Project
+### Project Notes
 
-- **[Roadmap](docs/ROADMAP.md)** - Development plans and milestones
-- **[Analysis](docs/ANALYSIS.md)** - Project analysis, feature inventory, and v1.0 scope
+- **[Implementation Status](docs/IMPLEMENTATION_STATUS.md)** - Current feature status and planned work
+- **[VM Parity Checklist](docs/VM_PARITY_CHECKLIST.md)** - Open VM gaps and runtime differences
+- **[Web Playground](docs/WEB_PLAYGROUND.md)** - Frontend roadmap for the browser playground
 
 ## Language Examples
 
@@ -313,7 +319,7 @@ izilang/
 
 ## Contributing
 
-Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+Contributions are welcome through issues and pull requests.
 
 Areas where help is needed:
 - Language features and standard library
@@ -323,31 +329,7 @@ Areas where help is needed:
 
 ## Roadmap
 
-**v0.3** (Released) - Language Power & Performance ✅
-- ✅ Gradual typing with optional type annotations
-- ✅ Classes and OOP with inheritance
-- ✅ Mark-and-Sweep garbage collection
-- ✅ Semantic analysis and static checks
-- ✅ Enhanced stack traces and error reporting
-- ✅ VM import system and benchmark command (`izi bench`)
-- ✅ Stack overflow protection and memory statistics
-
-**v0.4** (In Progress) - Concurrency & Ecosystem
-- ✅ Code formatter (`izi fmt`) — experimental
-- ✅ Async/await syntax (parse + partial runtime; event loop planned)
-- ✅ Macro system (experimental)
-- ✅ Rich stdlib (json, time, regex, http, net, log, ipc) — partial/experimental
-- ✅ Nullish coalescing operator (`??`)
-- 🚧 LSP server — in progress, not yet stable
-- 🚧 Package manager MVP (`izi-pkg`) — planned, not yet implemented
-- 🚧 Full async I/O (`std.async` event loop) — planned
-
-**v1.0** (Target Q1 2027) - Stable
-- Language freeze (no breaking changes)
-- Package registry
-- Production deployments
-
-**[→ Full Roadmap](docs/ROADMAP.md)** | **[→ Project Analysis](docs/ANALYSIS.md)** | **[→ Implementation Status](docs/IMPLEMENTATION_STATUS.md)**
+The detailed feature matrix lives in [docs/IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md). The current focus is parity between the tree-walker interpreter and the bytecode VM, plus the stdlib and browser playground work tracked in [docs/VM_PARITY_CHECKLIST.md](docs/VM_PARITY_CHECKLIST.md) and [docs/WEB_PLAYGROUND.md](docs/WEB_PLAYGROUND.md).
 
 ## License
 

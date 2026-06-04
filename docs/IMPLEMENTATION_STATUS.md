@@ -118,7 +118,7 @@ This document is the source of truth for the implementation status of all major 
 | `std.string` | ✅ Complete | Yes | Yes | Yes | Stable |
 | `std.array` | ✅ Complete | Yes | Yes | Yes | Stable |
 | `std.io` | 🔶 Partial | Yes | Partial | Partial | Basic file I/O |
-| `std.env` | 🔶 Partial | Yes | Partial | Partial | Environment variables |
+| `std.env` | ✅ Complete | Yes | Yes | Yes | Environment variables |
 | `std.fs` | 🔶 Partial | Yes | Partial | Partial | Filesystem operations |
 | `std.json` | 🧪 Experimental | Yes | Partial | Partial | Basic parse/stringify |
 | `std.time` | 🧪 Experimental | Yes | Partial | Partial | Basic time functions |
@@ -128,7 +128,7 @@ This document is the source of truth for the implementation status of all major 
 | `std.log` | 🧪 Experimental | Yes | Partial | No | Logging helpers |
 | `std.ipc` | 🧪 Experimental | Yes | Partial | Partial | Named-pipe IPC |
 | `std.assert` | ✅ Complete | Yes | Yes | Yes | Assertion helpers |
-| `std.process` | 🔶 Partial | Yes | Partial | Partial | Process spawn/exit |
+| `std.process` | ✅ Complete | Yes | Yes | Yes | Process spawn/exit |
 | `std.audio` | 🚧 Planned | No | No | No | Planned with raylib |
 | `std.image` | 🚧 Planned | No | No | No | Planned with raylib |
 | `std.ui` | 🚧 Planned | No | No | No | Planned with raylib |

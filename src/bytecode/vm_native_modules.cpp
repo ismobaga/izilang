@@ -118,8 +118,8 @@ Value createVmLogModule(VM& vm) {
 Value createVmAssertModule(VM& /*vm*/) {
     auto module = std::make_shared<Map>();
 
-    module->entries["ok"] = Value{std::make_shared<VmNativeFunction>("ok", -1,
-        [](VM&, const std::vector<Value>& args) -> Value {
+    module->entries["ok"] =
+        Value{std::make_shared<VmNativeFunction>("ok", -1, [](VM&, const std::vector<Value>& args) -> Value {
             if (args.size() < 1 || args.size() > 2) {
                 throw std::runtime_error("assert.ok() takes 1 or 2 arguments.");
             }
@@ -136,8 +136,8 @@ Value createVmAssertModule(VM& /*vm*/) {
             return Nil{};
         })};
 
-    module->entries["eq"] = Value{std::make_shared<VmNativeFunction>("eq", 2,
-        [](VM&, const std::vector<Value>& args) -> Value {
+    module->entries["eq"] =
+        Value{std::make_shared<VmNativeFunction>("eq", 2, [](VM&, const std::vector<Value>& args) -> Value {
             if (args.size() != 2) {
                 throw std::runtime_error("assert.eq() takes exactly 2 arguments.");
             }
@@ -150,8 +150,8 @@ Value createVmAssertModule(VM& /*vm*/) {
             return Nil{};
         })};
 
-    module->entries["ne"] = Value{std::make_shared<VmNativeFunction>("ne", 2,
-        [](VM&, const std::vector<Value>& args) -> Value {
+    module->entries["ne"] =
+        Value{std::make_shared<VmNativeFunction>("ne", 2, [](VM&, const std::vector<Value>& args) -> Value {
             if (args.size() != 2) {
                 throw std::runtime_error("assert.ne() takes exactly 2 arguments.");
             }
@@ -170,10 +170,9 @@ Value createVmAssertModule(VM& /*vm*/) {
 Value createVmEnvModule(VM& vm) {
     auto module = std::make_shared<Map>();
 
-    // Environment variable functions (placeholder - need VM versions)
-    // module->entries["get"] = Value{std::make_shared<VmNativeFunction>("get", 1, vmNativeEnvGet)};
-    // module->entries["set"] = Value{std::make_shared<VmNativeFunction>("set", 2, vmNativeEnvSet)};
-    // module->entries["exists"] = Value{std::make_shared<VmNativeFunction>("exists", 1, vmNativeEnvExists)};
+    module->entries["get"] = Value{std::make_shared<VmNativeFunction>("get", 1, vmNativeEnvGet)};
+    module->entries["set"] = Value{std::make_shared<VmNativeFunction>("set", 2, vmNativeEnvSet)};
+    module->entries["exists"] = Value{std::make_shared<VmNativeFunction>("exists", 1, vmNativeEnvExists)};
 
     return Value{module};
 }
@@ -181,10 +180,9 @@ Value createVmEnvModule(VM& vm) {
 Value createVmProcessModule(VM& vm) {
     auto module = std::make_shared<Map>();
 
-    // Process control functions (placeholder - need VM versions)
-    // module->entries["exit"] = Value{std::make_shared<VmNativeFunction>("exit", 1, vmNativeProcessExit)};
-    // module->entries["status"] = Value{std::make_shared<VmNativeFunction>("status", 0, vmNativeProcessStatus)};
-    // module->entries["args"] = Value{std::make_shared<VmNativeFunction>("args", 0, vmNativeProcessArgs)};
+    module->entries["exit"] = Value{std::make_shared<VmNativeFunction>("exit", 1, vmNativeProcessExit)};
+    module->entries["status"] = Value{std::make_shared<VmNativeFunction>("status", 0, vmNativeProcessStatus)};
+    module->entries["args"] = Value{std::make_shared<VmNativeFunction>("args", 0, vmNativeProcessArgs)};
 
     return Value{module};
 }
@@ -248,15 +246,13 @@ Value createVmRegexModule(VM& vm) {
 }
 
 bool isVmNativeModule(const std::string& path) {
-    return path == "math" || path == "std.math" || path == "string" || path == "std.string" ||
-           path == "array" || path == "std.array" || path == "io" || path == "std.io" || path == "json" ||
-           path == "std.json" || path == "http" || path == "log" || path == "std.log" || path == "assert" ||
-           path == "std.assert" || path == "env" || path == "std.env" || path == "process" || path == "std.process" ||
-           path == "path" || path == "std.path" || path == "fs" || path == "std.fs" || path == "time" ||
-           path == "std.time" || path == "regex" || path == "std.regex" ||
-           path == "ui" || path == "std.ui" || path == "audio" || path == "std.audio" ||
-           path == "image" || path == "std.image" ||
-           path == "ipc" || path == "std.ipc" ||
+    return path == "math" || path == "std.math" || path == "string" || path == "std.string" || path == "array" ||
+           path == "std.array" || path == "io" || path == "std.io" || path == "json" || path == "std.json" ||
+           path == "http" || path == "log" || path == "std.log" || path == "assert" || path == "std.assert" ||
+           path == "env" || path == "std.env" || path == "process" || path == "std.process" || path == "path" ||
+           path == "std.path" || path == "fs" || path == "std.fs" || path == "time" || path == "std.time" ||
+           path == "regex" || path == "std.regex" || path == "ui" || path == "std.ui" || path == "audio" ||
+           path == "std.audio" || path == "image" || path == "std.image" || path == "ipc" || path == "std.ipc" ||
            path == "net" || path == "std.net";
 }
 
@@ -299,24 +295,27 @@ Value getVmNativeModule(const std::string& name, VM& vm) {
         return createVmImageModule(vm);
     } else if (name == "ipc" || name == "std.ipc") {
         auto module = std::make_shared<Map>();
-        module->entries["createPipe"] = Value{std::make_shared<VmNativeFunction>("createPipe", 1, vmNativeIpcCreatePipe)};
-        module->entries["openRead"]   = Value{std::make_shared<VmNativeFunction>("openRead", 1, vmNativeIpcOpenRead)};
-        module->entries["openWrite"]  = Value{std::make_shared<VmNativeFunction>("openWrite", 1, vmNativeIpcOpenWrite)};
-        module->entries["send"]       = Value{std::make_shared<VmNativeFunction>("send", 2, vmNativeIpcSend)};
-        module->entries["recv"]       = Value{std::make_shared<VmNativeFunction>("recv", 1, vmNativeIpcRecv)};
-        module->entries["tryRecv"]    = Value{std::make_shared<VmNativeFunction>("tryRecv", 1, vmNativeIpcTryRecv)};
-        module->entries["close"]      = Value{std::make_shared<VmNativeFunction>("close", 1, vmNativeIpcClose)};
-        module->entries["removePipe"] = Value{std::make_shared<VmNativeFunction>("removePipe", 1, vmNativeIpcRemovePipe)};
+        module->entries["createPipe"] =
+            Value{std::make_shared<VmNativeFunction>("createPipe", 1, vmNativeIpcCreatePipe)};
+        module->entries["openRead"] = Value{std::make_shared<VmNativeFunction>("openRead", 1, vmNativeIpcOpenRead)};
+        module->entries["openWrite"] = Value{std::make_shared<VmNativeFunction>("openWrite", 1, vmNativeIpcOpenWrite)};
+        module->entries["send"] = Value{std::make_shared<VmNativeFunction>("send", 2, vmNativeIpcSend)};
+        module->entries["recv"] = Value{std::make_shared<VmNativeFunction>("recv", 1, vmNativeIpcRecv)};
+        module->entries["tryRecv"] = Value{std::make_shared<VmNativeFunction>("tryRecv", 1, vmNativeIpcTryRecv)};
+        module->entries["close"] = Value{std::make_shared<VmNativeFunction>("close", 1, vmNativeIpcClose)};
+        module->entries["removePipe"] =
+            Value{std::make_shared<VmNativeFunction>("removePipe", 1, vmNativeIpcRemovePipe)};
         return Value{module};
     } else if (name == "net" || name == "std.net") {
         auto module = std::make_shared<Map>();
-        module->entries["connect"]    = Value{std::make_shared<VmNativeFunction>("connect", 2, vmNativeNetConnect)};
-        module->entries["listen"]     = Value{std::make_shared<VmNativeFunction>("listen", 1, vmNativeNetListen)};
-        module->entries["accept"]     = Value{std::make_shared<VmNativeFunction>("accept", -1, vmNativeNetAccept)};
-        module->entries["send"]       = Value{std::make_shared<VmNativeFunction>("send", 2, vmNativeNetSend)};
-        module->entries["recv"]       = Value{std::make_shared<VmNativeFunction>("recv", -1, vmNativeNetRecv)};
-        module->entries["close"]      = Value{std::make_shared<VmNativeFunction>("close", 1, vmNativeNetClose)};
-        module->entries["setTimeout"] = Value{std::make_shared<VmNativeFunction>("setTimeout", 2, vmNativeNetSetTimeout)};
+        module->entries["connect"] = Value{std::make_shared<VmNativeFunction>("connect", 2, vmNativeNetConnect)};
+        module->entries["listen"] = Value{std::make_shared<VmNativeFunction>("listen", 1, vmNativeNetListen)};
+        module->entries["accept"] = Value{std::make_shared<VmNativeFunction>("accept", -1, vmNativeNetAccept)};
+        module->entries["send"] = Value{std::make_shared<VmNativeFunction>("send", 2, vmNativeNetSend)};
+        module->entries["recv"] = Value{std::make_shared<VmNativeFunction>("recv", -1, vmNativeNetRecv)};
+        module->entries["close"] = Value{std::make_shared<VmNativeFunction>("close", 1, vmNativeNetClose)};
+        module->entries["setTimeout"] =
+            Value{std::make_shared<VmNativeFunction>("setTimeout", 2, vmNativeNetSetTimeout)};
         return Value{module};
     }
 
