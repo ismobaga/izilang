@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <random>
+#include <cstdio>
 #include <sys/stat.h>
 #include <thread>
 #include <regex>
@@ -379,6 +380,255 @@ Value vmNativeProcessArgs(VM& vm, const std::vector<Value>& arguments) {
         argsArray->elements.push_back(arg);
     }
     return argsArray;
+}
+
+Value vmNativePathJoin(VM& vm, const std::vector<Value>& arguments) {
+    if (arguments.empty()) {
+        return std::string("");
+    }
+
+    std::string result;
+    for (size_t i = 0; i < arguments.size(); ++i) {
+        if (!std::holds_alternative<std::string>(arguments[i])) {
+            throw std::runtime_error("path.join() requires all arguments to be strings.");
+        }
+
+        std::string part = std::get<std::string>(arguments[i]);
+        if (part.empty()) {
+            continue;
+        }
+
+        if (!result.empty() && result.back() != '/') {
+            result += '/';
+        }
+
+        if (!result.empty() && !part.empty() && part[0] == '/') {
+            part = part.substr(1);
+        }
+
+        result += part;
+    }
+
+    return result;
+}
+
+Value vmNativePathBasename(VM& vm, const std::vector<Value>& arguments) {
+    if (arguments.size() != 1) {
+        throw std::runtime_error("path.basename() takes exactly one argument.");
+    }
+    if (!std::holds_alternative<std::string>(arguments[0])) {
+        throw std::runtime_error("path.basename() requires a string argument.");
+    }
+
+    std::string path = std::get<std::string>(arguments[0]);
+    while (!path.empty() && path.back() == '/') {
+        path.pop_back();
+    }
+
+    if (path.empty()) {
+        return std::string("/");
+    }
+
+    size_t pos = path.find_last_of('/');
+    if (pos == std::string::npos) {
+        return path;
+    }
+    return path.substr(pos + 1);
+}
+
+Value vmNativePathDirname(VM& vm, const std::vector<Value>& arguments) {
+    if (arguments.size() != 1) {
+        throw std::runtime_error("path.dirname() takes exactly one argument.");
+    }
+    if (!std::holds_alternative<std::string>(arguments[0])) {
+        throw std::runtime_error("path.dirname() requires a string argument.");
+    }
+
+    std::string path = std::get<std::string>(arguments[0]);
+    while (!path.empty() && path.back() == '/') {
+        path.pop_back();
+    }
+
+    if (path.empty()) {
+        return std::string(".");
+    }
+
+    size_t pos = path.find_last_of('/');
+    if (pos == std::string::npos) {
+        return std::string(".");
+    }
+    if (pos == 0) {
+        return std::string("/");
+    }
+    return path.substr(0, pos);
+}
+
+Value vmNativePathExtname(VM& vm, const std::vector<Value>& arguments) {
+    if (arguments.size() != 1) {
+        throw std::runtime_error("path.extname() takes exactly one argument.");
+    }
+    if (!std::holds_alternative<std::string>(arguments[0])) {
+        throw std::runtime_error("path.extname() requires a string argument.");
+    }
+
+    std::string path = std::get<std::string>(arguments[0]);
+    size_t slashPos = path.find_last_of('/');
+    std::string basename = (slashPos == std::string::npos) ? path : path.substr(slashPos + 1);
+
+    size_t dotPos = basename.find_last_of('.');
+    if (dotPos == std::string::npos || dotPos == 0) {
+        return std::string("");
+    }
+
+    return basename.substr(dotPos);
+}
+
+Value vmNativePathNormalize(VM& vm, const std::vector<Value>& arguments) {
+    if (arguments.size() != 1) {
+        throw std::runtime_error("path.normalize() takes exactly one argument.");
+    }
+    if (!std::holds_alternative<std::string>(arguments[0])) {
+        throw std::runtime_error("path.normalize() requires a string argument.");
+    }
+
+    std::string path = std::get<std::string>(arguments[0]);
+    if (path.empty()) {
+        return std::string(".");
+    }
+
+    bool isAbsolute = (!path.empty() && path[0] == '/');
+
+    std::vector<std::string> parts;
+    std::string current;
+    for (char c : path) {
+        if (c == '/') {
+            if (!current.empty()) {
+                parts.push_back(current);
+                current.clear();
+            }
+        } else {
+            current += c;
+        }
+    }
+    if (!current.empty()) {
+        parts.push_back(current);
+    }
+
+    std::vector<std::string> stack;
+    for (const auto& part : parts) {
+        if (part == "..") {
+            if (!stack.empty() && stack.back() != "..") {
+                stack.pop_back();
+            } else if (!isAbsolute) {
+                stack.push_back(part);
+            }
+        } else if (part != ".") {
+            stack.push_back(part);
+        }
+    }
+
+    std::string result;
+    if (isAbsolute) {
+        result = "/";
+    }
+
+    for (size_t i = 0; i < stack.size(); ++i) {
+        result += stack[i];
+        if (i + 1 < stack.size()) {
+            result += '/';
+        }
+    }
+
+    if (result.empty()) {
+        return std::string(".");
+    }
+
+    return result;
+}
+
+Value vmNativeFsExists(VM& vm, const std::vector<Value>& arguments) {
+    return vmNativeFileExists(vm, arguments);
+}
+
+Value vmNativeFsRead(VM& vm, const std::vector<Value>& arguments) {
+    if (arguments.size() != 1) {
+        throw std::runtime_error("fs.read() takes exactly one argument.");
+    }
+    if (!std::holds_alternative<std::string>(arguments[0])) {
+        throw std::runtime_error("Argument to fs.read() must be a string.");
+    }
+
+    std::string path = std::get<std::string>(arguments[0]);
+    std::ifstream file(path);
+    if (!file.is_open()) {
+        throw std::runtime_error("Failed to open file for reading: " + path);
+    }
+
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    return buffer.str();
+}
+
+Value vmNativeFsWrite(VM& vm, const std::vector<Value>& arguments) {
+    if (arguments.size() != 2) {
+        throw std::runtime_error("fs.write() takes exactly two arguments.");
+    }
+    if (!std::holds_alternative<std::string>(arguments[0]) || !std::holds_alternative<std::string>(arguments[1])) {
+        throw std::runtime_error("Both arguments to fs.write() must be strings.");
+    }
+
+    std::string path = std::get<std::string>(arguments[0]);
+    std::string content = std::get<std::string>(arguments[1]);
+
+    std::ofstream file(path);
+    if (!file.is_open()) {
+        throw std::runtime_error("Failed to open file for writing: " + path);
+    }
+    file << content;
+    if (file.fail()) {
+        throw std::runtime_error("Failed to write to file: " + path);
+    }
+
+    return Nil{};
+}
+
+Value vmNativeFsAppend(VM& vm, const std::vector<Value>& arguments) {
+    if (arguments.size() != 2) {
+        throw std::runtime_error("fs.append() takes exactly two arguments.");
+    }
+    if (!std::holds_alternative<std::string>(arguments[0]) || !std::holds_alternative<std::string>(arguments[1])) {
+        throw std::runtime_error("Both arguments to fs.append() must be strings.");
+    }
+
+    std::string path = std::get<std::string>(arguments[0]);
+    std::string content = std::get<std::string>(arguments[1]);
+
+    std::ofstream file(path, std::ios::app);
+    if (!file.is_open()) {
+        throw std::runtime_error("Failed to open file for appending: " + path);
+    }
+    file << content;
+    if (file.fail()) {
+        throw std::runtime_error("Failed to append to file: " + path);
+    }
+
+    return Nil{};
+}
+
+Value vmNativeFsRemove(VM& vm, const std::vector<Value>& arguments) {
+    if (arguments.size() != 1) {
+        throw std::runtime_error("fs.remove() takes exactly one argument.");
+    }
+    if (!std::holds_alternative<std::string>(arguments[0])) {
+        throw std::runtime_error("Argument to fs.remove() must be a string.");
+    }
+
+    std::string path = std::get<std::string>(arguments[0]);
+    if (std::remove(path.c_str()) != 0) {
+        throw std::runtime_error("Failed to remove file: " + path);
+    }
+
+    return Nil{};
 }
 
 // ============ Set functions ============

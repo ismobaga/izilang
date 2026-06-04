@@ -143,6 +143,35 @@ TEST_CASE("VM parity: try/catch/finally", "[vm-parity][p0]") {
     )");
 }
 
+TEST_CASE("VM parity: std.path module exports", "[vm-parity][p0]") {
+    requireSameOutput(R"(
+        import * as path from "std.path";
+        print(path.join("a", "b", "c.txt"));
+        print(path.basename("/tmp/demo/file.txt"));
+        print(path.dirname("/tmp/demo/file.txt"));
+        print(path.extname("archive.tar.gz"));
+        print(path.normalize("/foo/bar/../baz"));
+    )");
+}
+
+TEST_CASE("VM parity: std.fs module exports", "[vm-parity][p0]") {
+    requireSameOutput(R"(
+        import * as fs from "std.fs";
+        var p = "tests/.tmp_vm_fs_parity.iztmp";
+
+        if (fs.exists(p)) {
+            fs.remove(p);
+        }
+
+        fs.write(p, "hello");
+        fs.append(p, " world");
+        print(fs.read(p));
+        print(fs.exists(p));
+        fs.remove(p);
+        print(fs.exists(p));
+    )");
+}
+
 TEST_CASE("VM known gap: class inheritance parity", "[vm-gap][!mayfail]") {
     requireSameOutput(R"(
         class A {

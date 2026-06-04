@@ -190,12 +190,11 @@ Value createVmProcessModule(VM& vm) {
 Value createVmPathModule(VM& vm) {
     auto module = std::make_shared<Map>();
 
-    // Path manipulation functions (placeholder - need VM versions)
-    // module->entries["join"] = Value{std::make_shared<VmNativeFunction>("join", -1, vmNativePathJoin)};
-    // module->entries["basename"] = Value{std::make_shared<VmNativeFunction>("basename", 1, vmNativePathBasename)};
-    // module->entries["dirname"] = Value{std::make_shared<VmNativeFunction>("dirname", 1, vmNativePathDirname)};
-    // module->entries["extname"] = Value{std::make_shared<VmNativeFunction>("extname", 1, vmNativePathExtname)};
-    // module->entries["normalize"] = Value{std::make_shared<VmNativeFunction>("normalize", 1, vmNativePathNormalize)};
+    module->entries["join"] = Value{std::make_shared<VmNativeFunction>("join", -1, vmNativePathJoin)};
+    module->entries["basename"] = Value{std::make_shared<VmNativeFunction>("basename", 1, vmNativePathBasename)};
+    module->entries["dirname"] = Value{std::make_shared<VmNativeFunction>("dirname", 1, vmNativePathDirname)};
+    module->entries["extname"] = Value{std::make_shared<VmNativeFunction>("extname", 1, vmNativePathExtname)};
+    module->entries["normalize"] = Value{std::make_shared<VmNativeFunction>("normalize", 1, vmNativePathNormalize)};
 
     return Value{module};
 }
@@ -203,12 +202,11 @@ Value createVmPathModule(VM& vm) {
 Value createVmFsModule(VM& vm) {
     auto module = std::make_shared<Map>();
 
-    // Filesystem functions (placeholder - need VM versions)
-    // module->entries["exists"] = Value{std::make_shared<VmNativeFunction>("exists", 1, vmNativeFsExists)};
-    // module->entries["read"] = Value{std::make_shared<VmNativeFunction>("read", 1, vmNativeFsRead)};
-    // module->entries["write"] = Value{std::make_shared<VmNativeFunction>("write", 2, vmNativeFsWrite)};
-    // module->entries["append"] = Value{std::make_shared<VmNativeFunction>("append", 2, vmNativeFsAppend)};
-    // module->entries["remove"] = Value{std::make_shared<VmNativeFunction>("remove", 1, vmNativeFsRemove)};
+    module->entries["exists"] = Value{std::make_shared<VmNativeFunction>("exists", 1, vmNativeFsExists)};
+    module->entries["read"] = Value{std::make_shared<VmNativeFunction>("read", 1, vmNativeFsRead)};
+    module->entries["write"] = Value{std::make_shared<VmNativeFunction>("write", 2, vmNativeFsWrite)};
+    module->entries["append"] = Value{std::make_shared<VmNativeFunction>("append", 2, vmNativeFsAppend)};
+    module->entries["remove"] = Value{std::make_shared<VmNativeFunction>("remove", 1, vmNativeFsRemove)};
 
     return Value{module};
 }
